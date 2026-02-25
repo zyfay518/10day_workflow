@@ -1,0 +1,923 @@
+# 前后端接口设计文档 - 10日工作流管理系统
+
+> **项目名称**: 10-Day Flow (10日工作流管理)
+> **文档版本**: v1.0
+> **更新日期**: 2026-02-25
+> **基础架构**: React + TypeScript + localStorage (本地测试) → Supabase (云端部署)
+
+---
+
+## 📋 目录
+
+1. [总体架构](#一总体架构)
+2. [页面交互分析](#二页面交互分析)
+3. [数据接口设计](#三数据接口设计)
+4. [Hook设计](#四hook设计)
+5. [实时数据同步](#五实时数据同步)
+6. [API调用流程](#六api调用流程)
+7. [错误处理与验证](#七错误处理与验证)
+8. [性能优化建议](#八性能优化建议)
+9. [迁移计划](#九迁移计划-localstorage--supabase)
+10. [测试清单](#十测试清单)
+
+---
+
+## 一、总体架构
+
+### 1.1 系统分层
+
+```
+┌─────────────────────────────────────────┐
+│           User Interface Layer           │
+│  Home / Record / History / Report / ...  │
+│  (React Components + Tailwind CSS)       │
+└──────────────────┬──────────────────────┘
+                   │ Hooks + Context
+┌──────────────────▼──────────────────────┐
+│        Data Access Layer (Hooks)         │
+│ useAuth / useCycles / useRecords / ...   │
+└──────────────────┬──────────────────────┘
+                   │ localStorage / Supabase
+┌──────────────────▼──────────────────────┐
+│      Backend Storage (可切换)            │
+│   localStorage (开发) / Supabase (生产)   │
+└─────────────────────────────────────────┘
+```
+
+### 1.2 技术栈
+
+| 层级 | 技术 | 说明 |
+|------|------|------|
+| **前端框架** | React 19 + TypeScript | 组件开发和类型安全 |
+| **状态管理** | React Hooks | 轻量级状态管理 |
+| **路由** | React Router v7 | 页面路由和导航 |
+| **样式** | Tailwind CSS v4 | 原子化CSS框架 |
+| **图表库** | Recharts | 数据可视化 |
+| **图标** | Material Symbols | 图标库 |
+| **存储** | localStorage (开发) / Supabase Storage (生产) | 文件和图片存储 |
+| **数据库** | Supabase (PostgreSQL) | 后端数据库 (未来) |
+| **认证** | Supabase Auth | 用户认证管理 (未来) |
+| **AI服务** | Google Gemini API | AI文字识别和解析 (未来) |
+
+### 1.3 数据流向图
+
+```
+用户操作 (UI Event)
+    ↓
+React Event Handler
+    ↓
+Custom Hook (useRecords/useCycles/...)
+    ↓
+localStorage.ts (本地存储层)
+    ↓
+浏览器 localStorage
+    ↓
+数据变更通知
+    ↓
+Hook State 更新
+    ↓
+React Re-render
+    ↓
+UI 更新显示
+```
+
+---
+
+## 二、页面交互分析
+
+### 2.1 首页 (Home.tsx) ✅ 已连接后端
+
+#### 页面功能概述
+
+首页是应用的核心入口，展示用户的37个周期完成情况矩阵，当前周期进度，以及今日记录状态。
+
+#### 页面元素与交互
+
+| 元素 | 类型 | 功能说明 | 数据源 | 操作后 | 状态 |
+|------|------|--------|--------|--------|------|
+| **用户头像** | 圆形头像 | 显示用户基本信息 | user_profiles.nickname | 点击跳转到Profile页 | ✅ |
+| **设置按钮** | Icon Button | 打开设置页面 | - | 跳转 /profile | ✅ |
+| **37周期矩阵** | Grid Layout (6×6+1) | 展示所有周期完成度 | cycles.completion_rate | 点击查看详情 | 🟡 静态 |
+| **当前周期卡片** | Card | 显示进度条和百分比 | cycles 表当前周期数据 | 刷新数据 | ✅ |
+| **今日记录状态** | Tag 列表 | 显示各维度记录状态 | records 表今日数据 | 实时更新 | ✅ |
+| **开始记录按钮** | Primary Button | 跳转到记录页 | - | 导航到 /record | ✅ |
+| **查看报告按钮** | Secondary Button | 跳转到报告页 | - | 导航到 /report | ✅ |
+
+#### 涉及的数据表
+
+- `user_profiles` - 用户基本信息 ✅
+- `cycles` - 周期数据 ✅
+- `dimensions` - 维度配置 ✅
+- `records` - 记录数据（用于计算今日状态）✅
+
+---
+
+### 2.2 记录页 (Record.tsx) ✅ 已连接后端 ⭐ 核心页面
+
+#### 页面功能概述
+
+记录页是应用的核心功���页面，用户在此输入各维度的日记内容。支持维度切换、日期选择。
+
+#### 页面元素与交互
+
+| 元素 | 类型 | 功能说明 | 数据源 | 操作后 | 状态 |
+|------|------|--------|--------|--------|------|
+| **返回按钮** | Icon Button | 返回首页 | - | 导航到 / | ✅ |
+| **日历按钮** | Icon Button | 打开日期选择器 | cycles 的日期范围 | 弹出日期选择 | ✅ |
+| **选中日期显示** | Text | 显示当前选中日期 | state: selectedDate | 更新为新选中日期 | ✅ |
+| **维度 Tab栏** | Tab Group | 切换五个维度 | dimensions 表 | 加载对应维度的记录 | ✅ |
+| **文本输入框** | Textarea | 输入维度内容 | record.content | 保存记录 | ✅ |
+| **拍照按钮** | Icon Button | 调用设备摄像头 | - | 🔵 TODO | ❌ |
+| **语音按钮** | Icon Button | 录制语音 | - | 🔵 TODO | ❌ |
+| **图片按钮** | Icon Button | 选择本地图片 | - | 🔵 TODO | ❌ |
+| **AI解析按钮** | Primary Button | 费用维度显示 | - | 导航到 /expense | ✅ |
+| **今日记录概览** | Tag 列表 | 显示5个维度的完成状态 | records 表 | 实时更新 | ✅ |
+| **保存记录按钮** | Gradient Button | 保存当前维度记录 | record.content | 调用 saveRecord() | ✅ |
+| **今日完成按钮** | Primary Button | 标记今日全部完成 | - | 验证所有维度后导航 | ✅ |
+
+#### 涉及的数据表
+
+- `user_profiles` - 用户信息 ✅
+- `cycles` - 周期数据 ✅
+- `dimensions` - 维度配置 ✅
+- `records` - 核心记录表 ✅
+- `record_attachments` - 附件表 ❌ TODO
+
+---
+
+### 2.3 费用记录特殊页 (Expense.tsx) ❌ 未连接后端
+
+#### 页面功能概述
+
+费用记录页面提供AI智能解析账单功能，自动识别开销信息并分类。
+
+#### 页面元素与交互
+
+| 元素 | 类型 | 功能说明 | 数据源 | 状态 |
+|------|------|--------|--------|------|
+| **返回按钮** | Icon Button | 返回记录页 | - | ✅ |
+| **输入框** | Textarea | 输入开销信息 | state: text | 🟡 静态 |
+| **AI解析按钮** | Primary Button | 调用Gemini API解析 | Gemini API | ❌ TODO |
+| **解析结果卡片** | Card List | 显示AI识别的开销项 | - | ❌ TODO |
+| **确认记录按钮** | Primary Button | 保存所有开销 | expenses 表 | ❌ TODO |
+
+#### 需要开发的功能
+
+- [ ] 创建 `useExpenses` Hook
+- [ ] 实现 AI 解析接口（未来）
+- [ ] 批量保存开销到 expenses 表
+
+---
+
+### 2.4 历史记录页 (History.tsx) ❌ 未连接后端
+
+#### 页面功能概述
+
+展示当前周期内的所有记录，支持日期范围筛选、维度筛选、全文搜索。
+
+#### 页面元素与交互
+
+| 元素 | 类型 | 功能说明 | 数据源 | 状态 |
+|------|------|--------|--------|------|
+| **搜索按钮** | Icon Button | 打开搜索框 | - | 🟡 静态 |
+| **搜索输入框** | Input | 输入关键词搜索 | state | 🟡 静态 |
+| **日期筛选** | Dropdown Button | 选择日期范围 | cycles | ❌ TODO |
+| **维度筛选** | Dropdown Button | 选择特定维度 | dimensions | ❌ TODO |
+| **记录卡片** | Card List | 显示记录内容 | records | ❌ TODO |
+| **附件缩略图** | Image Grid | 显示上传的图片 | record_attachments | ❌ TODO |
+| **开销明细** | Expense List | 显示该记录的开销 | expenses | ❌ TODO |
+
+#### 需要开发的功能
+
+- [ ] 创建 `useHistory` Hook 或扩展 `useRecords`
+- [ ] 实现日期范围查询
+- [ ] 实现维度过滤
+- [ ] 实现全文搜索
+
+---
+
+### 2.5 报告页 (Report.tsx) ❌ 未连接后端
+
+#### 页面功能概述
+
+展示周期报告、时间轴和数据洞察。需要AI聚合分析功能。
+
+#### Tab 1: 周期报告 ❌ TODO
+
+| 元素 | 功能说明 | 状态 |
+|------|--------|------|
+| **周期选择器** | 选择查看哪个周期 | ❌ |
+| **AI评价卡片** | 显示完成度和建议 | ❌ |
+| **各维度卡片** | 显示各维度总结 | ❌ |
+| **导出按钮** | 导出PDF/Markdown | ❌ |
+
+#### Tab 2: 时间轴 ❌ TODO
+
+| 元素 | 功能说明 | 状态 |
+|------|--------|------|
+| **完成度趋势图** | 显示各周期完成度曲线 | ❌ |
+| **里程碑时间轴** | 显示重要事件 | ❌ |
+
+#### Tab 3: 数据洞察 ❌ TODO
+
+| 元素 | 功能说明 | 状态 |
+|------|--------|------|
+| **全局统计卡片** | 显示累���数据 | ❌ |
+| **维度分布雷达图** | 各维度活跃度对比 | ❌ |
+| **开销趋势图** | 按周期显示开销 | ❌ |
+| **关键词词云** | 显示提取的关键词 | ❌ |
+
+#### 需要开发的功能
+
+- [ ] 创建 `useReport` Hook
+- [ ] 创建 `useMilestones` Hook
+- [ ] 实现AI报告生成接口（未来）
+- [ ] 实现导出功能
+
+---
+
+### 2.6 个人设置页 (Profile.tsx) ❌ 未连接后端
+
+#### 页面功能概述
+
+用户个人信息管理和应用设置。
+
+#### 页面元素与交互
+
+| 元素 | 功能说明 | 数据源 | 状态 |
+|------|--------|--------|------|
+| **头像上传** | 上传/更换头像 | user_profiles.avatar_url | ❌ TODO |
+| **昵称编辑** | 修改用户昵称 | user_profiles.nickname | ❌ TODO |
+| **推送通知开关** | 启用/禁用通知 | user_profiles | ❌ TODO |
+| **退出登录** | 清除会话 | - | ❌ TODO |
+
+#### 需要开发的功能
+
+- [ ] 扩展 `useUserProfile` Hook 支持更新功能
+- [ ] 实现头像上传到 Storage（未来）
+
+---
+
+## 三、数据接口设计
+
+### 3.1 用户相关接口
+
+#### 3.1.1 获取用户信息
+
+```typescript
+// Hook: useUserProfile(userId)
+const getUserProfile = (userId: string) => {
+  const profiles = getFromStorage<UserProfile>('user_profiles');
+  return profiles.find(p => p.user_id === userId) || null;
+};
+
+// 返回数据结构
+{
+  id: number;
+  user_id: string;
+  nickname: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### 3.1.2 更新用户信息
+
+```typescript
+// Hook: updateProfile(updates)
+const updateUserProfile = (userId: string, updates: Partial<UserProfile>) => {
+  const profiles = getFromStorage<UserProfile>('user_profiles');
+  const index = profiles.findIndex(p => p.user_id === userId);
+
+  if (index === -1) return false;
+
+  profiles[index] = {
+    ...profiles[index],
+    ...updates,
+    updated_at: new Date().toISOString()
+  };
+
+  saveToStorage('user_profiles', profiles);
+  return true;
+};
+```
+
+---
+
+### 3.2 周期相关接口
+
+#### 3.2.1 获取所有周期
+
+```typescript
+// Hook: useCycles(userId)
+const getCycles = (userId: string): Cycle[] => {
+  const cycles = getFromStorage<Cycle>('cycles');
+  return cycles.filter(c => c.user_id === userId)
+                .sort((a, b) => a.cycle_number - b.cycle_number);
+};
+
+// 返回数据结构 (数组)
+[
+  {
+    id: number;
+    user_id: string;
+    cycle_number: number;        // 1-37
+    start_date: string;          // YYYY-MM-DD
+    end_date: string;            // YYYY-MM-DD
+    total_days: number;          // 10 or 5
+    completion_rate: number;     // 0-100
+    status: 'pending' | 'active' | 'completed';
+    created_at: string;
+    updated_at: string;
+  }
+]
+```
+
+#### 3.2.2 获取当前周期
+
+```typescript
+// Hook: currentCycle from useCycles()
+const getCurrentCycle = (userId: string): Cycle | null => {
+  const cycles = getCycles(userId);
+  return cycles.find(c => c.status === 'active') || cycles[0] || null;
+};
+```
+
+---
+
+### 3.3 记录相关接口
+
+#### 3.3.1 获取单条记录
+
+```typescript
+// Hook: useRecords({ userId, cycleId, dimensionId, date })
+const getRecord = (params: {
+  userId: string;
+  cycleId: number;
+  dimensionId: number;
+  date: string;
+}): Record | null => {
+  const records = getFromStorage<Record>('records');
+  return records.find(r =>
+    r.user_id === params.userId &&
+    r.cycle_id === params.cycleId &&
+    r.dimension_id === params.dimensionId &&
+    r.record_date === params.date
+  ) || null;
+};
+
+// 返回数据结构
+{
+  id: number;
+  user_id: string;
+  cycle_id: number;
+  dimension_id: number;
+  record_date: string;         // YYYY-MM-DD
+  content: string;
+  word_count: number;
+  status: 'draft' | 'published';
+  created_at: string;
+  updated_at: string;
+}
+```
+
+#### 3.3.2 保存/更新记录 (Upsert)
+
+```typescript
+// Hook: saveRecord(content, status)
+const saveRecord = (params: {
+  userId: string;
+  cycleId: number;
+  dimensionId: number;
+  date: string;
+  content: string;
+  status?: 'draft' | 'published';
+}): Record => {
+  const records = getFromStorage<Record>('records');
+  const existing = getRecord(params);
+
+  if (existing) {
+    // 更新现有记录
+    const index = records.findIndex(r => r.id === existing.id);
+    records[index] = {
+      ...records[index],
+      content: params.content,
+      word_count: params.content.length,
+      status: params.status || 'published',
+      updated_at: new Date().toISOString()
+    };
+    saveToStorage('records', records);
+
+    // 触发完成度更新
+    updateCycleCompletionRate(params.cycleId);
+
+    return records[index];
+  } else {
+    // 插入新记录
+    const newRecord: Record = {
+      id: generateId(),
+      user_id: params.userId,
+      cycle_id: params.cycleId,
+      dimension_id: params.dimensionId,
+      record_date: params.date,
+      content: params.content,
+      word_count: params.content.length,
+      status: params.status || 'published',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    records.push(newRecord);
+    saveToStorage('records', records);
+
+    // 触发完成度更新
+    updateCycleCompletionRate(params.cycleId);
+
+    return newRecord;
+  }
+};
+```
+
+#### 3.3.3 按日期范围获取记录 (History 页需要)
+
+```typescript
+// TODO: 需要创建新的 Hook 或扩展 useRecords
+const getRecordsByDateRange = (params: {
+  userId: string;
+  cycleId: number;
+  startDate: string;
+  endDate: string;
+}): Record[] => {
+  const records = getFromStorage<Record>('records');
+  return records.filter(r =>
+    r.user_id === params.userId &&
+    r.cycle_id === params.cycleId &&
+    r.record_date >= params.startDate &&
+    r.record_date <= params.endDate
+  ).sort((a, b) => b.record_date.localeCompare(a.record_date));
+};
+```
+
+---
+
+### 3.4 开销相关接口 (TODO)
+
+#### 3.4.1 保存开销
+
+```typescript
+// TODO: 需要创建 useExpenses Hook
+const saveExpense = (expense: {
+  userId: string;
+  recordId?: number;
+  expenseDate: string;
+  amount: number;
+  category: string;
+  merchant?: string;
+  notes?: string;
+  aiParsed?: boolean;
+}): Expense => {
+  const expenses = getFromStorage<Expense>('expenses');
+  const newExpense: Expense = {
+    id: generateId(),
+    ...expense,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  expenses.push(newExpense);
+  saveToStorage('expenses', expenses);
+  return newExpense;
+};
+```
+
+---
+
+## 四、Hook设计
+
+### 4.1 已实现的Hooks ✅
+
+#### 4.1.1 useAuth.local.ts ✅
+
+```typescript
+/**
+ * 用户认证 Hook
+ */
+export function useAuth(): UseAuthReturn {
+  user: User | null;           // 当前用户 { id, phone }
+  loading: boolean;
+  login: (phone: string) => void;
+  logout: () => void;
+}
+
+// 使用示例
+const { user, login, logout } = useAuth();
+```
+
+#### 4.1.2 useUserProfile.local.ts ✅
+
+```typescript
+/**
+ * 用户档案 Hook
+ */
+export function useUserProfile(userId?: string) {
+  profile: UserProfile | null;
+  loading: boolean;
+  updateProfile: (updates: Partial<UserProfile>) => boolean;
+}
+```
+
+#### 4.1.3 useCycles.local.ts ✅
+
+```typescript
+/**
+ * 周期管理 Hook
+ */
+export function useCycles(userId?: string): UseCyclesReturn {
+  cycles: Cycle[];
+  currentCycle: Cycle | null;
+  loading: boolean;
+  refreshCycles: () => void;
+}
+```
+
+#### 4.1.4 useRecords.local.ts ✅
+
+```typescript
+/**
+ * 记录管理 Hook
+ */
+export function useRecords(params: UseRecordsParams): UseRecordsReturn {
+  record: Record | null;
+  loading: boolean;
+  saving: boolean;
+  saveRecord: (content: string, status?: 'draft' | 'published') => boolean;
+}
+```
+
+#### 4.1.5 useDimensions.local.ts ✅
+
+```typescript
+/**
+ * 维度配置 Hook
+ */
+export function useDimensions(userId?: string) {
+  dimensions: Dimension[];
+  loading: boolean;
+  updateDimension: (dimensionId: number, updates: Partial<Dimension>) => boolean;
+}
+```
+
+---
+
+### 4.2 需要创建的新Hooks
+
+#### 4.2.1 useExpenses.local.ts ❌ TODO
+
+```typescript
+/**
+ * 开销管理 Hook
+ * 用于 Expense.tsx 和 History.tsx
+ */
+export function useExpenses(params: {
+  userId?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  // 返回值
+  expenses: Expense[];
+  loading: boolean;
+
+  // 方法
+  saveExpense: (expense: ExpenseInput) => Promise<Expense>;
+  getExpensesByDateRange: (start: string, end: string) => Expense[];
+  deleteExpense: (id: number) => boolean;
+  getTotalByCategory: (category: string) => number;
+  getTotalAmount: () => number;
+}
+
+// 使用示例
+const { expenses, saveExpense, getTotalAmount } = useExpenses({
+  userId: user.id,
+  startDate: '2026-02-24',
+  endDate: '2026-03-05'
+});
+```
+
+#### 4.2.2 useHistory.local.ts ❌ TODO
+
+```typescript
+/**
+ * 历史记录 Hook
+ * 用于 History.tsx
+ */
+export function useHistory(params: {
+  userId?: string;
+  cycleId?: number;
+}) {
+  // 返回值
+  records: RecordWithDetails[];  // 包含维度、附件、开销信息
+  loading: boolean;
+
+  // 方法
+  searchRecords: (query: string) => RecordWithDetails[];
+  filterByDimension: (dimensionId: number) => RecordWithDetails[];
+  filterByDateRange: (start: string, end: string) => RecordWithDetails[];
+}
+```
+
+#### 4.2.3 useReport.local.ts ❌ TODO
+
+```typescript
+/**
+ * 报告管理 Hook
+ * 用于 Report.tsx
+ */
+export function useReport(cycleId?: number, userId?: string) {
+  // 返回值
+  report: CycleReport | null;
+  loading: boolean;
+  generating: boolean;
+
+  // 方法
+  generateReport: () => Promise<CycleReport>;  // 未来AI生成
+  getStatistics: () => Statistics;
+  exportMarkdown: () => string;
+}
+```
+
+#### 4.2.4 useMilestones.local.ts ❌ TODO
+
+```typescript
+/**
+ * 里程碑事件 Hook
+ * 用于 Report.tsx 时间轴功能
+ */
+export function useMilestones(userId?: string) {
+  // 返回值
+  milestones: Milestone[];
+  loading: boolean;
+
+  // 方法
+  addMilestone: (milestone: MilestoneInput) => Milestone;
+  updateMilestone: (id: number, updates: Partial<Milestone>) => boolean;
+  deleteMilestone: (id: number) => boolean;
+}
+```
+
+#### 4.2.5 useAttachments.local.ts ❌ TODO
+
+```typescript
+/**
+ * 附件管理 Hook
+ * 用于 Record.tsx 和 History.tsx
+ */
+export function useAttachments(recordId?: number, userId?: string) {
+  // 返回值
+  attachments: RecordAttachment[];
+  loading: boolean;
+  uploading: boolean;
+
+  // 方法
+  uploadFile: (file: File, fileType: 'image' | 'audio') => Promise<RecordAttachment>;
+  deleteAttachment: (id: number) => boolean;
+  // 未来: OCR识别
+  getOCRText: (attachmentId: number) => Promise<string>;
+}
+```
+
+---
+
+## 五、实时数据同步
+
+### 5.1 localStorage 版本（当前）
+
+- 数据存储在浏览器 localStorage
+- 无实时同步功能
+- 刷新页面时重新加载数据
+
+### 5.2 Supabase 版本（未来）
+
+```typescript
+// 示例: Home.tsx - 订阅周期完成度变化
+useEffect(() => {
+  if (!userId) return;
+
+  const channel = supabase
+    .channel(`cycles-${userId}`)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'cycles',
+      filter: `user_id=eq.${userId}`
+    }, (payload) => {
+      // 更新本地周期数据
+      setCycles(prev =>
+        prev.map(c =>
+          c.id === payload.new.id
+            ? { ...c, completion_rate: payload.new.completion_rate }
+            : c
+        )
+      );
+    })
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [userId]);
+```
+
+---
+
+## 六、API调用流程
+
+### 6.1 场景: 保存记录
+
+```
+用户在 Record.tsx 输入内容
+  ↓
+点击"Save 工作"按钮
+  ↓
+handleSaveRecord()
+  ├─ 验证: note 不为空
+  ├─ 调用: saveRecord(note, 'published')
+  │    ↓
+  │   useRecords.saveRecord()
+  │    ├─ localRecords.save({ userId, cycleId, dimensionId, date, content })
+  │    ├─ 写入 localStorage
+  │    └─ 触发 localCycles.updateCompletionRate(cycleId)
+  │         ├─ 计算完成度百分比
+  │         └─ 更新 cycles 数据
+  │
+  ├─ 返回成功/失败
+  └─ 显示 Toast 提示
+```
+
+---
+
+## 七、错误处理与验证
+
+### 7.1 数据验证规则
+
+| 字段 | 验证规则 | 错误提示 |
+|------|--------|---------|
+| **记录内容** | 不能为空 | "请输入记录内容" |
+| **选中日期** | 必须在周期范围内 | "只能编辑当前周期的记录" |
+| **开销金额** | 必须大于0 | "金额必须大于0" |
+| **用户昵称** | 1-50字符 | "昵称长度不符" |
+
+### 7.2 错误处理示例
+
+```typescript
+const handleSaveRecord = async () => {
+  try {
+    if (!note.trim()) {
+      alert('请输入记录内容');
+      return;
+    }
+
+    if (!user || !currentCycle) {
+      alert('用户信息加载失败');
+      return;
+    }
+
+    const success = await saveRecord(note, 'published');
+    if (success) {
+      alert('记录已保存');
+      setNote('');
+    } else {
+      alert('保存失败，请重试');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('发生未知错误');
+  }
+};
+```
+
+---
+
+## 八、性能优化建议
+
+### 8.1 数据加载优化
+
+1. **缓存机制**: localStorage 本身就是缓存
+2. **按需加载**: 只加载当前周期的数据
+3. **分页加载**: History 页面限制单次显示 50 条
+
+### 8.2 渲染优化
+
+1. **使用 React.memo**: 对不常更新的组件使用 memo
+2. **防抖/节流**: 搜索、日期选择等输入加防抖
+3. **虚拟列表**: History 页面长列表使用虚拟滚动
+
+---
+
+## 九、迁移计划 (localStorage → Supabase)
+
+### 9.1 迁移步骤
+
+1. **第一阶段** ✅: 使用 localStorage 实现核心功能
+2. **第二阶段**: 配置 Supabase 项目和数据库
+3. **第三阶段**: 创建 Supabase 版本的 Hooks
+4. **第四阶段**: 修改导入路径完成切换
+5. **第五阶段**: 数据迁移脚本
+
+### 9.2 Hook 命名约定
+
+```
+当前:   useRecords.local.ts  (localStorage)
+迁移后: useRecords.ts        (Supabase)
+```
+
+---
+
+## 十、测试清单
+
+### 10.1 功能测试
+
+#### Home页 ✅
+- [x] 显示用户信息
+- [x] 显示当前周期进度
+- [x] 显示今日各维度完成状态
+- [ ] 周期矩阵点击交互
+
+#### Record页 ✅
+- [x] 维度切换
+- [x] 日期选择
+- [x] 保存记录
+- [x] 今日概览更新
+- [ ] 文件上传
+- [ ] AI解析费用
+
+#### History页 ❌
+- [ ] 显示记录列表
+- [ ] 日期范围筛选
+- [ ] 维度筛选
+- [ ] 全文搜索
+
+#### Report页 ❌
+- [ ] 周期报告生成
+- [ ] 时间轴显示
+- [ ] 数据洞察图表
+
+#### Profile页 ❌
+- [ ] 修改昵称
+- [ ] 上传头像
+- [ ] 退出登录
+
+---
+
+## 十一、开发优先级
+
+### P0 - 核心功能 ✅ 已完成
+
+- [x] Home 页显示周期和今日状态
+- [x] Record 页记录保存
+- [x] 周期完成度自动计算
+
+### P1 - 重要功能 ❌ 待开发
+
+- [ ] History 页查看历史记录
+- [ ] Expense 页开销管理
+- [ ] Profile 页用户信息编辑
+
+### P2 - 增强功能 ❌ 未来开发
+
+- [ ] Report 页数据可视化
+- [ ] 附件上传和OCR
+- [ ] AI智能分析
+
+---
+
+## 十二、总结
+
+### 当前状态
+
+✅ **已完成:**
+- Home 页和 Record 页核心功能
+- 本地存储数据层
+- 5个基础 Hooks
+
+❌ **待开发:**
+- History / Expense / Report / Profile 页面功能
+- 5个新的 Hooks
+- AI 功能集成
+- 迁移到 Supabase
+
+### 下一步工作
+
+**立即可做的改进:**
+1. 完善 History 页面，连接真实数据
+2. 完善 Profile 页面，支持编辑用户信息
+3. 实现 Expense 页面基础功能（无AI先手动输入）
+
+**需要外部服务的功能（后续）:**
+- Supabase 数据库和存储
+- Gemini AI API
+- 文件上传功能
+
+---
+
+**文档版本**: v1.0
+**最后更新**: 2026-02-25
+**维护者**: Claude AI Assistant
