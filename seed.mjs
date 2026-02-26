@@ -21,7 +21,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 // ⚠️ IMPORTANT: Because you already registered, I don't know your password.
 // Please change 'YOUR_ACTUAL_PASSWORD' to the password you used when you registered zyfay0518@163.com!
 const TEST_EMAIL = 'zyfay0518@163.com';
-const TEST_PASSWORD = 'YOUR_ACTUAL_PASSWORD';
+const TEST_PASSWORD = '123456';
 const START_DATE = new Date('2026-01-01T08:00:00Z');
 const END_DATE = new Date(); // Use the end of today
 const CYCLE_LENGTH_DAYS = 10;
@@ -42,29 +42,22 @@ async function seed() {
     console.log("🌱 Starting database seeding...");
 
     console.log(`1. Authenticating test user: ${TEST_EMAIL}`);
-    let { data: { user }, error: authError } = await supabase.auth.signUp({
+    let { data: { user }, error: authError } = await supabase.auth.signInWithPassword({
         email: TEST_EMAIL,
         password: TEST_PASSWORD,
     });
 
     if (authError) {
-        if (authError.message.includes("User already registered")) {
-            console.log("User already exists, signing in...");
-            const signinRes = await supabase.auth.signInWithPassword({
-                email: TEST_EMAIL,
-                password: TEST_PASSWORD,
-            });
-            if (signinRes.error) throw signinRes.error;
-            user = signinRes.data.user;
-        } else {
-            console.error("Supabase Auth Error! If this is an email rate limit (429), please go to your Supabase Dashboard -> Authentication, delete the old users, and try running this script again.");
-            throw new Error(`Auth Error: ${authError.message}`);
-        }
+        throw new Error(`Auth Error: ${authError.message}`);
     }
 
     const userId = user.id;
     console.log(`✅ Test User ID: ${userId}`);
 
+    console.log("2. Clearing old records...");
+    await supabase.from('records').delete().eq('user_id', userId);
+
+    console.log("3. Fetching dimensions...");
     let { data: dimensions, error: dimError } = await supabase
         .from('dimensions')
         .select('*')
@@ -95,18 +88,66 @@ async function seed() {
     }
     console.log(`✅ Dimensions loaded (${dimensions.length} total).`);
 
-    console.log("3. Generating records...");
-    const recordsToInsert = [];
+    console.log("3. Generating cycles, records, and expenses...");
+
+    // Clear old cycles as well (deletion cascades to records and expenses)
+    await supabase.from('cycles').delete().eq('user_id', userId);
 
     let currentDate = new Date(START_DATE);
     let daysCount = 0;
 
+    // Generate Cycles first
+    const cyclesToInsert = [];
+    const totalDays = Math.ceil((END_DATE - START_DATE) / (1000 * 60 * 60 * 24));
+    let numCycles = Math.ceil(totalDays / CYCLE_LENGTH_DAYS);
+
+    let cycleStartDate = new Date(START_DATE);
+    for (let c = 1; c <= numCycles; c++) {
+        let cycleEndDate = new Date(cycleStartDate);
+        cycleEndDate.setDate(cycleEndDate.getDate() + CYCLE_LENGTH_DAYS - 1);
+
+        let status = c < numCycles ? 'completed' : 'active';
+
+        cyclesToInsert.push({
+            user_id: userId,
+            cycle_number: c,
+            start_date: cycleStartDate.toISOString().split('T')[0],
+            end_date: cycleEndDate.toISOString().split('T')[0],
+            total_days: CYCLE_LENGTH_DAYS,
+            completion_rate: c === BLANK_CYCLE ? 0 : Math.floor(Math.random() * 40 + 60), // Random completion 60-100%
+            status: status
+        });
+
+        cycleStartDate.setDate(cycleStartDate.getDate() + CYCLE_LENGTH_DAYS);
+    }
+
+    // Insert Cycles
+    const { data: insertedCycles, error: cycleErr } = await supabase.from('cycles').insert(cyclesToInsert).select();
+    if (cycleErr) throw cycleErr;
+    console.log(`✅ Generated ${insertedCycles.length} cycles.`);
+
+    // Map cycle number to cycle_id
+    const cycleMap = {};
+    insertedCycles.forEach(c => { cycleMap[c.cycle_number] = c.id; });
+
+    // Generate Records & Expenses
+    const recordsToInsert = [];
+    // Expenses require a record_id, so we either insert records one by one or fetch them.
+    // To be efficient, we'll insert all records, then retrieve them to insert expenses.
+    // However, it's easier to just generate everything, insert records, fetch their IDs via date/dimension, then insert expenses.
+    // Actually, simpler: Insert records cycle by cycle so we have their IDs, or insert them all and use a bulk match.
+    // Let's just generate records first without expenses, then generate expenses.
+
+    const expensesToInsert = [];
+
+    currentDate = new Date(START_DATE);
+    daysCount = 0;
+
     while (currentDate <= END_DATE) {
-        const currentCycle = Math.floor(daysCount / CYCLE_LENGTH_DAYS) + 1;
+        const currentCycleNum = Math.floor(daysCount / CYCLE_LENGTH_DAYS) + 1;
+        const currentCycleId = cycleMap[currentCycleNum];
 
-        // Skip the configured blank cycle (e.g. Cycle 3 is empty)
-        if (currentCycle !== BLANK_CYCLE) {
-
+        if (currentCycleNum !== BLANK_CYCLE && currentCycleId) {
             const dimsToFillCount = Math.floor(Math.random() * 4) + 3; // Fill 3 to 6 dimensions
             const shuffledDims = [...dimensions].sort(() => 0.5 - Math.random());
             const selectedDims = shuffledDims.slice(0, dimsToFillCount);
@@ -114,6 +155,8 @@ async function seed() {
             for (const dim of selectedDims) {
                 let note = "";
                 let expense = 0;
+                let category = "Other";
+                let itemName = "Miscellaneous";
 
                 switch (dim.dimension_name) {
                     case 'Health':
@@ -128,26 +171,34 @@ async function seed() {
                     case 'Wealth':
                         note = getRandomItem(WEALTH_NOTES);
                         expense = getRandomExpense();
+                        category = "Investment/Saving";
+                        itemName = "Index Funds / Stocks";
                         break;
                     case 'Family':
                         note = getRandomItem(FAMILY_NOTES);
                         expense = getRandomExpense() > 0 ? Math.floor(Math.random() * 50) : 0;
+                        category = "Dining";
+                        itemName = "Family Dinner";
                         break;
                     case 'Leisure':
                         note = getRandomItem(LEISURE_NOTES);
                         expense = getRandomExpense() > 0 ? Math.floor(Math.random() * 30) : 0;
+                        category = "Entertainment";
+                        itemName = "Movie Ticket / Game";
                         break;
                 }
 
+                // Temporary object to hold expense data to link later
                 recordsToInsert.push({
-                    user_id: userId,
-                    dimension_id: dim.id,
-                    cycle_number: currentCycle,
-                    day_in_cycle: (daysCount % CYCLE_LENGTH_DAYS) + 1,
-                    content: note,
-                    expense_amount: expense,
-                    record_date: currentDate.toISOString().split('T')[0],
-                    ai_summary: null
+                    _expense: expense > 0 ? { amount: expense, category, itemName } : null,
+                    recordData: {
+                        user_id: userId,
+                        cycle_id: currentCycleId,
+                        dimension_id: dim.id,
+                        record_date: currentDate.toISOString().split('T')[0],
+                        content: note,
+                        status: 'published'
+                    }
                 });
             }
         }
@@ -158,16 +209,48 @@ async function seed() {
 
     console.log(`Generated ${recordsToInsert.length} records. Inserting into Supabase...`);
 
-    // Insert in chunks
+    // Insert records in chunks and capture them to insert expenses
     const chunkSize = 100;
     for (let i = 0; i < recordsToInsert.length; i += chunkSize) {
         const chunk = recordsToInsert.slice(i, i + chunkSize);
-        const { error: insertError } = await supabase.from('daily_records').insert(chunk);
+
+        // We need to insert records and get their IDs back to link expenses
+        const pureRecords = chunk.map(c => c.recordData);
+        const { data: insertedChunk, error: insertError } = await supabase.from('records').insert(pureRecords).select();
+
         if (insertError) {
             console.error("Insert error:", insertError);
             throw insertError;
         }
-        console.log(`✅ Inserted chunk ${Math.floor(i / chunkSize) + 1} / ${Math.ceil(recordsToInsert.length / chunkSize)}`);
+
+        // Match inserted records with our temporary objects to build expenses
+        for (let j = 0; j < insertedChunk.length; j++) {
+            const dbRecord = insertedChunk[j];
+            // Find corresponding _expense (assuming same order returned by Supabase, typically true for bulk inserts of this size without ordering constraints)
+            // To be absolutely safe, match by dimension_id and date
+            const original = chunk.find(c => c.recordData.dimension_id === dbRecord.dimension_id && c.recordData.record_date === dbRecord.record_date);
+
+            if (original && original._expense) {
+                expensesToInsert.push({
+                    record_id: dbRecord.id,
+                    user_id: userId,
+                    cycle_id: dbRecord.cycle_id,
+                    category: original._expense.category,
+                    item_name: original._expense.itemName,
+                    amount: original._expense.amount,
+                    expense_date: dbRecord.record_date
+                });
+            }
+        }
+
+        console.log(`✅ Inserted records chunk ${Math.floor(i / chunkSize) + 1} / ${Math.ceil(recordsToInsert.length / chunkSize)}`);
+    }
+
+    if (expensesToInsert.length > 0) {
+        console.log(`Inserting ${expensesToInsert.length} expenses...`);
+        const { error: expErr } = await supabase.from('expenses').insert(expensesToInsert);
+        if (expErr) throw expErr;
+        console.log(`✅ Copied expenses successfully.`);
     }
 
     // Update Profile Nickname
