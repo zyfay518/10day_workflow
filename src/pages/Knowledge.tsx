@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../hooks/useAuth.local";
-import { useKnowledgeBase } from "../hooks/useKnowledgeBase.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { useCycles } from "../hooks/useCycles.local";
+import { Signal, Wifi, BatteryFull, BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X } from "lucide-react";
+import DynamicIcon from "../components/DynamicIcon";
+import { useAuth } from "../hooks/useAuth";
+import { useKnowledgeBase } from "../hooks/useKnowledgeBase";
+import { useDimensions } from "../hooks/useDimensions";
+import { useCycles } from "../hooks/useCycles";
 import { cn } from "../lib/utils";
-import { useBooks } from "../hooks/useBooks.local";
-import { useWeight } from "../hooks/useWeight.local";
-import { useExpenses } from "../hooks/useExpenses.local";
+import { useBooks } from "../hooks/useBooks";
+import { useWeight } from "../hooks/useWeight";
+import { useExpenses } from "../hooks/useExpenses";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
 export default function Knowledge() {
@@ -160,10 +162,10 @@ export default function Knowledge() {
             {/* Status Bar */}
             <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-600 bg-white border-b border-gray-100">
                 <span>{new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
-                <div className="flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[16px]">signal_cellular_alt</span>
-                    <span className="material-symbols-outlined text-[16px]">wifi</span>
-                    <span className="material-symbols-outlined text-[16px]">battery_full</span>
+                <div className="flex items-center gap-2 text-gray-800">
+                    <Signal size={16} strokeWidth={2.5} />
+                    <Wifi size={16} strokeWidth={2.5} />
+                    <BatteryFull size={16} strokeWidth={2.5} />
                 </div>
             </div>
 
@@ -193,7 +195,7 @@ export default function Knowledge() {
                         )}
                         style={activeTab === dim.id ? { backgroundColor: dim.color_code } : {}}
                     >
-                        <span className="material-symbols-outlined text-[16px] leading-none mb-[1px]">{dim.icon_name}</span>
+                        <DynamicIcon name={dim.icon_name || ''} size={16} className="mb-[1px]" />
                         {dim.dimension_name}
                     </button>
                 ))}
@@ -258,7 +260,7 @@ export default function Knowledge() {
                         {books.length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-3xl shadow-sm border border-gray-100 items-center justify-center flex flex-col">
                                 <div className="w-16 h-16 bg-[#F5F5F5] rounded-full flex items-center justify-center mb-4">
-                                    <span className="material-symbols-outlined text-3xl text-gray-300">menu_book</span>
+                                    <BookOpen size={32} className="text-gray-300" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-medium">No books tracked yet.</p>
                             </div>
@@ -268,7 +270,7 @@ export default function Knowledge() {
                                     {/* Book Cover Placeholder - Morandi Pink/Gray */}
                                     <div className="w-20 h-28 bg-gradient-to-br from-[#E9D8D6] to-[#D9B8B5] rounded-xl flex flex-col items-center justify-center flex-shrink-0 shadow-inner relative overflow-hidden group">
                                         <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        <span className="material-symbols-outlined text-white/80 text-3xl mb-1 drop-shadow-sm">book</span>
+                                        <Book size={32} className="text-white/80 mb-1 drop-shadow-sm" />
                                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-black/5" />
                                     </div>
 
@@ -278,7 +280,7 @@ export default function Knowledge() {
                                                 <h3 className="font-bold text-base text-[#5F6368] line-clamp-2 leading-tight tracking-tight">{book.book_title}</h3>
                                                 {book.reading_status === 'completed' ? (
                                                     <div className="flex-shrink-0 w-6 h-6 bg-[#B0B7A4]/30 rounded-full flex items-center justify-center">
-                                                        <span className="material-symbols-outlined text-[#6B705C] text-[16px] font-bold">check</span>
+                                                        <Check size={16} strokeWidth={3} className="text-[#6B705C]" />
                                                     </div>
                                                 ) : (
                                                     <span className="text-[9px] bg-[#D9B8B5]/30 text-[#A56B6B] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Reading</span>
@@ -306,7 +308,7 @@ export default function Knowledge() {
                                                         onClick={() => updateBook(book.id, { progress_percent: Math.min(100, book.progress_percent + 10), reading_status: book.progress_percent + 10 >= 100 ? 'completed' : 'reading' })}
                                                         className="flex items-center gap-1 text-[11px] font-bold text-[#A8A8A8] hover:text-[#91A8B1] transition-colors"
                                                     >
-                                                        <span className="material-symbols-outlined text-[14px]">add_circle</span>
+                                                        <PlusCircle size={14} />
                                                         <span>10%</span>
                                                     </button>
                                                 )}
@@ -330,7 +332,7 @@ export default function Knowledge() {
                     <div className="space-y-4">
                         <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-50">
                             <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <span className="material-symbols-outlined text-[#A8C3A9]">monitor_weight</span>
+                                <Scale className="text-[#A8C3A9]" size={24} />
                                 Weight Trend
                             </h3>
                             {weights.length === 0 ? (
@@ -380,7 +382,7 @@ export default function Knowledge() {
                         {monthlyExpenses.length === 0 ? (
                             <div className="text-center py-12 bg-white rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center">
                                 <div className="w-14 h-14 bg-[#F2F2F2] rounded-full flex items-center justify-center mb-4">
-                                    <span className="material-symbols-outlined text-3xl text-gray-300">account_balance_wallet</span>
+                                    <Wallet size={32} className="text-gray-300" />
                                 </div>
                                 <p className="text-gray-400 text-sm font-medium">No financial records yet.</p>
                             </div>
@@ -390,7 +392,7 @@ export default function Knowledge() {
                                     <div className="flex justify-between items-center mb-3">
                                         <div className="flex items-center gap-2.5">
                                             <div className="w-8 h-8 bg-[#91A8B1] text-white rounded-lg flex items-center justify-center">
-                                                <span className="material-symbols-outlined text-[18px]">calendar_month</span>
+                                                <Calendar size={18} />
                                             </div>
                                             <h3 className="font-bold text-[#5F6368] text-base leading-none">{stat.month}</h3>
                                         </div>
@@ -398,7 +400,7 @@ export default function Knowledge() {
                                             "px-2 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider flex items-center gap-1",
                                             stat.savings >= 0 ? "bg-[#B0B7A4]/20 text-[#6B705C]" : "bg-[#D9B8B5]/20 text-[#A56B6B]"
                                         )}>
-                                            <span className="material-symbols-outlined text-[12px]">{stat.savings >= 0 ? 'trending_up' : 'trending_down'}</span>
+                                            {stat.savings >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                                             {stat.income > 0 ? ((stat.savings / stat.income) * 100).toFixed(0) : 0}% SAVED
                                         </div>
                                     </div>
@@ -420,14 +422,14 @@ export default function Knowledge() {
                                             <p className="text-base font-black text-white tracking-tight">¥{stat.savings.toLocaleString()}</p>
                                         </div>
                                         <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
-                                            <span className="material-symbols-outlined text-white text-[20px]">savings</span>
+                                            <PiggyBank size={20} className="text-white" />
                                         </div>
                                     </div>
 
                                     {/* AI Summary Section */}
                                     <div className="bg-white/40 rounded-xl p-3 border border-dashed border-[#C6C4BC]">
                                         <div className="flex items-center gap-1.5 mb-1.5">
-                                            <span className="material-symbols-outlined text-[14px] text-[#91A8B1]">psychology</span>
+                                            <Brain size={14} className="text-[#91A8B1]" />
                                             <span className="text-[10px] font-black text-[#91A8B1] uppercase tracking-wider">AI Summary</span>
                                         </div>
                                         <p className="text-[11px] text-[#5F6368] leading-relaxed italic">
@@ -440,7 +442,7 @@ export default function Knowledge() {
                     </div>
                 ) : displayedEntries.length === 0 ? (
                     <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100 mt-4">
-                        <span className="material-symbols-outlined text-4xl text-gray-300 mb-2">auto_stories</span>
+                        <BookOpen size={36} className="text-gray-300 mb-2 mx-auto" />
                         <p className="text-gray-500 text-sm">No insights recorded yet.</p>
                     </div>
                 ) : (
@@ -455,7 +457,7 @@ export default function Knowledge() {
                                             className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white flex items-center gap-1"
                                             style={{ backgroundColor: dim?.color_code || "#999" }}
                                         >
-                                            <span className="material-symbols-outlined text-[14px] leading-none">{dim?.icon_name}</span> {dim?.dimension_name}
+                                            <DynamicIcon name={dim?.icon_name || ''} size={14} /> {dim?.dimension_name}
                                         </span>
                                         <span className="text-xs text-gray-400 font-medium">Period {cycle?.cycle_number}</span>
                                     </div>
@@ -474,14 +476,14 @@ export default function Knowledge() {
                     onClick={() => setIsBookModalOpen(true)}
                     className="absolute bottom-[104px] right-6 w-14 h-14 bg-[#E8C996] text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-20"
                 >
-                    <span className="material-symbols-outlined text-[28px]">library_add</span>
+                    <BookPlus size={28} />
                 </button>
             ) : isHealthDimension && subTabHealth === "weight" ? (
                 <button
                     onClick={() => setIsWeightModalOpen(true)}
                     className="absolute bottom-[104px] right-6 w-14 h-14 bg-[#A8C3A9] text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-20"
                 >
-                    <span className="material-symbols-outlined text-[28px]">scale</span>
+                    <Scale size={28} />
                 </button>
             ) : isExpenseDimension ? (
                 <div /> // Do not show Add Knowledge for Expense Summary view, handled on Record page
@@ -495,7 +497,7 @@ export default function Knowledge() {
                     }}
                     className="absolute bottom-[104px] right-6 w-14 h-14 bg-gray-900 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-105 active:scale-95 transition-transform z-20"
                 >
-                    <span className="material-symbols-outlined text-[28px]">add</span>
+                    <Plus size={28} />
                 </button>
             )}
 
@@ -506,7 +508,7 @@ export default function Knowledge() {
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-lg font-bold text-gray-800">Track New Book</h2>
                             <button onClick={() => setIsBookModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <span className="material-symbols-outlined">close</span>
+                                <X size={24} />
                             </button>
                         </div>
                         <div className="space-y-4">
@@ -550,7 +552,7 @@ export default function Knowledge() {
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-bold text-gray-800">New Insight</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <span className="material-symbols-outlined">close</span>
+                                <X size={24} />
                             </button>
                         </div>
 
@@ -580,7 +582,7 @@ export default function Knowledge() {
                                             )}
                                             style={selectedDimId === dim.id ? { backgroundColor: dim.color_code } : {}}
                                         >
-                                            <span className="material-symbols-outlined text-[24px] mb-[2px]">{dim.icon_name}</span>
+                                            <DynamicIcon name={dim.icon_name || ''} size={24} className="mb-[2px]" />
                                             {dim.dimension_name}
                                         </button>
                                     ))}
@@ -635,7 +637,7 @@ export default function Knowledge() {
                         <div className="flex justify-between items-center mb-6">
                             <h2 className="text-lg font-bold text-gray-800">Record Weight</h2>
                             <button onClick={() => setIsWeightModalOpen(false)} className="text-gray-400 hover:text-gray-600">
-                                <span className="material-symbols-outlined">close</span>
+                                <X size={24} />
                             </button>
                         </div>
                         <div className="space-y-4">

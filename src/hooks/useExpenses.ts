@@ -1,17 +1,5 @@
-/**
- * useExpenses Hook - 费用管理
- *
- * 功能:
- * - 查询费用记录
- * - 解析费用文本 (调用 Gemini AI)
- * - 保存费用记录
- *
- * 参考: DATA_FLOW.md "3.3 Expense Parsing 页面"
- */
-
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { parseExpense } from '../lib/gemini';
 import { Database } from '../types/database';
 
 type Expense = Database['public']['Tables']['expenses']['Row'];
@@ -24,66 +12,48 @@ interface ParsedExpense {
   date?: string;
 }
 
-interface UseExpensesReturn {
-  parsing: boolean;
-  saving: boolean;
-  error: string | null;
-  parseExpenseText: (text: string) => Promise<ParsedExpense | null>;
-  saveExpense: (expense: ExpenseInsert) => Promise<boolean>;
-}
-
-export function useExpenses(userId?: string): UseExpensesReturn {
+export function useExpenses(params?: {
+  userId?: string;
+  startDate?: string;
+  endDate?: string;
+}) {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [loading, setLoading] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * 解析费用文本
-   *
-   * 调用 Gemini AI 提取:
-   * - 金额
-   * - 类目
-   * - 商户 (可选)
-   * - 日期 (可选)
-   *
-   * @param text - 费用描述文本
-   * @returns 解析结果
-   */
-  const parseExpenseText = async (text: string): Promise<ParsedExpense | null> => {
+  const loadExpenses = useCallback(async () => {
+    if (!params?.userId || !params?.startDate || !params?.endDate) return;
+
     try {
-      setParsing(true);
-      setError(null);
+      setLoading(true);
+      const { data, error: fetchError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', params.userId)
+        .gte('expense_date', params.startDate)
+        .lte('expense_date', params.endDate)
+        .order('expense_date', { ascending: false });
 
-      const result = await parseExpense(text);
-
-      if (!result || result.length === 0) {
-        throw new Error('Failed to parse expense from text');
-      }
-
-      // 返回第一个解析结果
-      const firstItem = result[0];
-      return {
-        amount: firstItem.amount,
-        category: firstItem.category,
-        merchant: firstItem.name,
-        date: undefined, // Gemini 不提取日期,使用当前日期
-      };
+      if (fetchError) throw fetchError;
+      setExpenses(data || []);
     } catch (err) {
-      console.error('Failed to parse expense:', err);
+      console.error('Failed to load expenses:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      return null;
     } finally {
-      setParsing(false);
+      setLoading(false);
     }
-  };
+  }, [params]);
 
-  /**
-   * 保存费用记录
-   *
-   * @param expense - 费用数据
-   * @returns 是否成功
-   */
+  useEffect(() => {
+    if (params?.userId && params?.startDate && params?.endDate) {
+      loadExpenses();
+    }
+  }, [params, loadExpenses]);
+
   const saveExpense = async (expense: ExpenseInsert): Promise<boolean> => {
+    const userId = params?.userId || expense.user_id;
     if (!userId) {
       setError('User not authenticated');
       return false;
@@ -93,13 +63,18 @@ export function useExpenses(userId?: string): UseExpensesReturn {
       setSaving(true);
       setError(null);
 
-      const { error: insertError } = await supabase.from('expenses').insert({
-        ...expense,
-        user_id: userId,
-      });
+      const { data, error: insertError } = await supabase
+        .from('expenses')
+        .insert({
+          ...expense,
+          user_id: userId,
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
+      setExpenses(prev => [(data as Expense), ...prev]);
       return true;
     } catch (err) {
       console.error('Failed to save expense:', err);
@@ -110,11 +85,66 @@ export function useExpenses(userId?: string): UseExpensesReturn {
     }
   };
 
+  const saveExpenses = async (items: ExpenseInsert[]): Promise<boolean> => {
+    if (!items.length) return true;
+    const userId = params?.userId || items[0].user_id;
+    if (!userId) {
+      setError('User not authenticated');
+      return false;
+    }
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { data, error: insertError } = await supabase
+        .from('expenses')
+        .insert(items.map(item => ({ ...item, user_id: userId })))
+        .select();
+
+      if (insertError) throw insertError;
+
+      setExpenses(prev => [...((data || []) as Expense[]), ...prev]);
+      return true;
+    } catch (err) {
+      console.error('Failed to save expenses:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const getExpensesByDateRange = useCallback(async (start: string, end: string): Promise<Expense[]> => {
+    if (!params?.userId) return [];
+    const { data } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('user_id', params.userId)
+      .gte('expense_date', start)
+      .lte('expense_date', end);
+    return (data || []) as Expense[];
+  }, [params?.userId]);
+
+  const getTotalByCategory = useCallback((category: string): number => {
+    return expenses.filter(e => e.category === category).reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
+
+  const getTotalAmount = useCallback((): number => {
+    return expenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
+
   return {
+    expenses,
+    loading,
     parsing,
     saving,
     error,
-    parseExpenseText,
     saveExpense,
+    saveExpenses,
+    getExpensesByDateRange,
+    getTotalByCategory,
+    getTotalAmount,
+    loadExpenses,
   };
 }

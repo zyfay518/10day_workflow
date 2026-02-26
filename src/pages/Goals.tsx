@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Signal, Wifi, BatteryFull, ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../hooks/useAuth.local";
-import { useCycles } from "../hooks/useCycles.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { useCycleGoals, useDailyGoals } from "../hooks/useGoals.local";
-import { useGoalEvaluations } from "../hooks/useGoalEvaluations.local";
+import { useAuth } from "../hooks/useAuth";
+import { useCycles } from "../hooks/useCycles";
+import { useDimensions } from "../hooks/useDimensions";
+import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
+import { useGoalEvaluations } from "../hooks/useGoalEvaluations";
 import { Database } from "../types/database";
 
 type CycleGoal = Database['public']['Tables']['cycle_goals']['Row'];
@@ -220,9 +221,9 @@ export default function Goals() {
       <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900">
         <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
         <div className="flex gap-1.5 items-center">
-          <span className="material-symbols-outlined text-[16px] font-bold">signal_cellular_alt</span>
-          <span className="material-symbols-outlined text-[16px] font-bold">wifi</span>
-          <span className="material-symbols-outlined text-[18px] font-bold">battery_full</span>
+          <Signal size={16} strokeWidth={2.5} />
+          <Wifi size={16} strokeWidth={2.5} />
+          <BatteryFull size={18} strokeWidth={2.5} />
         </div>
       </div>
 
@@ -230,7 +231,7 @@ export default function Goals() {
       <header className="bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <Link to="/" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft size={24} />
           </Link>
           <h1 className="text-[18px] font-bold text-gray-800">Goals</h1>
           <div className="w-10"></div>
@@ -324,12 +325,10 @@ export default function Goals() {
                       </div>
                     </div>
                   </div>
-                  <span className={cn(
-                    "material-symbols-outlined text-gray-400 transition-transform",
+                  <ChevronDown size={24} className={cn(
+                    "text-gray-400 transition-transform duration-300",
                     expandedCycleId === cycle.id && "rotate-180"
-                  )}>
-                    expand_more
-                  </span>
+                  )} />
                 </button>
 
                 {/* Expanded Content - Goals by Dimension */}
@@ -345,7 +344,7 @@ export default function Goals() {
                             onClick={() => openAddGoalDialog(dim.id)}
                             className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-[18px]">add</span>
+                            <Plus size={18} strokeWidth={2.5} />
                           </button>
                         </div>
 
@@ -384,13 +383,13 @@ export default function Goals() {
                                       onClick={() => openEditGoalDialog(goal)}
                                       className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                                     >
-                                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                                      <Edit2 size={16} />
                                     </button>
                                     <button
                                       onClick={() => handleDeleteGoal(goal.id)}
                                       className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                                     >
-                                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                                      <Trash2 size={16} />
                                     </button>
                                   </div>
                                 </div>
@@ -411,8 +410,8 @@ export default function Goals() {
                                     <div className="mt-3 p-2.5 bg-white rounded-lg border border-gray-100 flex items-center justify-between shadow-sm">
                                       <div className="flex items-center gap-3">
                                         <div className="text-[11px] text-gray-500 flex flex-col gap-1">
-                                          <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-[#9DC5EF]">psychology</span> AI Score: <span className="font-bold text-gray-700">{evaluation.ai_score}</span></div>
-                                          <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-[#FFB3C1]">person</span> User Score: <span className="font-bold text-gray-700">{evaluation.user_score !== null ? evaluation.user_score : '-'}</span></div>
+                                          <div className="flex items-center gap-1.5"><Bot size={14} className="text-[#9DC5EF]" /> AI Score: <span className="font-bold text-gray-700">{evaluation.ai_score}</span></div>
+                                          <div className="flex items-center gap-1.5"><User size={14} className="text-[#FFB3C1]" /> User Score: <span className="font-bold text-gray-700">{evaluation.user_score !== null ? evaluation.user_score : '-'}</span></div>
                                         </div>
                                       </div>
                                       <div className="text-right flex flex-col items-end">
@@ -483,7 +482,7 @@ export default function Goals() {
                   }}
                   className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition-colors mb-3"
                 >
-                  <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+                  <ArrowLeft size={18} />
                   <span>Back to Cycle Selection</span>
                 </button>
 
@@ -512,12 +511,10 @@ export default function Goals() {
                           </div>
                         </div>
                       </div>
-                      <span className={cn(
-                        "material-symbols-outlined text-gray-400 transition-transform",
+                      <ChevronDown size={24} className={cn(
+                        "text-gray-400 transition-transform duration-300",
                         expandedDate === date && "rotate-180"
-                      )}>
-                        expand_more
-                      </span>
+                      )} />
                     </button>
 
                     {/* Expanded Content - Goals by Dimension */}
@@ -533,7 +530,7 @@ export default function Goals() {
                                 onClick={() => openAddGoalDialog(dim.id)}
                                 className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                               >
-                                <span className="material-symbols-outlined text-[18px]">add</span>
+                                <Plus size={18} strokeWidth={2.5} />
                               </button>
                             </div>
 
@@ -570,13 +567,13 @@ export default function Goals() {
                                           onClick={() => openEditGoalDialog(goal)}
                                           className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                                         >
-                                          <span className="material-symbols-outlined text-[16px]">edit</span>
+                                          <Edit2 size={16} />
                                         </button>
                                         <button
                                           onClick={() => handleDeleteGoal(goal.id)}
                                           className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                                         >
-                                          <span className="material-symbols-outlined text-[16px]">delete</span>
+                                          <Trash2 size={16} />
                                         </button>
                                       </div>
                                     </div>
@@ -597,8 +594,8 @@ export default function Goals() {
                                         <div className="mt-3 p-2.5 bg-white rounded-lg border border-gray-100 flex items-center justify-between shadow-sm">
                                           <div className="flex items-center gap-3">
                                             <div className="text-[11px] text-gray-500 flex flex-col gap-1">
-                                              <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-[#9DC5EF]">psychology</span> AI Score: <span className="font-bold text-gray-700">{evaluation.ai_score}</span></div>
-                                              <div className="flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px] text-[#FFB3C1]">person</span> User Score: <span className="font-bold text-gray-700">{evaluation.user_score !== null ? evaluation.user_score : '-'}</span></div>
+                                              <div className="flex items-center gap-1.5"><Bot size={14} className="text-[#9DC5EF]" /> AI Score: <span className="font-bold text-gray-700">{evaluation.ai_score}</span></div>
+                                              <div className="flex items-center gap-1.5"><User size={14} className="text-[#FFB3C1]" /> User Score: <span className="font-bold text-gray-700">{evaluation.user_score !== null ? evaluation.user_score : '-'}</span></div>
                                             </div>
                                           </div>
                                           <div className="text-right flex flex-col items-end">
@@ -765,7 +762,7 @@ export default function Goals() {
 
             <div className="bg-gray-50 rounded-[12px] p-4 mb-4 border border-gray-100">
               <div className="flex items-center gap-2 mb-2">
-                <span className="material-symbols-outlined text-[#9DC5EF] text-[18px]">psychology</span>
+                <Bot size={18} className="text-[#9DC5EF]" />
                 <span className="text-xs font-bold text-gray-700">AI Evaluation</span>
                 <span className="ml-auto text-sm font-bold text-gray-800">
                   {getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type)?.ai_score || 85}/100

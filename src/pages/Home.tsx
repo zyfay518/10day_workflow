@@ -1,12 +1,13 @@
 import { Link, useNavigate } from "react-router-dom";
 import React from "react";
+import { Signal, Wifi, BatteryFull, Settings, ChevronRight, Circle, CheckCircle2, Edit, BarChart2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../hooks/useAuth.local";
-import { useCycles } from "../hooks/useCycles.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { useUserProfile } from "../hooks/useUserProfile.local";
-import { useCycleGoals, useDailyGoals } from "../hooks/useGoals.local";
-import { localRecords } from "../lib/localStorage";
+import { useAuth } from "../hooks/useAuth";
+import { useCycles } from "../hooks/useCycles";
+import { useDimensions } from "../hooks/useDimensions";
+import { useUserProfile } from "../hooks/useUserProfile";
+import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
+import { useRecords } from "../hooks/useRecords";
 
 export default function Home() {
   const { user } = useAuth();
@@ -109,26 +110,27 @@ export default function Home() {
   }
 
   // 计算今日记录完成情况
-  const getTodayRecordStatus = () => {
-    if (!user || !currentCycle || dimensionsLoading) return [];
+  const { record: workRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '工作')?.id, date: today });
+  const { record: readingRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '阅读')?.id, date: today });
+  const { record: investmentRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '投资')?.id, date: today });
+  const { record: expenseRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '费用')?.id, date: today });
+  const { record: healthRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '健康')?.id, date: today });
 
-    const today = new Date().toISOString().split('T')[0];
-    return dimensions.map(dim => {
-      const record = localRecords.get({
-        userId: user.id,
-        cycleId: currentCycle.id,
-        dimensionId: dim.id,
-        date: today,
-      });
-      return {
-        name: dim.dimension_name,
-        icon: dim.icon_name,
-        completed: record?.status === 'published',
-      };
-    });
-  };
+  const todayStatus = dimensions.map(dim => {
+    let isCompleted = false;
+    if (dim.dimension_name === '工作') isCompleted = !!workRecord;
+    if (dim.dimension_name === '阅读') isCompleted = !!readingRecord;
+    if (dim.dimension_name === '投资') isCompleted = !!investmentRecord;
+    if (dim.dimension_name === '费用') isCompleted = !!expenseRecord;
+    if (dim.dimension_name === '健康') isCompleted = !!healthRecord;
 
-  const todayStatus = getTodayRecordStatus();
+    return {
+      name: dim.dimension_name,
+      icon: dim.icon_name,
+      completed: isCompleted,
+    };
+  });
+
   const completedCount = todayStatus.filter(s => s.completed).length;
 
   // 刷新数据
@@ -150,9 +152,9 @@ export default function Home() {
       <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-600 bg-white border-b border-gray-100">
         <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
         <div className="flex items-center gap-2">
-          <span className="material-symbols-outlined text-[16px]">signal_cellular_alt</span>
-          <span className="material-symbols-outlined text-[16px]">wifi</span>
-          <span className="material-symbols-outlined text-[16px]">battery_full</span>
+          <Signal size={16} />
+          <Wifi size={16} />
+          <BatteryFull size={16} />
         </div>
       </div>
 
@@ -176,7 +178,7 @@ export default function Home() {
           )}
         </div>
         <Link to="/profile" className="w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800">
-          <span className="material-symbols-outlined">settings</span>
+          <Settings size={20} />
         </Link>
       </header>
 
@@ -299,7 +301,7 @@ export default function Home() {
             >
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-sm font-bold text-gray-800">10-Day Goals</h3>
-                <span className="material-symbols-outlined text-gray-400 text-[18px]">chevron_right</span>
+                <ChevronRight className="text-gray-400" size={18} />
               </div>
               <div className="space-y-2">
                 {cycleGoals.slice(0, 3).map((goal) => {
@@ -339,9 +341,7 @@ export default function Home() {
                   const dim = dimensions.find(d => d.id === goal.dimension_id);
                   return (
                     <div key={goal.id} className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[14px] text-gray-300">
-                        radio_button_unchecked
-                      </span>
+                      <Circle className="text-gray-300" size={14} />
                       <span
                         className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
                         style={{ backgroundColor: dim?.color_code || '#999' }}
@@ -376,9 +376,11 @@ export default function Home() {
                       : "bg-gray-100 text-gray-400"
                   )}
                 >
-                  <span className="material-symbols-outlined text-[14px] mr-1">
-                    {status.completed ? "check_circle" : "radio_button_unchecked"}
-                  </span>
+                  {status.completed ? (
+                    <CheckCircle2 size={14} className="mr-1" />
+                  ) : (
+                    <Circle size={14} className="mr-1" />
+                  )}
                   {status.name}
                 </div>
               ))}
@@ -388,14 +390,14 @@ export default function Home() {
                 to="/record"
                 className="bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white h-12 rounded-[8px] font-bold text-sm shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
               >
-                <span className="material-symbols-outlined text-[18px]">edit_square</span>
+                <Edit size={18} />
                 Start Recording
               </Link>
               <Link
                 to="/report"
                 className="bg-white border border-gray-200 text-gray-600 h-12 rounded-[8px] font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
               >
-                <span className="material-symbols-outlined text-[18px]">bar_chart</span>
+                <BarChart2 size={18} />
                 Report
               </Link>
             </div>

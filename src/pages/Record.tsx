@@ -1,16 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Signal, Wifi, BatteryFull, ChevronLeft, Calendar, Camera, Mic, Paperclip, Bot, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../hooks/useAuth.local";
-import { useCycles } from "../hooks/useCycles.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { useRecords } from "../hooks/useRecords.local";
-import { useAttachments } from "../hooks/useAttachments.local";
+import { useAuth } from "../hooks/useAuth";
+import { useCycles } from "../hooks/useCycles";
+import { useDimensions } from "../hooks/useDimensions";
+import { useRecords } from "../hooks/useRecords";
+import { useAttachments } from "../hooks/useAttachments";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition.local";
-import { useAIAnalysis } from "../hooks/useAIAnalysis.local";
-import { localRecords } from "../lib/localStorage";
-import { useMilestones } from "../hooks/useMilestones.local";
-import { useGrowthTags } from "../hooks/useGrowthTags.local";
+import { useAIAnalysis } from "../hooks/useAIAnalysis";
+import { useMilestones } from "../hooks/useMilestones";
+import { useGrowthTags } from "../hooks/useGrowthTags";
+import { supabase } from "../lib/supabase";
 
 export default function Record() {
   const navigate = useNavigate();
@@ -72,23 +73,35 @@ export default function Record() {
   }, [transcript, resetTranscript]);
 
   // 计算所有维度今日完成状态
-  const getOverviewStatus = () => {
-    if (!user || !currentCycle) return {};
+  const [overviewStatus, setOverviewStatus] = useState<Record<string, boolean>>({});
 
-    const status: Record<string, boolean> = {};
-    dimensions.forEach(dim => {
-      const rec = localRecords.get({
-        userId: user.id,
-        cycleId: currentCycle.id,
-        dimensionId: dim.id,
-        date: selectedDate,
+  useEffect(() => {
+    if (!user || !currentCycle) return;
+
+    const fetchOverviewStatus = async () => {
+      const { data, error } = await supabase
+        .from('records')
+        .select('dimension_id, status')
+        .eq('user_id', user.id)
+        .eq('cycle_id', currentCycle.id)
+        .eq('record_date', selectedDate);
+
+      if (error) {
+        console.error('Failed to fetch overview status:', error);
+        return;
+      }
+
+      const recordsData = data as { dimension_id: number; status: string }[] | null;
+      const status: Record<string, boolean> = {};
+      dimensions.forEach(dim => {
+        const rec = recordsData?.find(r => r.dimension_id === dim.id);
+        status[dim.dimension_name] = rec?.status === 'published';
       });
-      status[dim.dimension_name] = rec?.status === 'published';
-    });
-    return status;
-  };
+      setOverviewStatus(status);
+    };
 
-  const overviewStatus = getOverviewStatus();
+    fetchOverviewStatus();
+  }, [user, currentCycle, selectedDate, dimensions, record?.status]);
 
   // Show custom dialog
   const showCustomDialog = (title: string, message: string, onConfirm?: () => void) => {
@@ -224,20 +237,16 @@ export default function Record() {
             }
           }
 
-          // Save AI suggestions and quote if available
+          // Update record with AI suggestions and quote
           if ((aiResult || aiQuote) && activeDimension) {
-            localRecords.save(
-              {
-                userId: user!.id,
-                cycleId: currentCycle!.id,
-                dimensionId: activeDimension.id,
-                date: selectedDate,
-              },
-              finalContent,
-              'published',
-              aiResult,
-              aiQuote
-            );
+            // @ts-ignore - Supabase type inference issue with update
+            await supabase
+              .from('records')
+              .update({
+                ai_suggestions: aiResult || record.ai_suggestions,
+                ai_quote: aiQuote || record.ai_quote
+              })
+              .eq('id', record.id);
           }
           showCustomDialog('Success', `${activeTab} record saved!`);
         } else {
@@ -275,20 +284,17 @@ export default function Record() {
           }
         }
 
-        // Save AI suggestions and quote if available
+        // Update record with AI suggestions and quote
         if ((aiResult || aiQuote) && activeDimension) {
-          localRecords.save(
-            {
-              userId: user!.id,
-              cycleId: currentCycle!.id,
-              dimensionId: activeDimension.id,
-              date: selectedDate,
-            },
-            note,
-            'published',
-            aiResult,
-            aiQuote
-          );
+          // @ts-ignore - Supabase type inference issue with update
+          await supabase
+            .from('records')
+            .update({
+              ai_suggestions: aiResult,
+              ai_quote: aiQuote
+            })
+            // @ts-ignore - Supabase type inference issue with return value
+            .eq('id', (success as any)?.id || record?.id || 0);
         }
         showCustomDialog('Success', `${activeTab} record saved!`);
       } else {
@@ -315,16 +321,16 @@ export default function Record() {
         <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900 z-10">
           <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
           <div className="flex gap-1.5 items-center">
-            <span className="material-symbols-outlined text-[16px] font-bold">signal_cellular_alt</span>
-            <span className="material-symbols-outlined text-[16px] font-bold">wifi</span>
-            <span className="material-symbols-outlined text-[18px] font-bold">battery_full</span>
+            <Signal size={16} strokeWidth={2.5} />
+            <Wifi size={16} strokeWidth={2.5} />
+            <BatteryFull size={18} strokeWidth={2.5} />
           </div>
         </div>
 
         <header className="px-4 py-2 bg-white flex flex-col flex-shrink-0 relative z-10">
           <div className="flex items-center justify-between h-11">
             <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
-              <span className="material-symbols-outlined text-gray-700">arrow_back_ios_new</span>
+              <ChevronLeft className="text-gray-700" size={24} />
             </Link>
             <h1 className="text-[20px] font-bold text-gray-800">Record</h1>
             <div className="w-10"></div>
@@ -337,7 +343,7 @@ export default function Record() {
               onClick={() => dateInputRef.current?.showPicker()}
               className="p-1 cursor-pointer rounded-full hover:bg-gray-100 transition-colors text-gray-500 hover:text-blue-600"
             >
-              <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+              <Calendar size={20} />
             </button>
             <input
               ref={dateInputRef}
@@ -384,7 +390,7 @@ export default function Record() {
                 disabled={uploading}
                 className="w-[48px] h-[48px] flex items-center justify-center rounded-[8px] bg-[#F3F4F6] text-gray-500 transition-all active:scale-95 hover:bg-gray-200 disabled:opacity-50"
               >
-                <span className="material-symbols-outlined">photo_camera</span>
+                <Camera size={24} />
               </button>
               <button
                 onClick={handleVoiceRecord}
@@ -393,10 +399,10 @@ export default function Record() {
                   isListening ? "bg-red-500 text-white" : "bg-[#F3F4F6] text-gray-500 hover:bg-gray-200"
                 )}
               >
-                <span className="material-symbols-outlined">mic</span>
+                <Mic size={24} />
               </button>
               <label className="w-[48px] h-[48px] flex items-center justify-center rounded-[8px] bg-[#F3F4F6] text-gray-500 transition-all active:scale-95 hover:bg-gray-200 cursor-pointer">
-                <span className="material-symbols-outlined">attach_file</span>
+                <Paperclip size={24} />
                 <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               </label>
               <button
@@ -404,7 +410,7 @@ export default function Record() {
                 disabled={analyzing}
                 className="ml-auto px-4 h-[48px] flex items-center justify-center rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-medium shadow-sm active:scale-95 hover:opacity-90 disabled:opacity-50"
               >
-                <span className="material-symbols-outlined mr-2">smart_toy</span>
+                <Bot size={20} className="mr-2" />
                 {analyzing ? 'Parsing...' : 'AI Parse'}
               </button>
             </div>
@@ -462,7 +468,7 @@ export default function Record() {
                   )}
                 >
                   {isActive ? (
-                    <span className="material-symbols-outlined text-[14px] text-green-500">check_circle</span>
+                    <CheckCircle2 size={14} className="text-green-500" />
                   ) : (
                     <span className="w-3.5 h-3.5 rounded-full border border-gray-300" />
                   )}

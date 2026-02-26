@@ -1,137 +1,117 @@
-/**
- * useAttachments Hook - 附件管理
- *
- * 功能:
- * - 上传图片到 Supabase Storage
- * - 调用 Gemini AI 进行 OCR 识别
- * - 保存附件记录到数据库
- *
- * 参考: DATA_FLOW.md "3.2.4 附件上传流程"
- */
-
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
 
 type RecordAttachment = Database['public']['Tables']['record_attachments']['Row'];
-type RecordAttachmentInsert =
-  Database['public']['Tables']['record_attachments']['Insert'];
+type RecordAttachmentInsert = Database['public']['Tables']['record_attachments']['Insert'];
 
-interface UseAttachmentsReturn {
-  uploading: boolean;
-  error: string | null;
-  uploadImage: (file: File, recordId: number) => Promise<string | null>;
-  ocrImage: (imageUrl: string) => Promise<string | null>;
-  saveAttachment: (attachment: RecordAttachmentInsert) => Promise<boolean>;
-}
-
-export function useAttachments(): UseAttachmentsReturn {
+export function useAttachments(recordId?: number, userId?: string) {
+  const [attachments, setAttachments] = useState<RecordAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /**
-   * 上传图片到 Supabase Storage
-   *
-   * @param file - 图片文件
-   * @param recordId - 关联的记录 ID
-   * @returns 图片公开 URL
-   */
-  const uploadImage = async (
-    file: File,
-    recordId: number
-  ): Promise<string | null> => {
+  const loadAttachments = useCallback(async () => {
+    if (!recordId || !userId) {
+      setAttachments([]);
+      return;
+    }
+
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('record_attachments')
+        .select('*')
+        .eq('record_id', recordId)
+        .eq('user_id', userId);
+
+      if (fetchError) throw fetchError;
+      setAttachments(data || []);
+    } catch (err) {
+      console.error('Failed to load attachments:', err);
+    }
+  }, [recordId, userId]);
+
+  useEffect(() => {
+    loadAttachments();
+  }, [loadAttachments]);
+
+  const uploadImage = async (file: File) => {
+    if (!recordId || !userId) return null;
+
     try {
       setUploading(true);
       setError(null);
 
-      // 1. 生成文件路径
       const fileExt = file.name.split('.').pop();
-      const fileName = `${recordId}/${Date.now()}.${fileExt}`;
+      const fileName = `${userId}/${recordId}/${Date.now()}.${fileExt}`;
 
-      // 2. 上传到 Storage
       const { error: uploadError } = await supabase.storage
         .from('attachments')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+        .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // 3. 获取公开 URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('attachments').getPublicUrl(fileName);
+      const { data: { publicUrl } } = supabase.storage
+        .from('attachments')
+        .getPublicUrl(fileName);
 
+      const attachment: RecordAttachmentInsert = {
+        record_id: recordId,
+        user_id: userId,
+        file_url: publicUrl,
+        file_name: file.name,
+        file_type: file.type.startsWith('image/') ? 'image' : 'audio',
+        file_size: file.size,
+      };
+
+      const { data: newAttachment, error: insertError } = await supabase
+        .from('record_attachments')
+        .insert([attachment])
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      setAttachments(prev => [...prev, newAttachment]);
       return publicUrl;
     } catch (err) {
       console.error('Failed to upload image:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      setError(err instanceof Error ? err.message : 'Upload failed');
       return null;
     } finally {
       setUploading(false);
     }
   };
 
-  /**
-   * OCR 识别图片文字
-   *
-   * 调用 Gemini Vision AI 进行文字识别
-   *
-   * @param imageUrl - 图片 URL
-   * @returns 识别的文字内容
-   */
-  const ocrImage = async (imageUrl: string): Promise<string | null> => {
-    try {
-      setError(null);
-
-      // 调用 Gemini Vision API
-      // 注意: 这里需要实现 Gemini Vision 的调用逻辑
-      // 可以参考 parseExpense 的实现方式
-
-      // TODO: 实现 Gemini Vision OCR
-      console.warn('OCR functionality not yet implemented');
-
-      // 临时返回空字符串
-      return '';
-    } catch (err) {
-      console.error('Failed to perform OCR:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-      return null;
-    }
+  const capturePhoto = async () => {
+    // In a real mobile app, this would use a camera API.
+    // For web development we'll mock it or use an input file.
+    // Here we'll just throw an error or suggest using uploadImage.
+    throw new Error('Camera capture not supported in this environment. Please use file upload.');
   };
 
-  /**
-   * 保存附件记录到数据库
-   *
-   * @param attachment - 附件数据
-   * @returns 是否成功
-   */
-  const saveAttachment = async (
-    attachment: RecordAttachmentInsert
-  ): Promise<boolean> => {
+  const deleteAttachment = async (id: number) => {
     try {
-      setError(null);
-
-      const { error: insertError } = await supabase
+      const { error: deleteError } = await supabase
         .from('record_attachments')
-        .insert(attachment);
+        .delete()
+        .eq('id', id);
 
-      if (insertError) throw insertError;
-
+      if (deleteError) throw deleteError;
+      setAttachments(prev => prev.filter(a => a.id !== id));
       return true;
     } catch (err) {
-      console.error('Failed to save attachment:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      console.error('Failed to delete attachment:', err);
       return false;
     }
   };
 
   return {
+    attachments,
     uploading,
     error,
     uploadImage,
-    ocrImage,
-    saveAttachment,
+    capturePhoto,
+    deleteAttachment,
+    loadAttachments,
   };
 }

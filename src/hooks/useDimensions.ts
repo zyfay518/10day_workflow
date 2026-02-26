@@ -51,7 +51,7 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
         .from('dimensions')
         .select('*')
         .eq('user_id', userId)
-        .order('sort_order', { ascending: true });
+        .order('display_order', { ascending: true });
 
       if (fetchError) throw fetchError;
 

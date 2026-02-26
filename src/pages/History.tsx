@@ -1,13 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { Signal, Wifi, BatteryFull, ArrowLeft, Search, X, Calendar, ChevronDown, Trophy, Quote, Image as ImageIcon, Sparkles, Lightbulb, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../hooks/useAuth.local";
-import { useCycles } from "../hooks/useCycles.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { localRecords, localAttachments, localExpenses } from "../lib/localStorage";
+import { useAuth } from "../hooks/useAuth";
+import { useCycles } from "../hooks/useCycles";
+import { useDimensions } from "../hooks/useDimensions";
+import { supabase } from "../lib/supabase";
 import { Database } from "../types/database";
 import DateRangePicker from "../components/DateRangePicker";
-import { useMilestones } from "../hooks/useMilestones.local";
+import { useMilestones } from "../hooks/useMilestones";
+import DynamicIcon from "../components/DynamicIcon";
 
 type Record = Database['public']['Tables']['records']['Row'];
 type Milestone = Database['public']['Tables']['milestones']['Row'];
@@ -93,30 +95,53 @@ export default function History() {
   }, [dateRangeType, customStartDate, customEndDate, selectedCycle]);
 
   // Load records with attachments and expenses
-  const records: RecordWithDetails[] = useMemo(() => {
-    if (!user) return [];
+  const [dbRecords, setDbRecords] = useState<RecordWithDetails[]>([]);
+  const [loading, setLoading] = useState(false);
 
-    // Get all records across all cycles for the user
-    const allStoredRecords = JSON.parse(localStorage.getItem('records') || '[]') as Record[];
-    const userRecords = allStoredRecords.filter(record => {
-      const recordDate = record.record_date;
-      return record.user_id === user.id && recordDate >= startDate && recordDate <= endDate;
-    });
+  useEffect(() => {
+    async function fetchHistory() {
+      if (!user) return;
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('records')
+          .select(`
+            *,
+            record_attachments(*),
+            expenses(*)
+          `)
+          .eq('user_id', user.id)
+          .gte('record_date', startDate)
+          .lte('record_date', endDate)
+          .order('record_date', { ascending: false });
 
-    return userRecords
-      .map(record => {
-        const dim = dimensions.find(d => d.id === record.dimension_id);
-        return {
-          ...record,
-          dimension_name: dim?.dimension_name || 'Unknown',
-          dimension_color: dim?.color_code || '#999999',
-          dimension_icon: dim?.icon_name || '📝',
-          attachments: localAttachments.getByRecordId(record.id),
-          expenses: localExpenses.getByRecordId(record.id),
-        };
-      })
-      .sort((a, b) => new Date(b.record_date).getTime() - new Date(a.record_date).getTime());
+        if (error) throw error;
+
+        const recordsData = data as any[] | null;
+        const enriched = (recordsData || []).map(record => {
+          const dim = dimensions.find(d => d.id === record.dimension_id);
+          return {
+            ...record,
+            dimension_name: dim?.dimension_name || 'Unknown',
+            dimension_color: dim?.color_code || '#999999',
+            dimension_icon: dim?.icon_name || '📝',
+            attachments: record.record_attachments || [],
+            expenses: record.expenses || [],
+          };
+        }) as RecordWithDetails[];
+
+        setDbRecords(enriched);
+      } catch (err) {
+        console.error('Failed to fetch history:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchHistory();
   }, [user, startDate, endDate, dimensions]);
+
+  const records = dbRecords;
 
   // Filter records
   const filteredRecords = useMemo(() => {
@@ -253,9 +278,9 @@ export default function History() {
       <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900">
         <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
         <div className="flex gap-1.5 items-center">
-          <span className="material-symbols-outlined text-[16px] font-bold">signal_cellular_alt</span>
-          <span className="material-symbols-outlined text-[16px] font-bold">wifi</span>
-          <span className="material-symbols-outlined text-[18px] font-bold">battery_full</span>
+          <Signal size={16} strokeWidth={2.5} />
+          <Wifi size={16} strokeWidth={2.5} />
+          <BatteryFull size={18} strokeWidth={2.5} />
         </div>
       </div>
 
@@ -263,14 +288,14 @@ export default function History() {
       <header className="bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <Link to="/" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
-            <span className="material-symbols-outlined">arrow_back</span>
+            <ArrowLeft size={24} />
           </Link>
           <h1 className="text-[18px] font-bold text-gray-800">History</h1>
           <button
             onClick={() => setIsSearching(!isSearching)}
             className="p-2 -mr-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
           >
-            <span className="material-symbols-outlined">{isSearching ? 'close' : 'search'}</span>
+            {isSearching ? <X size={24} /> : <Search size={24} />}
           </button>
         </div>
 
@@ -284,14 +309,14 @@ export default function History() {
               className="w-full bg-gray-50 border border-gray-200 rounded-[8px] py-2 pl-9 pr-4 text-sm focus:ring-1 focus:ring-blue-300 focus:border-transparent"
               autoFocus
             />
-            <span className="material-symbols-outlined absolute left-2.5 top-2 text-gray-400 text-[18px]">search</span>
+            <Search className="absolute left-2.5 top-2.5 text-gray-400" size={18} />
           </div>
         )}
 
         {/* Date Range Display */}
         <div className="mb-3 bg-gradient-to-r from-blue-50 to-pink-50 rounded-[10px] py-2.5 px-4 flex items-center justify-between border border-gray-100">
           <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-gray-600 text-[18px]">calendar_today</span>
+            <Calendar className="text-gray-600" size={18} />
             <span className="text-sm font-medium text-gray-700">
               {startDate} ~ {endDate}
             </span>
@@ -313,7 +338,7 @@ export default function History() {
               className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-[8px] py-2 px-3 text-sm hover:bg-gray-100 transition-colors"
             >
               <span className="font-medium text-gray-700 truncate">{getDateRangeLabel()}</span>
-              <span className="material-symbols-outlined text-gray-400 text-[18px]">expand_more</span>
+              <ChevronDown className="text-gray-400" size={18} />
             </button>
             {showDateDropdown && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 overflow-hidden">
@@ -384,7 +409,7 @@ export default function History() {
               className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-[8px] py-2 px-3 text-sm hover:bg-gray-100 transition-colors"
             >
               <span className="font-medium text-gray-700">{dimFilter}</span>
-              <span className="material-symbols-outlined text-gray-400 text-[18px]">expand_more</span>
+              <ChevronDown className="text-gray-400" size={18} />
             </button>
             {showDimDropdown && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-[8px] shadow-lg z-50 max-h-48 overflow-y-auto">
@@ -451,7 +476,7 @@ export default function History() {
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-amber-600 tracking-wider uppercase px-2 py-0.5 bg-amber-100/50 rounded-full border border-amber-200/50 flex items-center gap-1">
-                            <span className="material-symbols-outlined text-[14px]">emoji_events</span>
+                            <Trophy size={14} />
                             Milestone
                           </span>
                           <span className="text-sm font-bold text-gray-800">
@@ -460,7 +485,7 @@ export default function History() {
                         </div>
                         {dim && (
                           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-white/80 shadow-sm">
-                            <span className="material-symbols-outlined text-[16px]" style={{ color: dim.color_code }}>{dim.icon_name}</span>
+                            <DynamicIcon name={dim.icon_name} color={dim.color_code} size={16} />
                             <span className="text-xs font-medium text-gray-700">{dim.dimension_name}</span>
                           </div>
                         )}
@@ -504,7 +529,7 @@ export default function History() {
                         </span>
                         <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
-                          <span className="material-symbols-outlined text-[16px]" style={{ color: record.dimension_color }}>{record.dimension_icon}</span>
+                          <DynamicIcon name={record.dimension_icon} color={record.dimension_color} size={16} />
                           <span className="text-xs font-medium text-gray-700">{record.dimension_name}</span>
                         </div>
                       </div>
@@ -558,7 +583,7 @@ export default function History() {
                       <div className="flex items-center gap-3">
                         {record.ai_quote ? (
                           <div className="flex items-center gap-1.5 text-xs italic text-gray-600">
-                            <span className="material-symbols-outlined text-[14px] text-gray-400">format_quote</span>
+                            <Quote size={14} className="text-gray-400" />
                             <span>{record.ai_quote}</span>
                           </div>
                         ) : (
@@ -570,7 +595,7 @@ export default function History() {
                           <>
                             <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                             <div className="flex items-center gap-1 text-xs text-gray-400">
-                              <span className="material-symbols-outlined text-[14px]">image</span>
+                              <ImageIcon size={14} />
                               <span>{record.attachments.length}</span>
                             </div>
                           </>
@@ -578,7 +603,7 @@ export default function History() {
                       </div>
                       {record.ai_suggestions && (
                         <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
-                          <span className="material-symbols-outlined text-[14px] text-blue-600">auto_awesome</span>
+                          <Sparkles size={14} className="text-blue-600" />
                           <span className="text-xs font-medium text-blue-700">AI Reviewed</span>
                         </div>
                       )}
@@ -588,7 +613,7 @@ export default function History() {
                     {truncatedAI && (
                       <div className="mt-3 p-2.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-[8px] border border-blue-100">
                         <div className="flex items-start gap-2">
-                          <span className="material-symbols-outlined text-[16px] text-blue-600 mt-0.5">lightbulb</span>
+                          <Lightbulb size={16} className="text-blue-600 mt-0.5" />
                           <p className="text-xs text-gray-600 leading-relaxed">{truncatedAI}</p>
                         </div>
                       </div>
@@ -617,21 +642,21 @@ export default function History() {
               onClick={() => setShowImageModal(false)}
               className="absolute top-6 right-6 w-10 h-10 bg-white rounded-full flex items-center justify-center"
             >
-              <span className="material-symbols-outlined text-gray-800">close</span>
+              <X className="text-gray-800" size={24} />
             </button>
             {selectedImages.length > 1 && (
               <>
                 <button
                   onClick={prevImage}
-                  className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center"
+                  className="absolute left-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"
                 >
-                  <span className="material-symbols-outlined text-gray-800">chevron_left</span>
+                  <ChevronLeft className="text-gray-800" size={24} />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center"
+                  className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"
                 >
-                  <span className="material-symbols-outlined text-gray-800">chevron_right</span>
+                  <ChevronRight className="text-gray-800" size={24} />
                 </button>
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium">
                   {currentImageIndex + 1} / {selectedImages.length}

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
 
 type WeightRecord = Database['public']['Tables']['weight_records']['Row'];
@@ -8,9 +9,7 @@ export function useWeight(userId?: string) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const STORAGE_KEY = 'weight_records';
-
-    const loadWeights = useCallback(() => {
+    const loadWeights = useCallback(async () => {
         if (!userId) {
             setWeights([]);
             return;
@@ -18,9 +17,14 @@ export function useWeight(userId?: string) {
 
         try {
             setLoading(true);
-            const data = localStorage.getItem(STORAGE_KEY);
-            const allWeights: WeightRecord[] = data ? JSON.parse(data) : [];
-            setWeights(allWeights.filter(w => w.user_id === userId).sort((a, b) => new Date(a.record_date).getTime() - new Date(b.record_date).getTime()));
+            const { data, error: fetchError } = await supabase
+                .from('weight_records')
+                .select('*')
+                .eq('user_id', userId)
+                .order('record_date', { ascending: true });
+
+            if (fetchError) throw fetchError;
+            setWeights(data || []);
         } catch (err) {
             setError('Failed to load weight records');
             console.error(err);
@@ -37,23 +41,21 @@ export function useWeight(userId?: string) {
         if (!userId) return null;
 
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            const allWeights: WeightRecord[] = data ? JSON.parse(data) : [];
+            const { data, error: insertError } = await supabase
+                .from('weight_records')
+                .insert([{
+                    user_id: userId,
+                    weight_kg,
+                    record_date,
+                    notes: notes || null
+                }])
+                .select()
+                .single();
 
-            const newWeight: WeightRecord = {
-                id: Date.now(),
-                user_id: userId,
-                weight_kg,
-                record_date,
-                notes: notes || null,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-            };
+            if (insertError) throw insertError;
 
-            allWeights.push(newWeight);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(allWeights));
-            loadWeights();
-            return newWeight;
+            setWeights(prev => [...prev, data]);
+            return data;
         } catch (err) {
             setError('Failed to add weight');
             console.error(err);
@@ -65,11 +67,14 @@ export function useWeight(userId?: string) {
         if (!userId) return false;
 
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
-            const allWeights: WeightRecord[] = data ? JSON.parse(data) : [];
-            const updatedWeights = allWeights.filter(w => w.id !== id);
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedWeights));
-            loadWeights();
+            const { error: deleteError } = await supabase
+                .from('weight_records')
+                .delete()
+                .eq('id', id);
+
+            if (deleteError) throw deleteError;
+
+            setWeights(prev => prev.filter(w => w.id !== id));
             return true;
         } catch (err) {
             setError('Failed to delete weight');

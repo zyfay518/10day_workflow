@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { localReports } from '../lib/localStorage';
+import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
 
 type Report = Database['public']['Tables']['reports']['Row'];
@@ -8,16 +8,28 @@ export function useReports(userId: string | undefined, cycleId: number | undefin
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const loadReports = useCallback(() => {
+    const loadReports = useCallback(async () => {
         if (!userId || !cycleId) {
             setReports([]);
             setLoading(false);
             return;
         }
 
-        const data = localReports.getByCycle(userId, cycleId);
-        setReports(data);
-        setLoading(false);
+        try {
+            setLoading(true);
+            const { data, error } = await supabase
+                .from('reports')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('cycle_id', cycleId);
+
+            if (error) throw error;
+            setReports(data || []);
+        } catch (err) {
+            console.error('Failed to load reports:', err);
+        } finally {
+            setLoading(false);
+        }
     }, [userId, cycleId]);
 
     useEffect(() => {

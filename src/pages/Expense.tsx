@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Signal, Wifi, BatteryFull, ArrowLeft, FileEdit, RefreshCw, Bot, Sparkles, Edit2, Trash2, PlusCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { useAuth } from "../hooks/useAuth.local";
-import { useCycles } from "../hooks/useCycles.local";
-import { useDimensions } from "../hooks/useDimensions.local";
-import { useRecords } from "../hooks/useRecords.local";
-import { useExpenses } from "../hooks/useExpenses.local";
-import { useAIAnalysis } from "../hooks/useAIAnalysis.local";
+import { useAuth } from "../hooks/useAuth";
+import { useCycles } from "../hooks/useCycles";
+import { useDimensions } from "../hooks/useDimensions";
+import { useRecords } from "../hooks/useRecords";
+import { useExpenses } from "../hooks/useExpenses";
+import { useAIAnalysis } from "../hooks/useAIAnalysis";
 
 interface ExpenseItem {
   category: string;
@@ -164,15 +165,15 @@ export default function Expense() {
       <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900 z-10">
         <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
         <div className="flex gap-1.5 items-center">
-          <span className="material-symbols-outlined text-[16px] font-bold">signal_cellular_alt</span>
-          <span className="material-symbols-outlined text-[16px] font-bold">wifi</span>
-          <span className="material-symbols-outlined text-[18px] font-bold">battery_full</span>
+          <Signal size={16} strokeWidth={2.5} />
+          <Wifi size={16} strokeWidth={2.5} />
+          <BatteryFull size={18} strokeWidth={2.5} />
         </div>
       </div>
 
       <header className="flex items-center justify-between py-3 bg-white px-5 sticky top-0 z-10">
         <Link to="/record" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
-          <span className="material-symbols-outlined text-2xl">arrow_back</span>
+          <ArrowLeft size={24} />
         </Link>
         <h1 className="text-[20px] font-bold text-gray-800">Record Expense</h1>
         <div className="w-10" />
@@ -190,7 +191,7 @@ export default function Expense() {
               onChange={(e) => setText(e.target.value)}
             />
             <div className="absolute bottom-3 right-3 text-gray-300 pointer-events-none">
-              <span className="material-symbols-outlined text-xl">edit_note</span>
+              <FileEdit size={20} />
             </div>
           </div>
           <button
@@ -202,9 +203,9 @@ export default function Expense() {
             )}
           >
             {analyzing ? (
-              <span className="material-symbols-outlined animate-spin">refresh</span>
+              <RefreshCw className="animate-spin" size={20} />
             ) : (
-              <span className="material-symbols-outlined text-[20px] group-hover:rotate-12 transition-transform">smart_toy</span>
+              <Bot size={20} className="group-hover:rotate-12 transition-transform" />
             )}
             {analyzing ? "Parsing..." : "AI Smart Parse"}
           </button>
@@ -214,7 +215,7 @@ export default function Expense() {
           <div className="bg-white rounded-[12px] border border-gray-100 shadow-sm overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-[#9DC5EF]">auto_awesome</span>
+                <Sparkles size={20} className="text-[#9DC5EF]" />
                 <h2 className="font-bold text-gray-800 text-sm">AI Parse Result</h2>
               </div>
               <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">{items.length} items</span>
@@ -265,15 +266,15 @@ export default function Expense() {
                   <div className="flex gap-1">
                     <button
                       onClick={() => setEditingIndex(index)}
-                      className="text-blue-500 hover:text-blue-700 text-xs"
+                      className="text-blue-500 hover:text-blue-700"
                     >
-                      <span className="material-symbols-outlined text-[16px]">edit</span>
+                      <Edit2 size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(index)}
-                      className="text-red-500 hover:text-red-700 text-xs"
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 </div>
@@ -287,12 +288,12 @@ export default function Expense() {
           </div>
         )}
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex justify-center">
           <button
             onClick={handleAddRow}
-            className="text-sm text-gray-400 flex items-center justify-center gap-1 mx-auto hover:text-gray-600 transition-colors"
+            className="text-sm text-gray-400 flex items-center justify-center gap-1 hover:text-gray-600 transition-colors"
           >
-            <span className="material-symbols-outlined text-sm">add_circle</span>
+            <PlusCircle size={16} />
             Add Item Manually
           </button>
         </div>
@@ -315,7 +316,7 @@ export default function Expense() {
             items.length === 0 && "opacity-50 cursor-not-allowed"
           )}
         >
-          <span className="material-symbols-outlined">check_circle</span>
+          <CheckCircle2 size={20} />
           Confirm and Record
         </button>
       </div>

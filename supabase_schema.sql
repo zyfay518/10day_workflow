@@ -232,7 +232,9 @@ CREATE TABLE IF NOT EXISTS public.weight_records (
 -- Views
 
 -- View: v_user_cycle_stats
-CREATE OR REPLACE VIEW public.v_user_cycle_stats AS
+CREATE OR REPLACE VIEW public.v_user_cycle_stats 
+WITH (security_invoker = true)
+AS
 SELECT 
     c.user_id,
     c.id AS cycle_id,
@@ -250,7 +252,9 @@ GROUP BY
     c.id, c.user_id, c.cycle_number, c.completion_rate;
 
 -- View: v_user_global_stats
-CREATE OR REPLACE VIEW public.v_user_global_stats AS
+CREATE OR REPLACE VIEW public.v_user_global_stats 
+WITH (security_invoker = true)
+AS
 WITH user_records_by_dim AS (
     SELECT 
         r.user_id,

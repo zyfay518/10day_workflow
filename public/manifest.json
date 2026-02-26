@@ -1,0 +1,16 @@
+{
+    "name": "10-Day Flow",
+    "short_name": "10-Day",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#9DC5EF",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "1024x1024",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}
