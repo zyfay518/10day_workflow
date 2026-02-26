@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Brain } from "lucide-react";
+import { Infinity as InfinityIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface SplashProps {
@@ -33,7 +33,7 @@ export default function Splash({ onFinish }: SplashProps) {
             <div className="flex flex-col items-center">
                 <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-xl shadow-purple-500/20 mb-6 relative animate-pulse-slow">
                     <div className="absolute inset-0 bg-white/20 blur-md rounded-[24px]"></div>
-                    <Brain className="text-white relative z-10" size={40} strokeWidth={2} />
+                    <InfinityIcon className="text-white relative z-10" size={40} strokeWidth={2} />
                 </div>
                 <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 tracking-tight">
                     10-Day Flow

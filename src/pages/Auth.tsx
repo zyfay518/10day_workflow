@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Sparkles, Brain, Lock, Mail, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
+import { Sparkles, Infinity as InfinityIcon, Lock, Mail, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function Auth() {
@@ -56,7 +56,7 @@ export default function Auth() {
                 <div className="relative z-10 flex flex-col items-center mb-10">
                     <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 relative">
                         <div className="absolute inset-0 bg-white/20 blur-md rounded-[20px]"></div>
-                        <Brain className="text-white relative z-10" size={32} strokeWidth={2} />
+                        <InfinityIcon className="text-white relative z-10" size={32} strokeWidth={2} />
                     </div>
                     <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-2">
                         10-Day Flow
