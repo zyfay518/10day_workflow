@@ -1,0 +1,169 @@
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '.env') });
+
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY in .env");
+    process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// --- Config for seeding ---
+// Note: If you hit a rate limit, please go to your Supabase Dashboard -> Authentication -> Users
+// Delete all users, then run this script again.
+const TEST_EMAIL = 'test10dayflow@gmail.com';
+const TEST_PASSWORD = 'TestPassword123!';
+const START_DATE = new Date('2026-01-01T08:00:00Z');
+const END_DATE = new Date(); // Use the end of today
+const CYCLE_LENGTH_DAYS = 10;
+const BLANK_CYCLE = 3;
+
+// Example Data Pools
+const HEALTH_NOTES = ["Morning jog", "Gym session", "Yoga", "Ate clean today", "Slept 8 hours", "Rest day"];
+const WORK_NOTES = ["Deep work session", "Meeting marathon", "Finished the big feature", "Code review", "Planning", "Cleared inbox"];
+const STUDY_NOTES = ["Read 30 pages", "React course", "Practiced Spanish", "Watched a documentary", "Listened to podcast", "Studied system design"];
+const WEALTH_NOTES = ["Bought groceries", "Paid bills", "Invested in index funds", "Coffee with client", "No spend day", "Salary day!"];
+const FAMILY_NOTES = ["Called mom", "Dinner with partner", "Played with kids", "Helped a friend", "Family gathering"];
+const LEISURE_NOTES = ["Watched a movie", "Played video games", "Read a novel", "Went for a walk", "Listened to music", "Did nothing"];
+
+const getRandomItem = (arr) => arr[Math.floor(Math.random() * arr.length)];
+const getRandomExpense = () => (Math.random() > 0.6 ? Math.floor(Math.random() * 200) + 10 : 0);
+
+async function seed() {
+    console.log("🌱 Starting database seeding...");
+
+    console.log(`1. Authenticating test user: ${TEST_EMAIL}`);
+    let { data: { user }, error: authError } = await supabase.auth.signUp({
+        email: TEST_EMAIL,
+        password: TEST_PASSWORD,
+    });
+
+    if (authError) {
+        if (authError.message.includes("User already registered")) {
+            console.log("User already exists, signing in...");
+            const signinRes = await supabase.auth.signInWithPassword({
+                email: TEST_EMAIL,
+                password: TEST_PASSWORD,
+            });
+            if (signinRes.error) throw signinRes.error;
+            user = signinRes.data.user;
+        } else {
+            console.error("Supabase Auth Error! If this is an email rate limit (429), please go to your Supabase Dashboard -> Authentication, delete the old users, and try running this script again.");
+            throw new Error(`Auth Error: ${authError.message}`);
+        }
+    }
+
+    const userId = user.id;
+    console.log(`✅ Test User ID: ${userId}`);
+
+    // Wait a second for trigger to finish generating dimensions and profile
+    await new Promise(r => setTimeout(r, 2000));
+    const { data: dimensions, error: dimError } = await supabase
+        .from('dimensions')
+        .select('*')
+        .eq('user_id', userId);
+
+    if (dimError) throw dimError;
+    if (!dimensions || dimensions.length === 0) {
+        console.warn("⚠️ No dimensions found! The auto-provision trigger might not have run or failed.");
+        process.exit(1);
+    }
+    console.log(`✅ Dimensions loaded (${dimensions.length} total).`);
+
+    console.log("3. Generating records...");
+    const recordsToInsert = [];
+
+    let currentDate = new Date(START_DATE);
+    let daysCount = 0;
+
+    while (currentDate <= END_DATE) {
+        const currentCycle = Math.floor(daysCount / CYCLE_LENGTH_DAYS) + 1;
+
+        // Skip the configured blank cycle (e.g. Cycle 3 is empty)
+        if (currentCycle !== BLANK_CYCLE) {
+
+            const dimsToFillCount = Math.floor(Math.random() * 4) + 3; // Fill 3 to 6 dimensions
+            const shuffledDims = [...dimensions].sort(() => 0.5 - Math.random());
+            const selectedDims = shuffledDims.slice(0, dimsToFillCount);
+
+            for (const dim of selectedDims) {
+                let note = "";
+                let expense = 0;
+
+                switch (dim.dimension_name) {
+                    case 'Health':
+                        note = getRandomItem(HEALTH_NOTES);
+                        break;
+                    case 'Work':
+                        note = getRandomItem(WORK_NOTES);
+                        break;
+                    case 'Study':
+                        note = getRandomItem(STUDY_NOTES);
+                        break;
+                    case 'Wealth':
+                        note = getRandomItem(WEALTH_NOTES);
+                        expense = getRandomExpense();
+                        break;
+                    case 'Family':
+                        note = getRandomItem(FAMILY_NOTES);
+                        expense = getRandomExpense() > 0 ? Math.floor(Math.random() * 50) : 0;
+                        break;
+                    case 'Leisure':
+                        note = getRandomItem(LEISURE_NOTES);
+                        expense = getRandomExpense() > 0 ? Math.floor(Math.random() * 30) : 0;
+                        break;
+                }
+
+                recordsToInsert.push({
+                    user_id: userId,
+                    dimension_id: dim.id,
+                    cycle_number: currentCycle,
+                    day_in_cycle: (daysCount % CYCLE_LENGTH_DAYS) + 1,
+                    content: note,
+                    expense_amount: expense,
+                    record_date: currentDate.toISOString().split('T')[0],
+                    ai_summary: null
+                });
+            }
+        }
+
+        currentDate.setDate(currentDate.getDate() + 1);
+        daysCount++;
+    }
+
+    console.log(`Generated ${recordsToInsert.length} records. Inserting into Supabase...`);
+
+    // Insert in chunks
+    const chunkSize = 100;
+    for (let i = 0; i < recordsToInsert.length; i += chunkSize) {
+        const chunk = recordsToInsert.slice(i, i + chunkSize);
+        const { error: insertError } = await supabase.from('daily_records').insert(chunk);
+        if (insertError) {
+            console.error("Insert error:", insertError);
+            throw insertError;
+        }
+        console.log(`✅ Inserted chunk ${Math.floor(i / chunkSize) + 1} / ${Math.ceil(recordsToInsert.length / chunkSize)}`);
+    }
+
+    // Update Profile Nickname
+    await supabase.from('user_profiles').update({ nickname: '10D Pioneer' }).eq('user_id', userId);
+
+    console.log("\n🎉 Seeding Complete!");
+    console.log("-----------------------------------------");
+    console.log(`Test Email:    ${TEST_EMAIL}`);
+    console.log(`Test Password: ${TEST_PASSWORD}`);
+    console.log(`Time Span:     ${START_DATE.toISOString().split('T')[0]} to ${END_DATE.toISOString().split('T')[0]}`);
+    console.log(`Blank Cycle:   #${BLANK_CYCLE} is skipped as requested.`);
+    console.log("-----------------------------------------");
+}
+
+seed().catch(console.error);

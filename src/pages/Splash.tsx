@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Sprout } from "lucide-react";
+import { Brain } from "lucide-react";
 import { cn } from "../lib/utils";
 
 interface SplashProps {
@@ -27,16 +27,20 @@ export default function Splash({ onFinish }: SplashProps) {
 
     return (
         <div className={cn(
-            "fixed inset-0 min-h-screen bg-[#F9FAFB] flex items-center justify-center z-[100] transition-opacity duration-300",
+            "fixed inset-0 min-h-screen bg-[#FDFDFD] flex items-center justify-center z-[100] transition-opacity duration-300",
             fadeOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-[24px] bg-[#F4F6F5] border border-[#E5ECE9] flex items-center justify-center shadow-sm mb-6 animate-pulse-slow">
-                    <Sprout className="text-[#849B87]" size={40} strokeWidth={1.5} />
+                <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-xl shadow-purple-500/20 mb-6 relative animate-pulse-slow">
+                    <div className="absolute inset-0 bg-white/20 blur-md rounded-[24px]"></div>
+                    <Brain className="text-white relative z-10" size={40} strokeWidth={2} />
                 </div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-500 tracking-tight">
                     10-Day Flow
                 </h1>
+                <p className="text-gray-400 mt-2 text-sm font-medium tracking-wide pb-16">
+                    GROWTH LOOP
+                </p>
             </div>
         </div>
     );

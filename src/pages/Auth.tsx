@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Sparkles, Sprout, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, Brain, Lock, Mail, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function Auth() {
@@ -10,6 +10,7 @@ export default function Auth() {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
 
     const { signIn, signUp, user } = useAuth();
     const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function Auth() {
             } else {
                 const { error } = await signUp(email, password);
                 if (error) throw error;
-                // Optional: show "Check email for confirmation" if email confirmations are enabled
+                setSuccessMsg("Account created! Please check your email to confirm.");
             }
         } catch (err: any) {
             console.error("Auth error:", err);
@@ -43,17 +44,24 @@ export default function Auth() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F9FAFB] flex justify-center font-sans text-gray-900">
-            <div className="w-full max-w-md bg-white min-h-screen flex flex-col justify-center px-8">
+        <div className="min-h-screen bg-[#FDFDFD] flex justify-center font-sans text-gray-900 selection:bg-[#B4D2C8] selection:text-gray-900">
+            <div className="w-full max-w-md bg-white min-h-screen relative shadow-xl overflow-hidden flex flex-col justify-center px-8 relative">
 
-                <div className="flex flex-col items-center mb-10">
-                    <div className="w-16 h-16 rounded-[20px] bg-[#F4F6F5] border border-[#E5ECE9] flex items-center justify-center mb-6">
-                        <Sprout className="text-[#849B87]" size={36} strokeWidth={1.5} />
+                {/* Decorative background shapes */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute top-[-10%] right-[-10%] w-64 h-64 rounded-full bg-blue-100 blur-3xl opacity-60"></div>
+                    <div className="absolute bottom-[-5%] left-[-10%] w-72 h-72 rounded-full bg-purple-100 blur-3xl opacity-60"></div>
+                </div>
+
+                <div className="relative z-10 flex flex-col items-center mb-10">
+                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 relative">
+                        <div className="absolute inset-0 bg-white/20 blur-md rounded-[20px]"></div>
+                        <Brain className="text-white relative z-10" size={32} strokeWidth={2} />
                     </div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
+                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-2">
                         10-Day Flow
                     </h1>
-                    <p className="text-gray-500 text-sm font-medium">
+                    <p className="text-gray-500 text-center font-medium">
                         {isLogin ? "Welcome back to your journey" : "Start your growth loop today"}
                     </p>
                 </div>
@@ -61,8 +69,14 @@ export default function Auth() {
                 <form onSubmit={handleSubmit} className="relative z-10 space-y-5">
                     {errorMsg && (
                         <div className="p-3 rounded-[12px] bg-red-50 text-red-600 text-sm border border-red-100 flex items-center gap-2">
-                            <Sparkles size={16} /> {/* Replace with alert icon if needed */}
+                            <Sparkles size={16} />
                             {errorMsg}
+                        </div>
+                    )}
+                    {successMsg && (
+                        <div className="p-3 rounded-[12px] bg-green-50 text-green-700 text-sm border border-green-100 flex items-center gap-2">
+                            <CheckCircle2 size={16} />
+                            {successMsg}
                         </div>
                     )}
 
@@ -106,28 +120,29 @@ export default function Auth() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-3.5 mt-8 rounded-[16px] bg-[#849B87] text-white font-medium text-[15px] hover:bg-[#728775] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
+                        className="w-full flex items-center justify-center gap-2 py-4 mt-8 rounded-[16px] bg-gray-900 text-white font-semibold text-base hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-900/10 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
                     >
                         {loading ? (
-                            <Loader2 size={18} className="animate-spin" />
+                            <Loader2 size={20} className="animate-spin" />
                         ) : (
                             <>
                                 {isLogin ? "Log In" : "Sign Up"}
-                                <ArrowRight size={16} />
+                                <ArrowRight size={18} />
                             </>
                         )}
                     </button>
                 </form>
 
-                <div className="mt-8 text-center">
+                <div className="relative z-10 mt-8 text-center">
                     <p className="text-sm text-gray-500">
                         {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
                         <button
                             onClick={() => {
                                 setIsLogin(!isLogin);
                                 setErrorMsg("");
+                                setSuccessMsg("");
                             }}
-                            className="font-medium text-[#849B87] hover:text-[#728775] transition-colors"
+                            className="font-bold text-gray-900 hover:text-gray-600 transition-colors"
                         >
                             {isLogin ? "Sign up" : "Log in"}
                         </button>
