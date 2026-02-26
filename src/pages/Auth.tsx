@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
-import { Sparkles, Brain, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
+import { Sparkles, Sprout, Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
 
 export default function Auth() {
@@ -43,24 +43,17 @@ export default function Auth() {
     };
 
     return (
-        <div className="min-h-screen bg-[#FDFDFD] flex justify-center font-sans text-gray-900 selection:bg-[#B4D2C8] selection:text-gray-900">
-            <div className="w-full max-w-md bg-white min-h-screen relative shadow-xl overflow-hidden flex flex-col justify-center px-8 relative">
+        <div className="min-h-screen bg-[#F9FAFB] flex justify-center font-sans text-gray-900">
+            <div className="w-full max-w-md bg-white min-h-screen flex flex-col justify-center px-8">
 
-                {/* Decorative background shapes */}
-                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                    <div className="absolute top-[-10%] right-[-10%] w-64 h-64 rounded-full bg-[#E5ECE9] blur-3xl opacity-60"></div>
-                    <div className="absolute bottom-[-5%] left-[-10%] w-72 h-72 rounded-full bg-[#F4EBE8] blur-3xl opacity-60"></div>
-                </div>
-
-                <div className="relative z-10 flex flex-col items-center mb-10">
-                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#849B87] to-[#A3B8A6] flex items-center justify-center shadow-lg shadow-[#849B87]/20 mb-6 relative">
-                        <div className="absolute inset-0 bg-white/20 blur-md rounded-[20px]"></div>
-                        <Brain className="text-white relative z-10" size={32} strokeWidth={2} />
+                <div className="flex flex-col items-center mb-10">
+                    <div className="w-16 h-16 rounded-[20px] bg-[#F4F6F5] border border-[#E5ECE9] flex items-center justify-center mb-6">
+                        <Sprout className="text-[#849B87]" size={36} strokeWidth={1.5} />
                     </div>
-                    <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 mb-2">
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">
                         10-Day Flow
                     </h1>
-                    <p className="text-gray-500 text-center font-medium">
+                    <p className="text-gray-500 text-sm font-medium">
                         {isLogin ? "Welcome back to your journey" : "Start your growth loop today"}
                     </p>
                 </div>
@@ -113,20 +106,20 @@ export default function Auth() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full flex items-center justify-center gap-2 py-4 mt-8 rounded-[16px] bg-gray-900 text-white font-semibold text-base hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-900/10 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 py-3.5 mt-8 rounded-[16px] bg-[#849B87] text-white font-medium text-[15px] hover:bg-[#728775] active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm"
                     >
                         {loading ? (
-                            <Loader2 size={20} className="animate-spin" />
+                            <Loader2 size={18} className="animate-spin" />
                         ) : (
                             <>
                                 {isLogin ? "Log In" : "Sign Up"}
-                                <ArrowRight size={18} />
+                                <ArrowRight size={16} />
                             </>
                         )}
                     </button>
                 </form>
 
-                <div className="relative z-10 mt-8 text-center">
+                <div className="mt-8 text-center">
                     <p className="text-sm text-gray-500">
                         {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
                         <button
@@ -134,7 +127,7 @@ export default function Auth() {
                                 setIsLogin(!isLogin);
                                 setErrorMsg("");
                             }}
-                            className="font-bold text-[#849B87] hover:text-[#6a7c6c] transition-colors"
+                            className="font-medium text-[#849B87] hover:text-[#728775] transition-colors"
                         >
                             {isLogin ? "Sign up" : "Log in"}
                         </button>

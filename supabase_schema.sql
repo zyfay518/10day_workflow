@@ -30,7 +30,7 @@ BEGIN
   VALUES (new.id, split_part(new.email, '@', 1));
 
   -- Insert default dimensions for the new user
-  INSERT INTO public.dimensions (user_id, dimension_name, color_code, icon_name, sort_order)
+  INSERT INTO public.dimensions (user_id, dimension_name, color_code, icon_name, display_order)
   VALUES
     (new.id, 'Health', '#d4b5b0', 'Heart', 0),
     (new.id, 'Work', '#849b87', 'Briefcase', 1),
