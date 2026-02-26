@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Signal, Wifi, BatteryFull, BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X } from "lucide-react";
+import { BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X } from "lucide-react";
 import DynamicIcon from "../components/DynamicIcon";
 import { useAuth } from "../hooks/useAuth";
 import { useKnowledgeBase } from "../hooks/useKnowledgeBase";
@@ -159,15 +159,6 @@ export default function Knowledge() {
 
     return (
         <div className="flex flex-col h-full bg-[#F9FAFB] relative pb-24">
-            {/* Status Bar */}
-            <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-600 bg-white border-b border-gray-100">
-                <span>{new Date().toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}</span>
-                <div className="flex items-center gap-2 text-gray-800">
-                    <Signal size={16} strokeWidth={2.5} />
-                    <Wifi size={16} strokeWidth={2.5} />
-                    <BatteryFull size={16} strokeWidth={2.5} />
-                </div>
-            </div>
 
             <header className="px-4 py-3 sticky top-0 bg-white shadow-sm z-10">
                 <h1 className="text-[20px] font-bold text-gray-800">Knowledge Base</h1>

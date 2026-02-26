@@ -29,6 +29,7 @@ interface UseRecordsReturn {
   saving: boolean;
   error: string | null;
   saveRecord: (content: string, status?: 'draft' | 'published') => Promise<boolean>;
+  deleteRecord: (id: number) => Promise<boolean>;
 }
 
 export function useRecords(params: UseRecordsParams): UseRecordsReturn {
@@ -154,11 +155,38 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
     }
   };
 
+  /**
+   * 删除记录
+   */
+  const deleteRecord = async (id: number): Promise<boolean> => {
+    try {
+      setSaving(true);
+      const { error: deleteError } = await supabase
+        .from('records')
+        .delete()
+        .eq('id', id);
+
+      if (deleteError) throw deleteError;
+
+      if (record?.id === id) {
+        setRecord(null);
+      }
+      return true;
+    } catch (err) {
+      console.error('Failed to delete record:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     record,
     loading,
     saving,
     error,
     saveRecord,
+    deleteRecord,
   };
 }

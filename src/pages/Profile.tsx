@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Signal, Wifi, BatteryFull, ArrowLeft, Bell, Edit2, IdCard, ChevronRight, Bot, FileEdit, LogOut, X } from "lucide-react";
+import { ArrowLeft, Bell, Edit2, IdCard, ChevronRight, Bot, FileEdit, LogOut, X } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useAIPrompts } from "../hooks/useAIPrompts";
@@ -127,15 +127,6 @@ export default function Profile() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-      {/* Status Bar */}
-      <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900 z-10">
-        <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-        <div className="flex gap-1.5 items-center">
-          <Signal size={16} strokeWidth={2.5} />
-          <Wifi size={16} strokeWidth={2.5} />
-          <BatteryFull size={18} strokeWidth={2.5} />
-        </div>
-      </div>
 
       <header className="px-4 py-3 flex items-center justify-between bg-white sticky top-0 z-10 shadow-sm">
         <div className="flex items-center gap-3">

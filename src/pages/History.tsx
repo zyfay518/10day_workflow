@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Signal, Wifi, BatteryFull, ArrowLeft, Search, X, Calendar, ChevronDown, Trophy, Quote, Image as ImageIcon, Sparkles, Lightbulb, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Search, X, Calendar, ChevronDown, Trophy, Quote, Image as ImageIcon, Sparkles, Lightbulb, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -141,6 +141,23 @@ export default function History() {
     fetchHistory();
   }, [user, startDate, endDate, dimensions]);
 
+  const handleDeleteRecord = async (id: number) => {
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase.from('records').delete().eq('id', id);
+      if (error) throw error;
+
+      setDbRecords(prev => prev.filter(r => r.id !== id));
+    } catch (err) {
+      console.error('Failed to delete record:', err);
+      alert('Failed to delete record. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const records = dbRecords;
 
   // Filter records
@@ -274,15 +291,6 @@ export default function History() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-      {/* Status Bar */}
-      <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900">
-        <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-        <div className="flex gap-1.5 items-center">
-          <Signal size={16} strokeWidth={2.5} />
-          <Wifi size={16} strokeWidth={2.5} />
-          <BatteryFull size={18} strokeWidth={2.5} />
-        </div>
-      </div>
 
       {/* Header */}
       <header className="bg-white px-4 py-3 shadow-sm">
@@ -533,9 +541,18 @@ export default function History() {
                           <span className="text-xs font-medium text-gray-700">{record.dimension_name}</span>
                         </div>
                       </div>
-                      <span className="text-xs text-gray-400">
-                        {new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-gray-400">
+                          {new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </span>
+                        <button
+                          onClick={() => handleDeleteRecord(record.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors"
+                          title="Delete record"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-sm text-gray-700 leading-relaxed mb-3">

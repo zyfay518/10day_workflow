@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import React from "react";
-import { Signal, Wifi, BatteryFull, Settings, ChevronRight, Circle, CheckCircle2, Edit, BarChart2 } from "lucide-react";
+import { Settings, ChevronRight, Circle, CheckCircle2, Edit, BarChart2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -148,15 +148,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-      {/* Status Bar */}
-      <div className="flex justify-between items-center px-4 py-1 text-xs text-gray-600 bg-white border-b border-gray-100">
-        <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
-        <div className="flex items-center gap-2">
-          <Signal size={16} />
-          <Wifi size={16} />
-          <BatteryFull size={16} />
-        </div>
-      </div>
 
       <header className="flex justify-between items-center px-4 py-3 sticky top-0 bg-[#F9FAFB]/90 backdrop-blur-sm z-10">
         <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">

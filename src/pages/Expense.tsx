@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Signal, Wifi, BatteryFull, ArrowLeft, FileEdit, RefreshCw, Bot, Sparkles, Edit2, Trash2, PlusCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, FileEdit, RefreshCw, Bot, Sparkles, Edit2, Trash2, PlusCircle, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -162,14 +162,6 @@ export default function Expense() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-      <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900 z-10">
-        <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-        <div className="flex gap-1.5 items-center">
-          <Signal size={16} strokeWidth={2.5} />
-          <Wifi size={16} strokeWidth={2.5} />
-          <BatteryFull size={18} strokeWidth={2.5} />
-        </div>
-      </div>
 
       <header className="flex items-center justify-between py-3 bg-white px-5 sticky top-0 z-10">
         <Link to="/record" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">

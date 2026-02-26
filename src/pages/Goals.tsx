@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Signal, Wifi, BatteryFull, ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -217,15 +217,6 @@ export default function Goals() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-      {/* Status Bar */}
-      <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900">
-        <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-        <div className="flex gap-1.5 items-center">
-          <Signal size={16} strokeWidth={2.5} />
-          <Wifi size={16} strokeWidth={2.5} />
-          <BatteryFull size={18} strokeWidth={2.5} />
-        </div>
-      </div>
 
       {/* Header */}
       <header className="bg-white px-4 py-3 shadow-sm">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Signal, Wifi, BatteryFull, ChevronLeft, Calendar, Camera, Mic, Paperclip, Bot, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, Calendar, Camera, Mic, Paperclip, Bot, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -239,13 +239,14 @@ export default function Record() {
 
           // Update record with AI suggestions and quote
           if ((aiResult || aiQuote) && activeDimension) {
-            // @ts-ignore - Supabase type inference issue with update
+            const updatePayload: any = {
+              ai_suggestions: aiResult || record?.ai_suggestions,
+              ai_quote: aiQuote || record?.ai_quote
+            };
             await supabase
               .from('records')
-              .update({
-                ai_suggestions: aiResult || record.ai_suggestions,
-                ai_quote: aiQuote || record.ai_quote
-              })
+              // @ts-ignore
+              .update(updatePayload)
               .eq('id', record.id);
           }
           showCustomDialog('Success', `${activeTab} record saved!`);
@@ -286,14 +287,14 @@ export default function Record() {
 
         // Update record with AI suggestions and quote
         if ((aiResult || aiQuote) && activeDimension) {
-          // @ts-ignore - Supabase type inference issue with update
+          const updatePayload: any = {
+            ai_suggestions: aiResult,
+            ai_quote: aiQuote
+          };
           await supabase
             .from('records')
-            .update({
-              ai_suggestions: aiResult,
-              ai_quote: aiQuote
-            })
-            // @ts-ignore - Supabase type inference issue with return value
+            // @ts-ignore
+            .update(updatePayload)
             .eq('id', (success as any)?.id || record?.id || 0);
         }
         showCustomDialog('Success', `${activeTab} record saved!`);
@@ -318,14 +319,6 @@ export default function Record() {
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center font-sans text-gray-900">
       <div className="w-full max-w-md bg-white min-h-screen relative shadow-xl overflow-hidden flex flex-col">
-        <div className="h-12 w-full bg-white flex items-end justify-between px-6 pb-2 text-xs font-medium text-gray-900 z-10">
-          <span>{new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-          <div className="flex gap-1.5 items-center">
-            <Signal size={16} strokeWidth={2.5} />
-            <Wifi size={16} strokeWidth={2.5} />
-            <BatteryFull size={18} strokeWidth={2.5} />
-          </div>
-        </div>
 
         <header className="px-4 py-2 bg-white flex flex-col flex-shrink-0 relative z-10">
           <div className="flex items-center justify-between h-11">
