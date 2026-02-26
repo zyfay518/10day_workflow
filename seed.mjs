@@ -18,10 +18,10 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // --- Config for seeding ---
-// Note: If you hit a rate limit, please go to your Supabase Dashboard -> Authentication -> Users
-// Delete all users, then run this script again.
-const TEST_EMAIL = 'test10dayflow@gmail.com';
-const TEST_PASSWORD = 'TestPassword123!';
+// ⚠️ IMPORTANT: Because you already registered, I don't know your password.
+// Please change 'YOUR_ACTUAL_PASSWORD' to the password you used when you registered zyfay0518@163.com!
+const TEST_EMAIL = 'zyfay0518@163.com';
+const TEST_PASSWORD = 'YOUR_ACTUAL_PASSWORD';
 const START_DATE = new Date('2026-01-01T08:00:00Z');
 const END_DATE = new Date(); // Use the end of today
 const CYCLE_LENGTH_DAYS = 10;
@@ -65,17 +65,33 @@ async function seed() {
     const userId = user.id;
     console.log(`✅ Test User ID: ${userId}`);
 
-    // Wait a second for trigger to finish generating dimensions and profile
-    await new Promise(r => setTimeout(r, 2000));
-    const { data: dimensions, error: dimError } = await supabase
+    let { data: dimensions, error: dimError } = await supabase
         .from('dimensions')
         .select('*')
         .eq('user_id', userId);
 
     if (dimError) throw dimError;
+
     if (!dimensions || dimensions.length === 0) {
-        console.warn("⚠️ No dimensions found! The auto-provision trigger might not have run or failed.");
-        process.exit(1);
+        console.warn("⚠️ No dimensions found! Generating default dimensions as fallback...");
+        const defaultDims = [
+            { user_id: userId, dimension_name: 'Health', color_code: '#d4b5b0', icon_name: 'Heart', display_order: 0 },
+            { user_id: userId, dimension_name: 'Work', color_code: '#849b87', icon_name: 'Briefcase', display_order: 1 },
+            { user_id: userId, dimension_name: 'Study', color_code: '#a3b8a6', icon_name: 'Book', display_order: 2 },
+            { user_id: userId, dimension_name: 'Wealth', color_code: '#e8d5c4', icon_name: 'DollarSign', display_order: 3 },
+            { user_id: userId, dimension_name: 'Family', color_code: '#c49eb3', icon_name: 'Users', display_order: 4 },
+            { user_id: userId, dimension_name: 'Leisure', color_code: '#9ca3af', icon_name: 'Coffee', display_order: 5 }
+        ];
+
+        const { data: newDims, error: insertDimError } = await supabase.from('dimensions').insert(defaultDims).select();
+        if (insertDimError) throw insertDimError;
+        dimensions = newDims;
+
+        // Also ensure a user_profile exists
+        const { data: profiles } = await supabase.from('user_profiles').select('*').eq('user_id', userId);
+        if (!profiles || profiles.length === 0) {
+            await supabase.from('user_profiles').insert({ user_id: userId, nickname: 'Pioneer' });
+        }
     }
     console.log(`✅ Dimensions loaded (${dimensions.length} total).`);
 
