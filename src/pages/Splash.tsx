@@ -31,7 +31,7 @@ export default function Splash({ onFinish }: SplashProps) {
             fadeOut ? "opacity-0" : "opacity-100"
         )}>
             <div className="flex flex-col items-center">
-                <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-xl shadow-purple-500/20 mb-6 relative animate-pulse-slow">
+                <div className="w-20 h-20 rounded-[24px] bg-gradient-to-br from-blue-200 to-pink-200 flex items-center justify-center shadow-xl shadow-pink-500/20 mb-6 relative animate-pulse-slow">
                     <div className="absolute inset-0 bg-white/20 blur-md rounded-[24px]"></div>
                     <InfinityIcon className="text-white relative z-10" size={40} strokeWidth={2} />
                 </div>

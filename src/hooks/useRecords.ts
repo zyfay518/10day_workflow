@@ -28,7 +28,7 @@ interface UseRecordsReturn {
   loading: boolean;
   saving: boolean;
   error: string | null;
-  saveRecord: (content: string, status?: 'draft' | 'published') => Promise<boolean>;
+  saveRecord: (content: string, status?: 'draft' | 'published') => Promise<Record | null>;
   deleteRecord: (id: number) => Promise<boolean>;
 }
 
@@ -88,21 +88,21 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
    *
    * @param content - 记录内容
    * @param status - 记录状态 (默认: published)
-   * @returns 是否成功
+   * @returns 是否成功 (或者成功后的记录)
    */
   const saveRecord = async (
     content: string,
     status: 'draft' | 'published' = 'published'
-  ): Promise<boolean> => {
+  ): Promise<Record | null> => {
     if (!userId || !cycleId || !dimensionId || !date) {
       setError('Missing required parameters');
-      return false;
+      return null;
     }
 
     try {
       setSaving(true);
-
       const wordCount = content.length;
+      let savedData;
 
       if (record) {
         // 更新现有记录
@@ -119,7 +119,7 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
           .single();
 
         if (updateError) throw updateError;
-
+        savedData = data;
         setRecord(data);
       } else {
         // 插入新记录
@@ -140,16 +140,16 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
           .single();
 
         if (insertError) throw insertError;
-
+        savedData = data;
         setRecord(data);
       }
 
       setError(null);
-      return true;
+      return savedData;
     } catch (err) {
       console.error('Failed to save record:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
-      return false;
+      return null;
     } finally {
       setSaving(false);
     }

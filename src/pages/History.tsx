@@ -31,7 +31,7 @@ export default function History() {
   const { user } = useAuth();
   const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
-  const { milestones } = useMilestones(user?.id);
+  const { milestones, deleteMilestone } = useMilestones(user?.id);
 
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -491,12 +491,25 @@ export default function History() {
                             {new Date(milestone.event_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         </div>
-                        {dim && (
-                          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-white/80 shadow-sm">
-                            <DynamicIcon name={dim.icon_name} color={dim.color_code} size={16} />
-                            <span className="text-xs font-medium text-gray-700">{dim.dimension_name}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {dim && (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-white/80 shadow-sm">
+                              <DynamicIcon name={dim.icon_name} color={dim.color_code} size={16} />
+                              <span className="text-xs font-medium text-gray-700">{dim.dimension_name}</span>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to delete this milestone?")) {
+                                deleteMilestone(milestone.id);
+                              }
+                            }}
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            aria-label="Delete milestone"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
 
                       <h3 className="text-lg font-bold text-gray-900 mb-2">{highlightText(milestone.event_title, searchQuery)}</h3>

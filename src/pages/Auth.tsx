@@ -33,6 +33,7 @@ export default function Auth() {
             } else {
                 const { error } = await signUp(email, password);
                 if (error) throw error;
+                window.alert("Registration successful! Please check your email to confirm your account.");
                 setSuccessMsg("Account created! Please check your email to confirm.");
             }
         } catch (err: any) {
@@ -54,7 +55,7 @@ export default function Auth() {
                 </div>
 
                 <div className="relative z-10 flex flex-col items-center mb-10">
-                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center shadow-lg shadow-purple-500/20 mb-6 relative">
+                    <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-blue-200 to-pink-200 flex items-center justify-center shadow-lg shadow-pink-500/20 mb-6 relative">
                         <div className="absolute inset-0 bg-white/20 blur-md rounded-[20px]"></div>
                         <InfinityIcon className="text-white relative z-10" size={32} strokeWidth={2} />
                     </div>

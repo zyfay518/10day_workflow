@@ -49,7 +49,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, generateQuote, extractTags, clearResult } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, generateQuote, extractTags, clearResult, parseExpenseResult } = useAIAnalysis(user?.id);
 
   // 当切换维度或日期时，更新 note
   useEffect(() => {
@@ -212,8 +212,8 @@ export default function Record() {
           finalContent = record.content + '\n\n' + note;
         }
 
-        const success = await saveRecord(finalContent, 'published');
-        if (success) {
+        const savedRecord = await saveRecord(finalContent, 'published');
+        if (savedRecord) {
           if (isMilestone && activeDimension) {
             await addMilestone({
               user_id: user!.id,
@@ -223,6 +223,28 @@ export default function Record() {
               event_type: 'achievement',
               related_dimension_id: activeDimension.id
             });
+          }
+
+          // Auto-parse Expense for 'Wealth' dimension
+          if (activeDimension?.dimension_name === 'Wealth') {
+            try {
+              const expenseResult = await analyze(finalContent, 'Expense');
+              const parsedExpenses = parseExpenseResult(expenseResult);
+              if (parsedExpenses && parsedExpenses.length > 0) {
+                const newExpenses = parsedExpenses.map(exp => ({
+                  record_id: savedRecord.id,
+                  user_id: user!.id,
+                  cycle_id: currentCycle!.id,
+                  category: exp.category || 'Other',
+                  item_name: exp.name || 'Expense',
+                  amount: exp.amount,
+                  expense_date: selectedDate
+                }));
+                await supabase.from('expenses').insert(newExpenses);
+              }
+            } catch (err) {
+              console.error('Failed to parse expenses:', err);
+            }
           }
 
           // Generate AI quote and Extract Tags
@@ -247,7 +269,7 @@ export default function Record() {
               .from('records')
               // @ts-ignore
               .update(updatePayload)
-              .eq('id', record.id);
+              .eq('id', savedRecord.id);
           }
           showCustomDialog('Success', `${activeTab} record saved!`);
         } else {
@@ -444,7 +466,7 @@ export default function Record() {
               />
               <span className="text-sm font-medium text-gray-800 flex items-center gap-2">
                 <span className="text-amber-500 text-lg">🏆</span>
-                标记为里程碑 (Mark as Milestone)
+                Mark as Milestone
               </span>
             </label>
 
