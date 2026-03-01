@@ -321,8 +321,8 @@ export default function Record() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 flex justify-center font-sans text-gray-900">
-      <div className="w-full max-w-md bg-white min-h-screen relative shadow-xl overflow-hidden flex flex-col">
+    <div className="h-[100dvh] bg-gray-50 flex justify-center font-sans text-gray-900 overflow-hidden">
+      <div className="w-full max-w-md bg-white h-full relative shadow-xl flex flex-col">
 
         <header className="px-4 py-2 bg-white flex flex-col flex-shrink-0 relative z-10">
           <div className="flex items-center justify-between h-11">
@@ -450,7 +450,10 @@ export default function Record() {
           </div>
         </main>
 
-        <div className="bg-white px-4 py-3 pb-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-gray-100 flex gap-3 z-20 sticky bottom-0">
+        <div
+          className="bg-white px-4 py-3 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-gray-100 flex gap-3 z-20 sticky bottom-0"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+        >
           <button
             onClick={handleSaveRecord}
             disabled={saving || analyzing}
