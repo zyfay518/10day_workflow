@@ -112,99 +112,114 @@ export default function Report() {
       </header>
 
       <main className="flex-1 px-4 space-y-4 pt-2 overflow-y-auto">
-        {/* Overall Trend Line Chart */}
-        <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="text-[#9DC5EF]" size={24} />
-            <h2 className="font-bold text-gray-800">Growth Trend</h2>
-          </div>
-          <div className="h-48 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={trendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
-                <Tooltip />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                <Line type="monotone" dataKey="Average" stroke="#FFB3C1" strokeWidth={3} dot={{ r: 4, fill: "#FFB3C1", strokeWidth: 0 }} />
-                {dimensions.map(dim => (
-                  <Line key={dim.id} type="monotone" dataKey={dim.dimension_name} stroke={dim.color_code} strokeWidth={1.5} dot={false} opacity={0.6} />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        {selectedCycle && (
-          <>
-            <div className="flex items-center justify-between mt-6 mb-2">
-              <h2 className="font-bold text-gray-800 text-lg">Stage Insights</h2>
-              <select
-                value={selectedCycleId || ""}
-                onChange={(e) => setSelectedCycleId(Number(e.target.value))}
-                className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg block px-3 py-1.5 outline-none"
-              >
-                {completedCycles.map(cycle => (
-                  <option key={cycle.id} value={cycle.id}>Period {cycle.cycle_number}</option>
-                ))}
-              </select>
+        {completedCycles.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-64 mt-12 text-center px-4">
+            <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 border border-blue-100">
+              <Brain size={32} className="text-[#9DC5EF]" />
             </div>
-
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Awaiting Data</h2>
+            <p className="text-sm text-gray-500 leading-relaxed">
+              Your Cognitive Report relies on multi-dimensional AI evaluations generated at the end of each period.<br /><br />
+              Keep writing daily records and completing your goals! Your radar chart and growth trends will appear here after you finish your first Period.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Overall Trend Line Chart */}
             <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-2">
-                  <Target className="text-[#FFB3C1]" size={24} />
-                  <h2 className="font-bold text-gray-800">Period Snapshot</h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-gray-400">Avg. Score</p>
-                  <p className="text-2xl font-black text-gray-800">{currentCycleAvgScore}</p>
-                </div>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="text-[#9DC5EF]" size={24} />
+                <h2 className="font-bold text-gray-800">Growth Trend</h2>
               </div>
-              <div className="h-56 w-full">
+              <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                    <PolarGrid stroke="#F3F4F6" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#6B7280', fontSize: 10 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <LineChart data={trendData} margin={{ top: 5, right: 10, left: -25, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F3F4F6" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
                     <Tooltip />
-                    <Radar name="Score" dataKey="A" stroke="#9DC5EF" fill="#9DC5EF" fillOpacity={0.4} />
-                  </RadarChart>
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
+                    <Line type="monotone" dataKey="Average" stroke="#FFB3C1" strokeWidth={3} dot={{ r: 4, fill: "#FFB3C1", strokeWidth: 0 }} />
+                    {dimensions.map(dim => (
+                      <Line key={dim.id} type="monotone" dataKey={dim.dimension_name} stroke={dim.color_code} strokeWidth={1.5} dot={false} opacity={0.6} />
+                    ))}
+                  </LineChart>
                 </ResponsiveContainer>
               </div>
             </section>
 
-            {topTags.length > 0 && (
-              <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                  <Tag size={24} className="text-indigo-400" />
-                  Growth Tags
-                </h2>
-                <div className="flex flex-wrap gap-2">
-                  {topTags.map((tag) => (
-                    <div key={tag.id} className="px-3 py-1.5 rounded-lg border bg-blue-50 border-blue-100 text-blue-600 text-sm">
-                      {tag.tag_name} <span className="text-[10px] opacity-70 ml-1">{tag.frequency}</span>
-                    </div>
-                  ))}
+            {selectedCycle && (
+              <>
+                <div className="flex items-center justify-between mt-6 mb-2">
+                  <h2 className="font-bold text-gray-800 text-lg">Stage Insights</h2>
+                  <select
+                    value={selectedCycleId || ""}
+                    onChange={(e) => setSelectedCycleId(Number(e.target.value))}
+                    className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg block px-3 py-1.5 outline-none"
+                  >
+                    {completedCycles.map(cycle => (
+                      <option key={cycle.id} value={cycle.id}>Period {cycle.cycle_number}</option>
+                    ))}
+                  </select>
                 </div>
-              </section>
-            )}
 
-            <section className="space-y-3 pb-8">
-              <h2 className="font-bold text-gray-800 flex items-center gap-2">
-                <Brain size={24} className="text-[#E8C996]" />
-                AI Analysis
-              </h2>
-              {reports.map((report) => {
-                const dim = dimensions.find(d => d.id === report.dimension_id);
-                return (
-                  <div key={report.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                    <p className="font-bold text-sm text-gray-800 mb-2">{dim ? dim.dimension_name : "Overall Summary"}</p>
-                    <div className="text-sm text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: report.content.replace(/\n/g, '<br />') }} />
+                <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="flex items-center gap-2">
+                      <Target className="text-[#FFB3C1]" size={24} />
+                      <h2 className="font-bold text-gray-800">Period Snapshot</h2>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] text-gray-400">Avg. Score</p>
+                      <p className="text-2xl font-black text-gray-800">{currentCycleAvgScore}</p>
+                    </div>
                   </div>
-                );
-              })}
-            </section>
+                  <div className="h-56 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                        <PolarGrid stroke="#F3F4F6" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#6B7280', fontSize: 10 }} />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                        <Tooltip />
+                        <Radar name="Score" dataKey="A" stroke="#9DC5EF" fill="#9DC5EF" fillOpacity={0.4} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </section>
+
+                {topTags.length > 0 && (
+                  <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+                      <Tag size={24} className="text-indigo-400" />
+                      Growth Tags
+                    </h2>
+                    <div className="flex flex-wrap gap-2">
+                      {topTags.map((tag) => (
+                        <div key={tag.id} className="px-3 py-1.5 rounded-lg border bg-blue-50 border-blue-100 text-blue-600 text-sm">
+                          {tag.tag_name} <span className="text-[10px] opacity-70 ml-1">{tag.frequency}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                <section className="space-y-3 pb-8">
+                  <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                    <Brain size={24} className="text-[#E8C996]" />
+                    AI Analysis
+                  </h2>
+                  {reports.map((report) => {
+                    const dim = dimensions.find(d => d.id === report.dimension_id);
+                    return (
+                      <div key={report.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
+                        <p className="font-bold text-sm text-gray-800 mb-2">{dim ? dim.dimension_name : "Overall Summary"}</p>
+                        <div className="text-sm text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: report.content.replace(/\n/g, '<br />') }} />
+                      </div>
+                    );
+                  })}
+                </section>
+              </>
+            )}
           </>
         )}
       </main>
