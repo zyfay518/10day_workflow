@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAIPrompts } from './useAIPrompts';
+import { useUserProfile } from './useUserProfile';
 
-const DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
+const ENV_DEEPSEEK_API_KEY = import.meta.env.VITE_DEEPSEEK_API_KEY;
 const DEEPSEEK_API_URL = import.meta.env.VITE_DEEPSEEK_API_URL || 'https://api.deepseek.com/v1/chat/completions';
 
 interface ExpenseItem {
@@ -22,9 +23,16 @@ export function useAIAnalysis(userId?: string) {
     const [error, setError] = useState<string | null>(null);
 
     const { getPrompt } = useAIPrompts(userId);
+    const { profile } = useUserProfile(userId);
 
     const analyze = useCallback(
         async (content: string, dimension: string): Promise<string> => {
+            const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+            if (!apiKey) {
+                console.warn('AI Analysis skipped: No API key found in env or user profile.');
+                return '';
+            }
+
             if (!content.trim()) {
                 throw new Error('Content cannot be empty');
             }
@@ -47,11 +55,15 @@ export function useAIAnalysis(userId?: string) {
                     prompt = prompt.replace(/\{\{content\}\}/g, content);
                 }
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                 const response = await fetch(DEEPSEEK_API_URL, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                        Authorization: `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
                         model: 'deepseek-chat',
@@ -63,6 +75,8 @@ export function useAIAnalysis(userId?: string) {
                         max_tokens: 500,
                     }),
                 });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) {
                     throw new Error(`API request failed: ${response.status}`);
@@ -105,17 +119,24 @@ export function useAIAnalysis(userId?: string) {
 
     const generateQuote = useCallback(
         async (content: string): Promise<string> => {
+            const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+            if (!apiKey) return '';
+
             if (!content.trim()) return '';
 
             try {
                 let prompt = getPrompt('history_quote');
                 prompt = prompt.replace(/\{\{content\}\}/g, content);
 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                 const response = await fetch(DEEPSEEK_API_URL, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                        Authorization: `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
                         model: 'deepseek-chat',
@@ -127,6 +148,8 @@ export function useAIAnalysis(userId?: string) {
                         max_tokens: 100,
                     }),
                 });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) return '';
 
@@ -142,14 +165,21 @@ export function useAIAnalysis(userId?: string) {
 
     const extractTags = useCallback(
         async (content: string): Promise<string[]> => {
+            const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+            if (!apiKey) return [];
+
             if (!content.trim()) return [];
 
             try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
+
                 const response = await fetch(DEEPSEEK_API_URL, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                        Authorization: `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
                         model: 'deepseek-chat',
@@ -161,6 +191,8 @@ export function useAIAnalysis(userId?: string) {
                         max_tokens: 50,
                     }),
                 });
+
+                clearTimeout(timeoutId);
 
                 if (!response.ok) return [];
 
@@ -178,20 +210,33 @@ export function useAIAnalysis(userId?: string) {
 
     const splitDimensions = useCallback(
         async (content: string): Promise<SplitDimensionItem[]> => {
+            const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+            if (!apiKey) {
+                console.warn('AI splitDimensions skipped: No API key.');
+                return [];
+            }
+
             if (!content.trim()) return [];
 
             setAnalyzing(true);
             setError(null);
 
             try {
+                console.log('splitDimensions: getting prompt...');
                 let prompt = getPrompt('record_split_dimensions');
+                console.log('splitDimensions: raw prompt:', prompt);
                 prompt = prompt.replace(/\{\{content\}\}/g, content);
+                console.log('splitDimensions: calling DeepSeek API...');
+
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                 const response = await fetch(DEEPSEEK_API_URL, {
                     method: 'POST',
+                    signal: controller.signal,
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                        Authorization: `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
                         model: 'deepseek-chat',
@@ -204,11 +249,15 @@ export function useAIAnalysis(userId?: string) {
                     }),
                 });
 
+                clearTimeout(timeoutId);
+                console.log('splitDimensions: API returned', response.status);
+
                 if (!response.ok) {
                     throw new Error(`API request failed: ${response.status}`);
                 }
 
                 const data = await response.json();
+                console.log('splitDimensions: API data:', data);
                 let aiText = data.choices[0]?.message?.content?.trim() || '[]';
 
                 const jsonMatch = aiText.match(/\[[\s\S]*\]/);

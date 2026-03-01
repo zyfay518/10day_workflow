@@ -48,7 +48,7 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       const { data, error: fetchError } = await supabase
         .from('user_profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (fetchError) throw fetchError;
@@ -79,7 +79,7 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
           ...updates,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', userId);
+        .eq('user_id', userId);
 
       if (updateError) throw updateError;
 

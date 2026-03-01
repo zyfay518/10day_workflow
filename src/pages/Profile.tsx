@@ -31,17 +31,31 @@ export default function Profile() {
   const [promptSaveSuccess, setPromptSaveSuccess] = useState(false);
 
   const handleSaveApiKey = async () => {
-    if (!user || !apiKey.trim()) return;
+    if (!user || !apiKey.trim()) {
+      alert("Missing user or API key");
+      return;
+    }
 
-    const success = await updateProfile({
-      ai_api_key: apiKey.trim(),
-      ai_service_provider: 'deepseek',
-    });
+    try {
+      console.log('Attempting to save API Key for user:', user.id);
+      const success = await updateProfile({
+        ai_api_key: apiKey.trim(),
+        ai_service_provider: 'deepseek',
+      });
 
-    if (success) {
-      setShowApiKeyDialog(false);
-      setShowSuccess(true);
-      setTimeout(() => setShowSuccess(false), 2000);
+      console.log('updateProfile returned:', success);
+
+      if (success) {
+        setShowApiKeyDialog(false);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 2000);
+      } else {
+        alert("Save failed. The backend update request returned false.");
+      }
+    } catch (err) {
+      console.error('handleSaveApiKey exception:', err);
+      // @ts-ignore
+      alert("Error: " + (err.message || 'Unknown error'));
     }
   };
 
@@ -266,7 +280,7 @@ export default function Profile() {
                 disabled={!apiKey.trim()}
                 className="flex-1 h-10 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-medium disabled:opacity-50"
               >
-                Save
+                Save Key
               </button>
             </div>
           </div>

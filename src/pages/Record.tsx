@@ -165,14 +165,24 @@ export default function Record() {
 
   // Save current dimension record (Entry point)
   const handleSaveRecord = async () => {
+    console.log('--- handleSaveRecord Triggered ---');
+    console.log('Note content:', note);
     if (!note.trim()) {
       showCustomDialog('Notice', 'Please enter record content');
       return;
     }
 
-    const items = await splitDimensions(note);
-    setParsedDimensions(items);
-    setShowAIModal(true);
+    try {
+      console.log('Calling splitDimensions...');
+      const items = await splitDimensions(note);
+      console.log('splitDimensions returned items:', items);
+      setParsedDimensions(items);
+      console.log('Setting showAIModal to true');
+      setShowAIModal(true);
+      console.log('State updated, wait for render');
+    } catch (e) {
+      console.error('handleSaveRecord error caught:', e);
+    }
   };
 
   const handleSkipAI = async () => {
@@ -223,9 +233,9 @@ export default function Record() {
         let savedRecordId;
 
         if (existing) {
-          const existingRecord = existing as any;
+          const existingRecord = existing;
           finalContent = existingRecord.content + '\n\n' + item.content;
-          const updatePayload: any = { content: finalContent, word_count: finalContent.length };
+          const updatePayload = { content: finalContent, word_count: finalContent.length };
           const { data, error } = await supabase.from('records')
             .update(updatePayload)
             .eq('id', existingRecord.id)
@@ -233,7 +243,7 @@ export default function Record() {
           if (error) throw error;
           savedRecordId = data?.id;
         } else {
-          const insertPayload: any = {
+          const insertPayload = {
             user_id: user!.id,
             cycle_id: currentCycle!.id,
             dimension_id: dim.id,
@@ -283,7 +293,7 @@ export default function Record() {
         }
 
         if (aiQuote) {
-          const quotePayload: any = { ai_quote: aiQuote };
+          const quotePayload = { ai_quote: aiQuote };
           await supabase.from('records').update(quotePayload).eq('id', savedRecordId);
         }
       }
@@ -478,6 +488,15 @@ export default function Record() {
             </div>
           </div>
         )}
+
+        <AIResultModal
+          isOpen={showAIModal}
+          items={parsedDimensions}
+          availableDimensions={availableDimensions}
+          onConfirm={handleConfirmAI}
+          onCancel={() => setShowAIModal(false)}
+          onSkip={handleSkipAI}
+        />
       </div>
     </div>
   );
