@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/* Prevent text selection to feel like a native app */
+* {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  user-select: none; /* Non-prefixed version, currently supported by Chrome, Opera and Firefox */
+}
+
+/* Allow text selection in form inputs */
+input, textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+/* Prevent double-tap to zoom and pull-to-refresh rubber banding */
+html, body {
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
