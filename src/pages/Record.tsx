@@ -240,17 +240,9 @@ export default function Record() {
                   amount: exp.amount,
                   expense_date: selectedDate
                 }));
-                const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
-                if (insertError) {
-                  window.alert("Database Insert Error: " + insertError.message);
-                } else {
-                  window.alert(`Successfully auto-parsed ${newExpenses.length} expense(s)!`);
-                }
-              } else {
-                window.alert("AI returned no expenses or invalid format:\\n" + expenseResult);
+                await supabase.from('expenses').insert(newExpenses);
               }
-            } catch (err: any) {
-              window.alert("Exception during AI parse:\\n" + err?.message);
+            } catch (err) {
               console.error('Failed to parse expenses:', err);
             }
           }
@@ -318,17 +310,9 @@ export default function Record() {
                 amount: exp.amount,
                 expense_date: selectedDate
               }));
-              const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
-              if (insertError) {
-                window.alert("Database Insert Error: " + insertError.message);
-              } else {
-                window.alert(`Successfully auto-parsed ${newExpenses.length} expense(s)!`);
-              }
-            } else {
-              window.alert("AI returned no expenses or invalid format:\\n" + expenseResult);
+              await supabase.from('expenses').insert(newExpenses);
             }
-          } catch (err: any) {
-            window.alert("Exception during AI parse:\\n" + err?.message);
+          } catch (err) {
             console.error('Failed to parse expenses:', err);
           }
         }
