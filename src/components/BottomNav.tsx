@@ -16,7 +16,13 @@ export default function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 h-[84px] pb-5 px-6 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] w-full max-w-md mx-auto">
+    <nav
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] w-full max-w-md mx-auto px-6 pt-2"
+      style={{
+        height: 'calc(84px + env(safe-area-inset-bottom))',
+        paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))'
+      }}
+    >
       {navItems.map((item) => {
         const isActive = path === item.path;
         const Icon = item.icon;
