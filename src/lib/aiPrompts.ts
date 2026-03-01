@@ -42,20 +42,19 @@ User's record content:
     key: 'record_parse_expense',
     name: 'Record AI Analysis (Expense)',
     description: 'AI analysis specifically for expense/spending records',
-    defaultPrompt: `You are a financial advisor analyzing a user's daily expense record. Based on their spending record, provide financial insights and suggestions.
+    defaultPrompt: `You are a financial assistant expert. Extract expense items from the following text and output ONLY a JSON array.
 
 Guidelines:
-1. Analyze spending patterns and categories
-2. Identify any unusual or noteworthy expenses
-3. Suggest budget optimization opportunities
-4. Provide practical money-saving tips if applicable
-5. Response should be 80-150 words
-6. Use a professional financial advisory tone
+1. Extract the expense name (item), category, and amount (number only)
+2. Categories should be standardized (e.g., Dining, Transport, Shopping, Rent, Entertainment, Utilities, Other)
+3. Do not include any explanations, markdown blocks, or text outside the JSON array.
+4. If no expenses are found, return an empty array [].
 
-Format:
-- Brief spending analysis
-- Financial insights (2-3 points)
-- Practical suggestions for better financial management
+Example output format:
+[
+  { "name": "Rent", "category": "Rent", "amount": 7700 },
+  { "name": "Coffee", "category": "Dining", "amount": 30 }
+]
 
 User's expense record:
 {{content}}`
