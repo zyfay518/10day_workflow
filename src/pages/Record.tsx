@@ -26,8 +26,8 @@ export default function Record() {
   // The 'activeDimension' logic below will be refactored in Phase 3.
   // For Phase 2, we just keep the note state tied to the day.
 
-  // 获取或保存记录 (In Phase 2/3, we save the raw draft to 'Other' dimension temporarily before AI parse)
-  const defaultDimension = dimensions.find(d => d.dimension_name === 'Other');
+  // 获取或保存记录 (In Phase 2/3, we save the raw draft to a default dimension temporarily before AI parse)
+  const defaultDimension = dimensions.find(d => d.dimension_name === 'Other') || dimensions[0];
 
   const { record, saving, saveRecord } = useRecords({
     userId: user?.id,
