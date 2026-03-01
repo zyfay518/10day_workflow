@@ -15,13 +15,15 @@ import { supabase } from "../lib/supabase";
 import AIResultModal from "../components/AIResultModal";
 import { SplitDimensionItem } from "../hooks/useAIAnalysis";
 
+import { getLocalDateString } from "../lib/utils";
+
 export default function Record() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   // No more tabs, we default to the entire day's record view.
@@ -321,8 +323,9 @@ export default function Record() {
 
 
   return (
-    <div className="h-[100dvh] bg-gray-50 flex justify-center font-sans text-gray-900 overflow-hidden">
-      <div className="w-full max-w-md bg-white h-full relative shadow-xl flex flex-col">
+    <div className="fixed inset-0 bg-gray-50 flex justify-center font-sans text-gray-900 overflow-hidden"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      <div className="w-full max-w-md bg-white h-full relative shadow-xl flex flex-col mx-auto">
 
         <header className="px-4 py-2 bg-white flex flex-col flex-shrink-0 relative z-10">
           <div className="flex items-center justify-between h-11">

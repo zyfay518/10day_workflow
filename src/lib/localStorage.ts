@@ -6,6 +6,7 @@
  */
 
 import { Database } from '../types/database';
+import { getLocalDateString } from "./utils";
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 type Dimension = Database['public']['Tables']['dimensions']['Row'];
@@ -757,7 +758,7 @@ export function initTestData(): void {
   for (let day = 0; day < 3; day++) {
     const date = new Date(today);
     date.setDate(date.getDate() - day);
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = getLocalDateString(date);
 
     // 为每个维度创建一条记录
     dimensions.forEach((dim, index) => {
@@ -796,7 +797,7 @@ export function initTestData(): void {
       user_id: userId,
       dimension_id: item.dim,
       cycle_id: activeCycleId,
-      record_date: date.toISOString().split('T')[0],
+      record_date: getLocalDateString(date),
       content: item.content,
       media_urls: [],
       created_at: new Date().toISOString(),
@@ -814,7 +815,7 @@ export function initTestData(): void {
       id: generateId() + i,
       user_id: userId,
       weight_kg: 70 - (i * 0.2) + (Math.random() * 0.5), // 模拟缓慢下降趋势
-      record_date: date.toISOString().split('T')[0],
+      record_date: getLocalDateString(date),
       notes: i % 5 === 0 ? '早起空腹称重' : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -839,7 +840,7 @@ export function initTestData(): void {
         category: categories[Math.floor(Math.random() * 4)],
         item_name: '测试消费项目',
         amount: Math.floor(Math.random() * 200) + 20,
-        expense_date: date.toISOString().split('T')[0],
+        expense_date: getLocalDateString(date),
         created_at: new Date().toISOString()
       });
     }
@@ -852,7 +853,7 @@ export function initTestData(): void {
       category: '收入',
       item_name: '工资收入',
       amount: 15000,
-      expense_date: monthBase.toISOString().split('T')[0],
+      expense_date: getLocalDateString(monthBase),
       created_at: new Date().toISOString()
     });
   }
@@ -894,7 +895,7 @@ export function initTestData(): void {
       user_id: userId,
       dimension_id: 3, // 投资
       cycle_id: activeCycleId,
-      record_date: today.toISOString().split('T')[0],
+      record_date: getLocalDateString(today),
       content: '今日定投了沪深300指数基金。在市场情绪低迷时，反而要坚持执行纪律，避免受到噪音干扰。核心是关注企业的长期价值而非短期波动。',
       media_urls: [],
       created_at: new Date().toISOString(),
@@ -905,7 +906,7 @@ export function initTestData(): void {
       user_id: userId,
       dimension_id: 6, // 其他
       cycle_id: activeCycleId,
-      record_date: today.toISOString().split('T')[0],
+      record_date: getLocalDateString(today),
       content: '今天在公园散步，突然悟到：生活的意义不在于终点，而在于你如何觉察每一个当下。这种正念的感觉非常棒。',
       media_urls: [],
       created_at: new Date().toISOString(),

@@ -9,6 +9,8 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
 import { useRecords } from "../hooks/useRecords";
 
+import { getLocalDateString } from "../lib/utils";
+
 export default function Home() {
   const { user } = useAuth();
   const { profile } = useUserProfile(user?.id);
@@ -39,7 +41,7 @@ export default function Home() {
 
   // Load goals
   const { goals: cycleGoals } = useCycleGoals(user?.id, currentCycle?.id);
-  const today = new Date().toISOString().split('T')[0];
+  const today = getLocalDateString();
   const { goals: dailyGoals } = useDailyGoals(user?.id, today);
 
   // Generate 37 dots representing cycles (use real cycle data where available)

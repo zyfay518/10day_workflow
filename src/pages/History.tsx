@@ -8,6 +8,7 @@ import { useDimensions } from "../hooks/useDimensions";
 import { supabase } from "../lib/supabase";
 import { Database } from "../types/database";
 import DateRangePicker from "../components/DateRangePicker";
+import { getLocalDateString } from "../lib/utils";
 import { useMilestones } from "../hooks/useMilestones";
 import DynamicIcon from "../components/DynamicIcon";
 
@@ -59,37 +60,39 @@ export default function History() {
   const { startDate, endDate } = useMemo(() => {
     const today = new Date();
 
+    const todayStr = getLocalDateString(today);
+
     switch (dateRangeType) {
       case "current":
         return {
-          startDate: selectedCycle?.start_date || today.toISOString().split('T')[0],
-          endDate: selectedCycle?.end_date || today.toISOString().split('T')[0]
+          startDate: selectedCycle?.start_date || todayStr,
+          endDate: selectedCycle?.end_date || todayStr
         };
       case "2weeks": {
         const twoWeeksAgo = new Date(today);
         twoWeeksAgo.setDate(today.getDate() - 14);
         return {
-          startDate: twoWeeksAgo.toISOString().split('T')[0],
-          endDate: today.toISOString().split('T')[0]
+          startDate: getLocalDateString(twoWeeksAgo),
+          endDate: todayStr
         };
       }
       case "1month": {
         const oneMonthAgo = new Date(today);
         oneMonthAgo.setDate(today.getDate() - 30);
         return {
-          startDate: oneMonthAgo.toISOString().split('T')[0],
-          endDate: today.toISOString().split('T')[0]
+          startDate: getLocalDateString(oneMonthAgo),
+          endDate: todayStr
         };
       }
       case "custom":
         return {
-          startDate: customStartDate || today.toISOString().split('T')[0],
-          endDate: customEndDate || today.toISOString().split('T')[0]
+          startDate: customStartDate || todayStr,
+          endDate: customEndDate || todayStr
         };
       default:
         return {
-          startDate: today.toISOString().split('T')[0],
-          endDate: today.toISOString().split('T')[0]
+          startDate: todayStr,
+          endDate: todayStr
         };
     }
   }, [dateRangeType, customStartDate, customEndDate, selectedCycle]);

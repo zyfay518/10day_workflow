@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
+import { getLocalDateString } from "../lib/utils";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -76,7 +77,7 @@ export default function Goals() {
     for (let i = 0; i < 10; i++) {
       const date = new Date(startDate);
       date.setDate(date.getDate() + i);
-      dates.push(date.toISOString().split('T')[0]);
+      dates.push(getLocalDateString(date));
     }
     return dates;
   };

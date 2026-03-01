@@ -24,10 +24,20 @@ body {
   overscroll-behavior-y: none;
 }
 
-/* Handle mobile safe areas (notches, home bars) globally */
-body {
+/* Handle mobile safe areas (notches, home bars) selectively */
+.safe-pt {
   padding-top: env(safe-area-inset-top);
+}
+
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-px {
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
-  /* The bottom area is handled directly by BottomNav and specific pages to avoid scroll gaps */
+}
+
+body {
+  @apply safe-px;
 }

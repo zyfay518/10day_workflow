@@ -16,13 +16,15 @@ interface ExpenseItem {
   icon?: string;
 }
 
+import { getLocalDateString } from "../lib/utils";
+
 export default function Expense() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
-  const selectedDate = new Date().toISOString().split('T')[0];
+  const selectedDate = getLocalDateString();
 
   // Get "Expense" dimension
   const expenseDimension = dimensions.find(d => d.dimension_name === 'Expense');
