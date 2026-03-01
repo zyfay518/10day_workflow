@@ -19,18 +19,20 @@ export default function Record() {
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
-  const [activeTab, setActiveTab] = useState(dimensions[0]?.dimension_name || "Work");
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const dateInputRef = useRef<HTMLInputElement>(null);
 
-  // 获取当前激活维度的ID
-  const activeDimension = dimensions.find(d => d.dimension_name === activeTab);
+  // No more tabs, we default to the entire day's record view.
+  // The 'activeDimension' logic below will be refactored in Phase 3.
+  // For Phase 2, we just keep the note state tied to the day.
 
-  // 获取或保存记录
+  // 获取或保存记录 (In Phase 2/3, we save the raw draft to 'Other' dimension temporarily before AI parse)
+  const defaultDimension = dimensions.find(d => d.dimension_name === 'Other');
+
   const { record, saving, saveRecord } = useRecords({
     userId: user?.id,
     cycleId: currentCycle?.id,
-    dimensionId: activeDimension?.id,
+    dimensionId: defaultDimension?.id,
     date: selectedDate,
   });
 
@@ -51,11 +53,11 @@ export default function Record() {
   // AI分析
   const { analyzing, result: aiResult, analyze, generateQuote, extractTags, clearResult, parseExpenseResult } = useAIAnalysis(user?.id);
 
-  // 当切换维度或日期时，更新 note
+  // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
     setNote(record?.content || "");
     setIsMilestone(false);
-  }, [record?.content, activeTab, selectedDate]);
+  }, [record?.content, selectedDate]);
 
   // 加载附件
   useEffect(() => {
@@ -153,20 +155,7 @@ export default function Record() {
     }
   };
 
-  // Handle AI parsing
-  const handleAIParse = async () => {
-    if (!note.trim()) {
-      showCustomDialog('Notice', 'Please enter content before AI parsing');
-      return;
-    }
 
-    try {
-      const result = await analyze(note, activeTab);
-      showCustomDialog('AI Analysis Complete', result);
-    } catch (error) {
-      showCustomDialog('Error', error instanceof Error ? error.message : 'AI parsing failed');
-    }
-  };
 
   // Save current dimension record
   const handleSaveRecord = async () => {
@@ -214,64 +203,18 @@ export default function Record() {
 
         const savedRecord = await saveRecord(finalContent, 'published');
         if (savedRecord) {
-          if (isMilestone && activeDimension) {
+          if (isMilestone && defaultDimension) {
             await addMilestone({
               user_id: user!.id,
               event_date: selectedDate,
-              event_title: `Milestone: ${activeTab}`,
+              event_title: `Milestone: Journal`,
               event_description: finalContent,
               event_type: 'achievement',
-              related_dimension_id: activeDimension.id
+              related_dimension_id: defaultDimension.id
             });
           }
 
-          // Auto-parse Expense for 'Wealth' dimension
-          if (activeDimension?.dimension_name === 'Wealth') {
-            try {
-              const expenseResult = await analyze(finalContent, 'Expense');
-              const parsedExpenses = parseExpenseResult(expenseResult);
-              if (parsedExpenses && parsedExpenses.length > 0) {
-                const newExpenses = parsedExpenses.map(exp => ({
-                  record_id: savedRecord.id,
-                  user_id: user!.id,
-                  cycle_id: currentCycle!.id,
-                  category: exp.category || 'Other',
-                  item_name: exp.name || 'Expense',
-                  amount: exp.amount,
-                  expense_date: selectedDate
-                }));
-                await supabase.from('expenses').insert(newExpenses);
-              }
-            } catch (err) {
-              console.error('Failed to parse expenses:', err);
-            }
-          }
-
-          // Generate AI quote and Extract Tags
-          const [aiQuote, tags] = await Promise.all([
-            generateQuote(finalContent),
-            extractTags(finalContent)
-          ]);
-
-          if (tags.length > 0 && activeDimension) {
-            for (const tag of tags) {
-              addOrIncrementTag(tag, activeDimension.id);
-            }
-          }
-
-          // Update record with AI suggestions and quote
-          if ((aiResult || aiQuote) && activeDimension) {
-            const updatePayload: any = {
-              ai_suggestions: aiResult || record?.ai_suggestions,
-              ai_quote: aiQuote || record?.ai_quote
-            };
-            await supabase
-              .from('records')
-              // @ts-ignore
-              .update(updatePayload)
-              .eq('id', savedRecord.id);
-          }
-          showCustomDialog('Success', `${activeTab} record saved!`);
+          showCustomDialog('Success', `Record saved! (AI Parse to be implemented in Phase 3)`);
         } else {
           showCustomDialog('Failed', 'Save failed, please try again');
         }
@@ -284,81 +227,25 @@ export default function Record() {
       // No existing content or content unchanged, save directly
       const success = await saveRecord(note, 'published');
       if (success) {
-        if (isMilestone && activeDimension) {
+        if (isMilestone && defaultDimension) {
           await addMilestone({
             user_id: user!.id,
             event_date: selectedDate,
-            event_title: `Milestone: ${activeTab}`,
+            event_title: `Milestone: Journal`,
             event_description: note,
             event_type: 'achievement',
-            related_dimension_id: activeDimension.id
+            related_dimension_id: defaultDimension.id
           });
         }
 
-        // Auto-parse Expense for 'Wealth' dimension
-        if (activeDimension?.dimension_name === 'Wealth') {
-          try {
-            const expenseResult = await analyze(note, 'Expense');
-            const parsedExpenses = parseExpenseResult(expenseResult);
-            if (parsedExpenses && parsedExpenses.length > 0) {
-              const newExpenses = parsedExpenses.map(exp => ({
-                record_id: success.id,
-                user_id: user!.id,
-                cycle_id: currentCycle!.id,
-                category: exp.category || 'Other',
-                item_name: exp.name || 'Expense',
-                amount: exp.amount,
-                expense_date: selectedDate
-              }));
-              await supabase.from('expenses').insert(newExpenses);
-            }
-          } catch (err) {
-            console.error('Failed to parse expenses:', err);
-          }
-        }
-
-        // Generate AI quote and Extract Tags
-        const [aiQuote, tags] = await Promise.all([
-          generateQuote(note),
-          extractTags(note)
-        ]);
-
-        if (tags.length > 0 && activeDimension) {
-          for (const tag of tags) {
-            addOrIncrementTag(tag, activeDimension.id);
-          }
-        }
-
-        // Update record with AI suggestions and quote
-        if ((aiResult || aiQuote) && activeDimension) {
-          const updatePayload: any = {
-            ai_suggestions: aiResult,
-            ai_quote: aiQuote
-          };
-          await supabase
-            .from('records')
-            // @ts-ignore
-            .update(updatePayload)
-            .eq('id', (success as any)?.id || record?.id || 0);
-        }
-        showCustomDialog('Success', `${activeTab} record saved!`);
+        showCustomDialog('Success', `Record saved! (AI Parse to be implemented in Phase 3)`);
       } else {
         showCustomDialog('Failed', 'Save failed, please try again');
       }
     }
   };
 
-  // Complete today's records
-  const handleCompleteDay = () => {
-    const completedCount = Object.values(overviewStatus).filter(Boolean).length;
-    if (completedCount === dimensions.length) {
-      showCustomDialog('Congratulations', 'All dimension records for today are complete!', () => {
-        navigate('/');
-      });
-    } else {
-      showCustomDialog('Notice', `${dimensions.length - completedCount} dimension(s) remaining`);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center font-sans text-gray-900">
@@ -392,31 +279,13 @@ export default function Record() {
           </div>
         </header>
 
-        <div className="bg-white border-b border-gray-100 flex-shrink-0">
-          <div className="flex overflow-x-auto no-scrollbar px-4 pb-3 pt-1 items-center gap-5">
-            {dimensions.map((dim) => (
-              <button
-                key={dim.id}
-                onClick={() => setActiveTab(dim.dimension_name)}
-                className={cn(
-                  "flex flex-col items-center flex-shrink-0 transition-colors",
-                  activeTab === dim.dimension_name ? "text-gray-900 font-bold relative" : "text-gray-400 font-medium"
-                )}
-              >
-                <span className="text-[14px]">{dim.dimension_name}</span>
-                {activeTab === dim.dimension_name && (
-                  <div className="absolute -bottom-3 w-6 h-0.5 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] rounded-full" />
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
+
 
         <main className="flex-1 overflow-y-auto bg-[#F9FAFB] p-4 flex flex-col gap-4">
           <div className="bg-white rounded-[12px] p-4 shadow-sm min-h-[55%] flex flex-col relative">
             <textarea
               className="w-full flex-1 resize-none border-none p-0 text-base text-gray-700 placeholder:text-gray-300 focus:ring-0 leading-relaxed bg-transparent"
-              placeholder={`Record today's ${activeTab} details...`}
+              placeholder={`Pour your thoughts for today...`}
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -442,14 +311,6 @@ export default function Record() {
                 <Paperclip size={24} />
                 <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
               </label>
-              <button
-                onClick={handleAIParse}
-                disabled={analyzing}
-                className="ml-auto px-4 h-[48px] flex items-center justify-center rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-medium shadow-sm active:scale-95 hover:opacity-90 disabled:opacity-50"
-              >
-                <Bot size={20} className="mr-2" />
-                {analyzing ? 'Parsing...' : 'AI Parse'}
-              </button>
             </div>
 
             {/* 显示附件 */}
@@ -519,21 +380,10 @@ export default function Record() {
         <div className="bg-white px-4 py-3 pb-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t border-gray-100 flex gap-3 z-20 sticky bottom-0">
           <button
             onClick={handleSaveRecord}
-            disabled={saving}
-            className="flex-1 h-12 rounded-[8px] relative flex items-center justify-center font-medium active:bg-gray-50 transition-colors group bg-white active:scale-[0.98]"
+            disabled={saving || analyzing}
+            className="w-full h-14 rounded-full bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold shadow-lg hover:opacity-90 transition-all flex items-center justify-center"
           >
-            <div className="absolute inset-0 rounded-[8px] p-[2px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] -z-10 pointer-events-none">
-              <div className="w-full h-full bg-white rounded-[6px]" />
-            </div>
-            <span className="bg-gradient-to-r from-[#7BA5D6] to-[#E08596] bg-clip-text text-transparent font-bold">
-              {saving ? 'Saving...' : 'Save'}
-            </span>
-          </button>
-          <button
-            onClick={handleCompleteDay}
-            className="flex-1 h-12 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold shadow-lg shadow-blue-200/50 flex items-center justify-center active:brightness-95 transition-all active:scale-[0.98]"
-          >
-            Today Complete
+            {saving || analyzing ? 'Processing...' : 'Save & Organize'}
           </button>
         </div>
 

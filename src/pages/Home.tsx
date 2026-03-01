@@ -259,70 +259,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Cycle Goals Section */}
-        {cycleGoals.length > 0 && (
-          <section className="w-full mb-5">
-            <Link
-              to="/goals"
-              className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)] block hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-bold text-gray-800">10-Day Goals</h3>
-                <ChevronRight className="text-gray-400" size={18} />
-              </div>
-              <div className="space-y-2">
-                {cycleGoals.slice(0, 3).map((goal) => {
-                  const dim = dimensions.find(d => d.id === goal.dimension_id);
-                  return (
-                    <div key={goal.id} className="flex items-start gap-2">
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white mt-0.5"
-                        style={{ backgroundColor: dim?.color_code || '#999' }}
-                      >
-                        {dim?.dimension_name}
-                      </span>
-                      <p className="text-xs text-gray-700 flex-1 line-clamp-2">{goal.content}</p>
-                    </div>
-                  );
-                })}
-              </div>
-              {cycleGoals.length > 3 && (
-                <p className="text-xs text-gray-400 mt-3">+{cycleGoals.length - 3} more goals</p>
-              )}
-            </Link>
-          </section>
-        )}
 
-        {/* Today's Goals Section */}
-        {dailyGoals.length > 0 && (
-          <section className="w-full mb-5">
-            <div className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-sm font-bold text-gray-800">Today's Goals</h3>
-                <Link to="/goals" className="text-xs font-medium text-blue-600 hover:text-blue-700">
-                  View All
-                </Link>
-              </div>
-              <div className="space-y-2">
-                {dailyGoals.map((goal) => {
-                  const dim = dimensions.find(d => d.id === goal.dimension_id);
-                  return (
-                    <div key={goal.id} className="flex items-center gap-2">
-                      <Circle className="text-gray-300" size={14} />
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white"
-                        style={{ backgroundColor: dim?.color_code || '#999' }}
-                      >
-                        {dim?.dimension_name}
-                      </span>
-                      <p className="text-xs text-gray-700 flex-1">{goal.content}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
-        )}
 
         <section className="w-full mb-8 pt-4">
           <Link
