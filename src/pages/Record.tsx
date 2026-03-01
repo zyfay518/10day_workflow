@@ -240,9 +240,17 @@ export default function Record() {
                   amount: exp.amount,
                   expense_date: selectedDate
                 }));
-                await supabase.from('expenses').insert(newExpenses);
+                const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
+                if (insertError) {
+                  window.alert("Database Insert Error: " + insertError.message);
+                } else {
+                  window.alert(`Successfully auto-parsed ${newExpenses.length} expense(s)!`);
+                }
+              } else {
+                window.alert("AI returned no expenses or invalid format:\\n" + expenseResult);
               }
-            } catch (err) {
+            } catch (err: any) {
+              window.alert("Exception during AI parse:\\n" + err?.message);
               console.error('Failed to parse expenses:', err);
             }
           }
@@ -293,6 +301,36 @@ export default function Record() {
             event_type: 'achievement',
             related_dimension_id: activeDimension.id
           });
+        }
+
+        // Auto-parse Expense for 'Wealth' dimension
+        if (activeDimension?.dimension_name === 'Wealth') {
+          try {
+            const expenseResult = await analyze(note, 'Expense');
+            const parsedExpenses = parseExpenseResult(expenseResult);
+            if (parsedExpenses && parsedExpenses.length > 0) {
+              const newExpenses = parsedExpenses.map(exp => ({
+                record_id: success.id,
+                user_id: user!.id,
+                cycle_id: currentCycle!.id,
+                category: exp.category || 'Other',
+                item_name: exp.name || 'Expense',
+                amount: exp.amount,
+                expense_date: selectedDate
+              }));
+              const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
+              if (insertError) {
+                window.alert("Database Insert Error: " + insertError.message);
+              } else {
+                window.alert(`Successfully auto-parsed ${newExpenses.length} expense(s)!`);
+              }
+            } else {
+              window.alert("AI returned no expenses or invalid format:\\n" + expenseResult);
+            }
+          } catch (err: any) {
+            window.alert("Exception during AI parse:\\n" + err?.message);
+            console.error('Failed to parse expenses:', err);
+          }
         }
 
         // Generate AI quote and Extract Tags
