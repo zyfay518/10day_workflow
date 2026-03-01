@@ -12,6 +12,8 @@ import { useAIAnalysis } from "../hooks/useAIAnalysis";
 import { useMilestones } from "../hooks/useMilestones";
 import { useGrowthTags } from "../hooks/useGrowthTags";
 import { supabase } from "../lib/supabase";
+import AIResultModal from "../components/AIResultModal";
+import { SplitDimensionItem } from "../hooks/useAIAnalysis";
 
 export default function Record() {
   const navigate = useNavigate();
@@ -41,6 +43,10 @@ export default function Record() {
   const [showDialog, setShowDialog] = useState(false);
   const [dialogConfig, setDialogConfig] = useState({ title: '', message: '', onConfirm: () => { } });
 
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [parsedDimensions, setParsedDimensions] = useState<SplitDimensionItem[]>([]);
+  const availableDimensions = dimensions.map(d => d.dimension_name);
+
   const { addMilestone } = useMilestones(user?.id);
   const { addOrIncrementTag } = useGrowthTags(user?.id);
 
@@ -51,7 +57,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, generateQuote, extractTags, clearResult, parseExpenseResult } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult } = useAIAnalysis(user?.id);
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
@@ -157,91 +163,148 @@ export default function Record() {
 
 
 
-  // Save current dimension record
+  // Save current dimension record (Entry point)
   const handleSaveRecord = async () => {
     if (!note.trim()) {
       showCustomDialog('Notice', 'Please enter record content');
       return;
     }
 
-    // Check if record exists and has content, and user modified it
-    if (record?.content && record.content.trim() && note !== record.content) {
-      // Show options dialog: Overwrite, Cancel, or Append
-      const dialogElement = document.createElement('div');
-      dialogElement.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-      dialogElement.innerHTML = `
-        <div class="bg-white rounded-[12px] p-6 max-w-sm mx-4 shadow-xl">
-          <h3 class="text-lg font-bold text-gray-800 mb-3">Content Already Exists</h3>
-          <p class="text-sm text-gray-600 mb-6">This record already has content. What would you like to do?</p>
-          <div class="flex flex-col gap-2">
-            <button id="overwrite-btn" class="w-full h-10 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-medium">
-              Overwrite
-            </button>
-            <button id="append-btn" class="w-full h-10 rounded-[8px] border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">
-              Append Content
-            </button>
-            <button id="cancel-btn" class="w-full h-10 rounded-[8px] border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">
-              Cancel
-            </button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(dialogElement);
+    const items = await splitDimensions(note);
+    setParsedDimensions(items);
+    setShowAIModal(true);
+  };
 
-      // Handle button clicks
-      const handleChoice = async (choice: 'overwrite' | 'append' | 'cancel') => {
-        document.body.removeChild(dialogElement);
-
-        if (choice === 'cancel') {
-          return;
-        }
-
-        let finalContent = note;
-        if (choice === 'append') {
-          finalContent = record.content + '\n\n' + note;
-        }
-
-        const savedRecord = await saveRecord(finalContent, 'published');
-        if (savedRecord) {
-          if (isMilestone && defaultDimension) {
-            await addMilestone({
-              user_id: user!.id,
-              event_date: selectedDate,
-              event_title: `Milestone: Journal`,
-              event_description: finalContent,
-              event_type: 'achievement',
-              related_dimension_id: defaultDimension.id
-            });
-          }
-
-          showCustomDialog('Success', `Record saved! (AI Parse to be implemented in Phase 3)`);
-        } else {
-          showCustomDialog('Failed', 'Save failed, please try again');
-        }
-      };
-
-      dialogElement.querySelector('#overwrite-btn')?.addEventListener('click', () => handleChoice('overwrite'));
-      dialogElement.querySelector('#append-btn')?.addEventListener('click', () => handleChoice('append'));
-      dialogElement.querySelector('#cancel-btn')?.addEventListener('click', () => handleChoice('cancel'));
-    } else {
-      // No existing content or content unchanged, save directly
-      const success = await saveRecord(note, 'published');
-      if (success) {
-        if (isMilestone && defaultDimension) {
-          await addMilestone({
-            user_id: user!.id,
-            event_date: selectedDate,
-            event_title: `Milestone: Journal`,
-            event_description: note,
-            event_type: 'achievement',
-            related_dimension_id: defaultDimension.id
-          });
-        }
-
-        showCustomDialog('Success', `Record saved! (AI Parse to be implemented in Phase 3)`);
-      } else {
-        showCustomDialog('Failed', 'Save failed, please try again');
+  const handleSkipAI = async () => {
+    setShowAIModal(false);
+    const success = await saveRecord(note, 'published');
+    if (success) {
+      if (isMilestone && defaultDimension) {
+        await addMilestone({
+          user_id: user!.id,
+          event_date: selectedDate,
+          event_title: `Milestone: Journal`,
+          event_description: note,
+          event_type: 'achievement',
+          related_dimension_id: defaultDimension.id
+        });
       }
+
+      showCustomDialog('Success', 'Record saved without AI segmentation', () => {
+        navigate('/');
+      });
+    } else {
+      showCustomDialog('Failed', 'Save failed, please try again');
+    }
+  };
+
+  const handleConfirmAI = async (items: SplitDimensionItem[]) => {
+    setShowAIModal(false);
+
+    if (items.length === 0) {
+      handleSkipAI();
+      return;
+    }
+
+    try {
+      for (const item of items) {
+        const dim = dimensions.find(d => d.dimension_name === item.dimension) || defaultDimension;
+        if (!dim) continue;
+
+        const { data: existing } = await supabase.from('records')
+          .select('*')
+          .eq('user_id', user!.id)
+          .eq('cycle_id', currentCycle!.id)
+          .eq('dimension_id', dim.id)
+          .eq('record_date', selectedDate)
+          .maybeSingle();
+
+        let finalContent = item.content;
+        let savedRecordId;
+
+        if (existing) {
+          const existingRecord = existing as any;
+          finalContent = existingRecord.content + '\n\n' + item.content;
+          const updatePayload: any = { content: finalContent, word_count: finalContent.length };
+          const { data, error } = await supabase.from('records')
+            .update(updatePayload)
+            .eq('id', existingRecord.id)
+            .select().single();
+          if (error) throw error;
+          savedRecordId = data?.id;
+        } else {
+          const insertPayload: any = {
+            user_id: user!.id,
+            cycle_id: currentCycle!.id,
+            dimension_id: dim.id,
+            record_date: selectedDate,
+            content: finalContent,
+            word_count: finalContent.length,
+            status: 'published'
+          };
+          const { data, error } = await supabase.from('records')
+            .insert(insertPayload)
+            .select()
+            .single();
+          if (error) throw error;
+          savedRecordId = data?.id;
+        }
+
+        if (dim.dimension_name === 'Wealth' || dim.dimension_name === '财富') {
+          try {
+            const expenseResult = await analyze(finalContent, 'Expense');
+            const parsedExpenses = parseExpenseResult(expenseResult);
+            if (parsedExpenses && parsedExpenses.length > 0) {
+              const newExpenses = parsedExpenses.map(exp => ({
+                record_id: savedRecordId,
+                user_id: user!.id,
+                cycle_id: currentCycle!.id,
+                category: exp.category || 'Other',
+                item_name: exp.name || 'Expense',
+                amount: exp.amount,
+                expense_date: selectedDate
+              }));
+              await supabase.from('expenses').insert(newExpenses);
+            }
+          } catch (err) {
+            console.error('Failed to parse expenses:', err);
+          }
+        }
+
+        const [aiQuote, tags] = await Promise.all([
+          generateQuote(finalContent),
+          extractTags(finalContent)
+        ]);
+
+        if (tags.length > 0) {
+          for (const tag of tags) {
+            addOrIncrementTag(tag, dim.id);
+          }
+        }
+
+        if (aiQuote) {
+          const quotePayload: any = { ai_quote: aiQuote };
+          await supabase.from('records').update(quotePayload).eq('id', savedRecordId);
+        }
+      }
+
+      if (isMilestone && defaultDimension) {
+        await addMilestone({
+          user_id: user!.id,
+          event_date: selectedDate,
+          event_title: `Milestone: Journal`,
+          event_description: note,
+          event_type: 'achievement',
+          related_dimension_id: defaultDimension.id
+        });
+      }
+
+      showCustomDialog('Success', 'AI records organized and saved!', () => {
+        navigate('/');
+      });
+    } catch (err) {
+      console.error('Save AI records failed:', err);
+      showCustomDialog('Failed', 'Failed to save organized records.');
     }
   };
 

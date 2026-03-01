@@ -60,6 +60,34 @@ User's expense record:
 {{content}}`
   },
 
+  // Record页面 - 多维度拆分
+  RECORD_SPLIT_DIMENSIONS: {
+    key: 'record_split_dimensions',
+    name: 'Record AI Split Dimensions',
+    description: 'AI analysis to split raw text into multiple standardized dimensions',
+    defaultPrompt: `You are an intelligent assistant for a daily journaling app. Your task is to split the user's raw text into fragments and assign them to specific life dimensions. Output ONLY a clean JSON array.
+
+Guidelines:
+1. Valid dimensions to choose from: "Health", "Work", "Study", "Wealth", "Family", "Other".
+2. If multiple sentences belong to the same dimension, concatenate them using a newline character (\\n).
+3. Do not create more than one item per dimension. The maximum array length is 6.
+4. Ensure no content from the original text is lost.
+5. If a sentence doesn't clearly fit "Health", "Work", "Study", "Wealth", or "Family", put it in "Other".
+6. Do NOT include markdown code blocks \`\`\`json or any other text. Output RAW JSON array only.
+
+Example mapping behavior depending on user input:
+User input: "Ran 5km today. Spent 100 on lunch. Coded for 3 hours."
+Output:
+[
+  { "dimension": "Health", "content": "Ran 5km today." },
+  { "dimension": "Wealth", "content": "Spent 100 on lunch." },
+  { "dimension": "Work", "content": "Coded for 3 hours." }
+]
+
+User's raw text:
+{{content}}`
+  },
+
   // History页面 - 名言金句生成
   HISTORY_QUOTE: {
     key: 'history_quote',

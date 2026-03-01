@@ -11,6 +11,11 @@ interface ExpenseItem {
     icon?: string;
 }
 
+export interface SplitDimensionItem {
+    dimension: string;
+    content: string;
+}
+
 export function useAIAnalysis(userId?: string) {
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<string | null>(null);
@@ -171,11 +176,64 @@ export function useAIAnalysis(userId?: string) {
         []
     );
 
+    const splitDimensions = useCallback(
+        async (content: string): Promise<SplitDimensionItem[]> => {
+            if (!content.trim()) return [];
+
+            setAnalyzing(true);
+            setError(null);
+
+            try {
+                let prompt = getPrompt('record_split_dimensions');
+                prompt = prompt.replace(/\{\{content\}\}/g, content);
+
+                const response = await fetch(DEEPSEEK_API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${DEEPSEEK_API_KEY}`,
+                    },
+                    body: JSON.stringify({
+                        model: 'deepseek-chat',
+                        messages: [
+                            { role: 'system', content: 'You are a data extraction assistant. Return ONLY a cleanly formatted JSON array.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: 1000,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                let aiText = data.choices[0]?.message?.content?.trim() || '[]';
+
+                const jsonMatch = aiText.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    aiText = jsonMatch[0];
+                }
+
+                const parsed = JSON.parse(aiText);
+                return Array.isArray(parsed) ? parsed : [];
+            } catch (err) {
+                console.error('Failed to split dimensions:', err);
+                return [];
+            } finally {
+                setAnalyzing(false);
+            }
+        },
+        [getPrompt]
+    );
+
     return {
         analyzing,
         result,
         error,
         analyze,
+        splitDimensions,
         generateQuote,
         parseExpenseResult,
         extractTags,
