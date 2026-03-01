@@ -261,15 +261,6 @@ export default function Home() {
 
 
 
-        <section className="w-full mb-8 pt-4">
-          <Link
-            to="/record"
-            className="w-full bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white h-14 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
-          >
-            <Edit size={20} />
-            Start Recording
-          </Link>
-        </section>
       </main>
     </div>
   );
