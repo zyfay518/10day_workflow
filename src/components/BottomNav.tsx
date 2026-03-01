@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { LayoutGrid, Flag, Edit, History, Library, FileText } from "lucide-react";
+import { LayoutGrid, Flag, User, History, Library, FileText } from "lucide-react";
 
 export default function BottomNav() {
   const location = useLocation();
@@ -9,10 +9,10 @@ export default function BottomNav() {
   const navItems = [
     { name: "Home", icon: LayoutGrid, path: "/" },
     { name: "Goals", icon: Flag, path: "/goals" },
-    { name: "Record", icon: Edit, path: "/record" },
-    { name: "History", icon: History, path: "/history" },
     { name: "Lib", icon: Library, path: "/knowledge" },
+    { name: "History", icon: History, path: "/history" },
     { name: "Report", icon: FileText, path: "/report" },
+    { name: "Profile", icon: User, path: "/profile" },
   ];
 
   return (

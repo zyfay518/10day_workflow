@@ -109,30 +109,6 @@ export default function Home() {
     dotRows.push(dots.slice(i, i + 6));
   }
 
-  // 计算今日记录完成情况
-  const { record: workRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '工作')?.id, date: today });
-  const { record: readingRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '阅读')?.id, date: today });
-  const { record: investmentRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '投资')?.id, date: today });
-  const { record: expenseRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '费用')?.id, date: today });
-  const { record: healthRecord } = useRecords({ userId: user?.id || undefined, cycleId: currentCycle?.id || undefined, dimensionId: dimensions.find(d => d.dimension_name === '健康')?.id, date: today });
-
-  const todayStatus = dimensions.map(dim => {
-    let isCompleted = false;
-    if (dim.dimension_name === '工作') isCompleted = !!workRecord;
-    if (dim.dimension_name === '阅读') isCompleted = !!readingRecord;
-    if (dim.dimension_name === '投资') isCompleted = !!investmentRecord;
-    if (dim.dimension_name === '费用') isCompleted = !!expenseRecord;
-    if (dim.dimension_name === '健康') isCompleted = !!healthRecord;
-
-    return {
-      name: dim.dimension_name,
-      icon: dim.icon_name,
-      completed: isCompleted,
-    };
-  });
-
-  const completedCount = todayStatus.filter(s => s.completed).length;
-
   // 刷新数据
   const handleRefresh = () => {
     refreshCycles();
@@ -348,51 +324,14 @@ export default function Home() {
           </section>
         )}
 
-        <section className="w-full mb-6">
-          <div className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-bold text-gray-800">Today's Record</h3>
-              <span className="text-xs font-medium text-gray-500">
-                {completedCount}/{dimensions.length} Completed
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {todayStatus.map((status, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium",
-                    status.completed
-                      ? "bg-[#A8C3A9]/20 text-[#5F8C60]"
-                      : "bg-gray-100 text-gray-400"
-                  )}
-                >
-                  {status.completed ? (
-                    <CheckCircle2 size={14} className="mr-1" />
-                  ) : (
-                    <Circle size={14} className="mr-1" />
-                  )}
-                  {status.name}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-[2fr_1fr] gap-3">
-              <Link
-                to="/record"
-                className="bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white h-12 rounded-[8px] font-bold text-sm shadow-sm hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
-              >
-                <Edit size={18} />
-                Start Recording
-              </Link>
-              <Link
-                to="/report"
-                className="bg-white border border-gray-200 text-gray-600 h-12 rounded-[8px] font-medium text-sm hover:bg-gray-50 transition-colors flex items-center justify-center gap-1"
-              >
-                <BarChart2 size={18} />
-                Report
-              </Link>
-            </div>
-          </div>
+        <section className="w-full mb-8 pt-4">
+          <Link
+            to="/record"
+            className="w-full bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white h-14 rounded-full font-bold text-lg shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 flex items-center justify-center gap-2"
+          >
+            <Edit size={20} />
+            Start Recording
+          </Link>
         </section>
       </main>
     </div>
