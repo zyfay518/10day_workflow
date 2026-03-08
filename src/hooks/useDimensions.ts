@@ -57,25 +57,62 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
 
       let next = data || [];
 
-      // Auto-provision defaults when user data was cleaned
-      if (next.length === 0) {
-        const defaults = [
-          { user_id: userId, dimension_name: 'Health', color_code: '#d4b5b0', icon_name: 'health_and_safety', display_order: 0 },
-          { user_id: userId, dimension_name: 'Work', color_code: '#849b87', icon_name: 'work', display_order: 1 },
-          { user_id: userId, dimension_name: 'Study', color_code: '#a3b8a6', icon_name: 'auto_stories', display_order: 2 },
-          { user_id: userId, dimension_name: 'Wealth', color_code: '#e8d5c4', icon_name: 'payments', display_order: 3 },
-          { user_id: userId, dimension_name: 'Family', color_code: '#c49eb3', icon_name: 'diversity_3', display_order: 4 },
-          { user_id: userId, dimension_name: 'Other', color_code: '#9ca3af', icon_name: 'lightbulb', display_order: 5 },
-        ];
+      const defaults = [
+        { dimension_name: 'Health', color_code: '#d4b5b0', icon_name: 'health_and_safety', display_order: 0 },
+        { dimension_name: 'Work', color_code: '#849b87', icon_name: 'work', display_order: 1 },
+        { dimension_name: 'Study', color_code: '#a3b8a6', icon_name: 'auto_stories', display_order: 2 },
+        { dimension_name: 'Wealth', color_code: '#e8d5c4', icon_name: 'payments', display_order: 3 },
+        { dimension_name: 'Family', color_code: '#c49eb3', icon_name: 'diversity_3', display_order: 4 },
+        { dimension_name: 'Other', color_code: '#9ca3af', icon_name: 'lightbulb', display_order: 5 },
+      ];
 
-        const { data: created, error: createError } = await supabase
+      // 1) Remove duplicate dimensions (same name) - keep earliest display_order/id
+      const grouped = new Map<string, Dimension[]>();
+      for (const d of next) {
+        const key = d.dimension_name.trim().toLowerCase();
+        if (!grouped.has(key)) grouped.set(key, []);
+        grouped.get(key)!.push(d);
+      }
+
+      const duplicateIds: number[] = [];
+      for (const [, arr] of grouped) {
+        if (arr.length > 1) {
+          arr.sort((a, b) => (a.display_order - b.display_order) || (a.id - b.id));
+          arr.slice(1).forEach((d) => duplicateIds.push(d.id));
+        }
+      }
+
+      if (duplicateIds.length > 0) {
+        const { error: deleteDupError } = await supabase
           .from('dimensions')
-          .insert(defaults)
-          .select('*')
-          .order('display_order', { ascending: true });
+          .delete()
+          .in('id', duplicateIds)
+          .eq('user_id', userId);
+        if (deleteDupError) throw deleteDupError;
+      }
 
+      // 2) Ensure missing defaults are created (only missing ones)
+      const existingNames = new Set(next.map((d) => d.dimension_name.trim().toLowerCase()));
+      const missing = defaults
+        .filter((d) => !existingNames.has(d.dimension_name.toLowerCase()))
+        .map((d) => ({ user_id: userId, ...d }));
+
+      if (missing.length > 0) {
+        const { error: createError } = await supabase
+          .from('dimensions')
+          .insert(missing);
         if (createError) throw createError;
-        next = created || [];
+      }
+
+      // 3) Reload normalized dimensions for stable UI
+      if (duplicateIds.length > 0 || missing.length > 0) {
+        const { data: refreshed, error: refetchError } = await supabase
+          .from('dimensions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('display_order', { ascending: true });
+        if (refetchError) throw refetchError;
+        next = refreshed || [];
       }
 
       setDimensions(next);
