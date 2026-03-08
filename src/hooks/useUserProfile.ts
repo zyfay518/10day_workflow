@@ -100,7 +100,7 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       if (!nextProfile) {
         const { data: created, error: createError } = await supabase
           .from('user_profiles')
-          .upsert({ user_id: userId }, { onConflict: 'user_id' })
+          .insert({ user_id: userId, nickname: 'User' })
           .select('*')
           .single();
         if (createError) throw createError;
@@ -131,22 +131,41 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
     if (!userId) return false;
 
     try {
-      const payload = {
-        user_id: userId,
-        ...updates,
-        updated_at: new Date().toISOString(),
-      };
+      const now = new Date().toISOString();
 
-      const { data, error: upsertError } = await supabase
+      // 1) Try normal update first (works when profile row already exists)
+      const { data: updated, error: updateError } = await supabase
         .from('user_profiles')
-        .upsert(payload, { onConflict: 'user_id' })
+        .update({
+          ...updates,
+          updated_at: now,
+        })
+        .eq('user_id', userId)
         .select('*')
-        .single();
+        .maybeSingle();
 
-      if (upsertError) throw upsertError;
+      if (updateError) throw updateError;
 
-      // 更新本地状态
-      const next = data as UserProfile;
+      let next = updated as UserProfile | null;
+
+      // 2) If no row existed (e.g. manually cleaned data), create it with fallback nickname
+      if (!next) {
+        const fallbackNickname = updates.nickname || profile?.nickname || 'User';
+        const { data: created, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: userId,
+            nickname: fallbackNickname,
+            ...updates,
+            updated_at: now,
+          })
+          .select('*')
+          .single();
+
+        if (createError) throw createError;
+        next = created as UserProfile;
+      }
+
       setProfile(next);
       writeCachedProfile(userId, next);
       setError(null);
