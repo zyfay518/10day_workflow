@@ -127,13 +127,13 @@ export default function BottomNav() {
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <svg className="absolute inset-0 w-20 h-20" viewBox="0 0 80 80" aria-hidden="true">
                 <defs>
-                  <path id="voice-ring-left" d="M12 42 A30 30 0 0 1 22 20" />
-                  <path id="voice-ring-right" d="M58 20 A30 30 0 0 1 68 42" />
+                  <path id="voice-ring-left" d="M13 52 A27 27 0 0 1 34 16" />
+                  <path id="voice-ring-right" d="M46 16 A27 27 0 0 1 67 52" />
                 </defs>
-                <text fill="#9AA6B4" fontSize="4.9" fontWeight="600" letterSpacing="0.75">
+                <text fill="#9AA6B4" fontSize="4.4" fontWeight="600" letterSpacing="0.35">
                   <textPath href="#voice-ring-left" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#9AA6B4" fontSize="4.9" fontWeight="600" letterSpacing="0.75">
+                <text fill="#9AA6B4" fontSize="4.4" fontWeight="600" letterSpacing="0.35">
                   <textPath href="#voice-ring-right" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
@@ -155,8 +155,8 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-0 -translate-x-1/2 z-30 w-3 h-3 rounded-full bg-[#F7FAFD] border border-[#D8E2EE] flex items-center justify-center shadow-sm pointer-events-none">
-                <Mic size={8} strokeWidth={2.5} className="text-[#6F8EAF]" />
+              <div className="absolute left-1/2 top-[3px] -translate-x-1/2 z-30 pointer-events-none">
+                <Mic size={10} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
               <div className="relative z-10 w-12 h-12 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
