@@ -47,13 +47,19 @@ export default function History() {
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  // Find the cycle from URL parameter or use current cycle
+  // Find the cycle from URL parameter or derive current by date (not stale DB status)
   const selectedCycle = useMemo(() => {
     if (cycleIdParam) {
       const cycleId = parseInt(cycleIdParam);
       return cycles.find(c => c.id === cycleId) || currentCycle;
     }
-    return currentCycle;
+
+    const today = getLocalDateString();
+    const dateMatched = cycles
+      .filter(c => c.start_date <= today && c.end_date >= today)
+      .sort((a, b) => b.cycle_number - a.cycle_number);
+
+    return dateMatched[0] || currentCycle;
   }, [cycleIdParam, cycles, currentCycle]);
 
   // Calculate date range based on filter type

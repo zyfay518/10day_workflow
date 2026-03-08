@@ -54,11 +54,19 @@ export default function Goals() {
     updateEvaluation
   } = useGoalEvaluations(user?.id, expandedCycleId || selectedCycleForDaily || undefined);
 
-  // Get filtered cycles based on status tab
+  const getCycleDisplayStatus = (cycle: Cycle): 'completed' | 'ongoing' | 'not_started' => {
+    const today = getLocalDateString();
+    if (cycle.end_date < today) return 'completed';
+    if (cycle.start_date <= today && cycle.end_date >= today) return 'ongoing';
+    return 'not_started';
+  };
+
+  // Get filtered cycles based on date-derived status (not stale DB status)
   const filteredCycles = cycles.filter(cycle => {
-    if (cycleStatusTab === 'completed') return cycle.status === 'completed';
-    if (cycleStatusTab === 'ongoing') return cycle.status === 'active';
-    if (cycleStatusTab === 'not_started') return cycle.status === 'not_started';
+    const displayStatus = getCycleDisplayStatus(cycle);
+    if (cycleStatusTab === 'completed') return displayStatus === 'completed';
+    if (cycleStatusTab === 'ongoing') return displayStatus === 'ongoing';
+    if (cycleStatusTab === 'not_started') return displayStatus === 'not_started';
     return false;
   });
 
@@ -355,7 +363,7 @@ export default function Goals() {
                                     {goal.target_type === 'quantitative' ? 'Quantitative' : 'Qualitative'}
                                   </span>
                                   <div className="flex gap-1">
-                                    {cycle.status !== 'not_started' && (
+                                    {getCycleDisplayStatus(cycle) !== 'not_started' && (
                                       <button
                                         onClick={() => openEvaluateDialog(goal, 'cycle')}
                                         className={cn(

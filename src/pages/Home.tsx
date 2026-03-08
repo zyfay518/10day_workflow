@@ -44,11 +44,13 @@ export default function Home() {
   const today = getLocalDateString();
   const { goals: dailyGoals } = useDailyGoals(user?.id, today);
 
-  const getCycleDisplayStatus = (cycle: { start_date: string; end_date: string; status: string }) => {
+  const getCycleDisplayStatus = (cycle: { id: number; start_date: string; end_date: string }) => {
     const today = getLocalDateString();
-    if (cycle.start_date <= today && cycle.end_date >= today) return 'current';
+    if (currentCycle && cycle.id === currentCycle.id) return 'current';
     if (cycle.end_date < today) return 'complete';
-    return 'future';
+    if (cycle.start_date > today) return 'future';
+    // overlap/dirty data fallback
+    return 'complete';
   };
 
   // Generate 37 dots representing cycles (use real cycle data where available)

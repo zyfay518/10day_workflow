@@ -31,8 +31,11 @@ function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
   const today = getLocalDateString();
 
   // 1) Prefer date window to avoid stale backend status causing wrong cycle
-  const byDate = cycles.find((c) => c.start_date <= today && c.end_date >= today);
-  if (byDate) return byDate;
+  // If dirty data causes overlap, choose the latest cycle_number.
+  const dateMatched = cycles
+    .filter((c) => c.start_date <= today && c.end_date >= today)
+    .sort((a, b) => b.cycle_number - a.cycle_number);
+  if (dateMatched.length > 0) return dateMatched[0];
 
   // 2) Fallback to explicit active status
   const activeByStatus = cycles.find((c) => c.status === 'active');
