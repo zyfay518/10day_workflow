@@ -113,15 +113,15 @@ export default function BottomNav() {
             {navItemsLeft.map(renderItem)}
           </div>
 
-          {/* Floating Action Button */}
-          <div className="w-16 flex justify-center relative">
+            {/* Floating Action Button (hard-centered) */}
+          <div className="absolute left-1/2 -translate-x-1/2 -top-10 z-50">
             <button
               type="button"
               onPointerDown={onFabPointerDown}
               onPointerUp={onFabPointerUp}
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
-              className="absolute -top-10 flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_10px_20px_-4px_rgba(157,197,239,0.55)] hover:shadow-[0_12px_22px_-4px_rgba(157,197,239,0.65)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 z-50"
+              className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_10px_20px_-4px_rgba(157,197,239,0.55)] hover:shadow-[0_12px_22px_-4px_rgba(157,197,239,0.65)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
             >
               {holdProgress > 0 && (
                 <svg className="absolute inset-0 w-16 h-16 -rotate-90" viewBox="0 0 64 64">
