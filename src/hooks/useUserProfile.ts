@@ -121,11 +121,12 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       const {
         data: { publicUrl },
       } = supabase.storage.from('avatars').getPublicUrl(fileName);
+      const publicUrlWithTs = `${publicUrl}?t=${Date.now()}`;
 
       // 3. 更新用户配置
-      await updateProfile({ avatar_url: publicUrl });
+      await updateProfile({ avatar_url: publicUrlWithTs });
 
-      return publicUrl;
+      return publicUrlWithTs;
     } catch (err) {
       console.error('Failed to upload avatar:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');

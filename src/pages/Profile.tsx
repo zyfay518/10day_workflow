@@ -135,6 +135,8 @@ export default function Profile() {
         setShowAvatarDialog(false);
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
+      } else {
+        alert('Avatar upload failed. Please check Storage bucket "avatars" and RLS policy.');
       }
     }
   };
@@ -327,10 +329,82 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Editor Dialog and Success Toast removed for brevity in migration, can be added back if needed */}
+      {/* Nickname Dialog */}
+      {showNicknameDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[12px] p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Edit Nickname</h3>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="Enter nickname"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowNicknameDialog(false)}
+                className="flex-1 h-10 rounded-[8px] border border-gray-300 text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveNickname}
+                disabled={!nickname.trim()}
+                className="flex-1 h-10 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white disabled:opacity-50"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt Editor Dialog */}
+      {selectedPrompt && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[12px] p-6 max-w-2xl w-full shadow-xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-gray-800">Edit Prompt</h3>
+              <button onClick={() => setSelectedPrompt(null)} className="text-gray-400 hover:text-gray-600">
+                <X size={22} />
+              </button>
+            </div>
+            <p className="text-sm font-medium text-gray-700 mb-1">{selectedPrompt.name}</p>
+            <p className="text-xs text-gray-500 mb-3">{selectedPrompt.description}</p>
+            <textarea
+              value={editingPrompt}
+              onChange={(e) => setEditingPrompt(e.target.value)}
+              className="w-full min-h-[260px] p-3 border border-gray-300 rounded-lg text-xs font-mono"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={handleResetPrompt}
+                className="h-10 px-4 rounded-[8px] border border-gray-300 text-gray-700"
+              >
+                Reset to Default
+              </button>
+              <button
+                onClick={handleSavePrompt}
+                disabled={promptsLoading || !editingPrompt.trim()}
+                className="h-10 px-5 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white disabled:opacity-50"
+              >
+                Save Prompt
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showSuccess && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
           Success!
+        </div>
+      )}
+
+      {promptSaveSuccess && (
+        <div className="fixed top-32 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+          Prompt saved!
         </div>
       )}
     </div>

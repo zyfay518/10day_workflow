@@ -382,22 +382,6 @@ export default function Report() {
                   </section>
                 )}
 
-
-                <section className="space-y-3 pb-8">
-                  <h2 className="font-bold text-gray-800 flex items-center gap-2">
-                    <Brain size={24} className="text-[#E8C996]" />
-                    AI Analysis
-                  </h2>
-                  {reports.map((report) => {
-                    const dim = dimensions.find(d => d.id === report.dimension_id);
-                    return (
-                      <div key={report.id} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
-                        <p className="font-bold text-sm text-gray-800 mb-2">{dim ? dim.dimension_name : "Overall Summary"}</p>
-                        <div className="text-sm text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: report.content.replace(/\n/g, '<br />') }} />
-                      </div>
-                    );
-                  })}
-                </section>
               </>
             )}
           </>

@@ -11,6 +11,19 @@ import { useWeight } from "../hooks/useWeight";
 import { useExpenses } from "../hooks/useExpenses";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 
+const defaultDimensionIcon = (name: string) => {
+    if (name.includes('工作') || name.toLowerCase().includes('work')) return 'work';
+    if (name.includes('阅读') || name.includes('学习') || name.toLowerCase().includes('study')) return 'auto_stories';
+    if (name.includes('健康') || name.toLowerCase().includes('health')) return 'health_and_safety';
+    if (name.includes('开销') || name.toLowerCase().includes('wealth')) return 'payments';
+    if (name.includes('家') || name.toLowerCase().includes('family')) return 'diversity_3';
+    return 'psychology';
+};
+
+const getDimensionIconName = (dimensionName: string, iconName?: string | null) => {
+    return iconName && iconName.trim().length > 0 ? iconName : defaultDimensionIcon(dimensionName);
+};
+
 export default function Knowledge() {
     const { user } = useAuth();
     const { entries, addEntry } = useKnowledgeBase(user?.id);
@@ -186,7 +199,7 @@ export default function Knowledge() {
                         )}
                         style={activeTab === dim.id ? { backgroundColor: dim.color_code } : {}}
                     >
-                        <DynamicIcon name={dim.icon_name || ''} size={16} className="mb-[1px]" />
+                        <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} size={16} className="mb-[1px]" />
                         {dim.dimension_name}
                     </button>
                 ))}
@@ -448,7 +461,7 @@ export default function Knowledge() {
                                             className="px-2 py-0.5 rounded-full text-[10px] font-medium text-white flex items-center gap-1"
                                             style={{ backgroundColor: dim?.color_code || "#999" }}
                                         >
-                                            <DynamicIcon name={dim?.icon_name || ''} size={14} /> {dim?.dimension_name}
+                                            <DynamicIcon name={getDimensionIconName(dim?.dimension_name || '', dim?.icon_name)} size={14} /> {dim?.dimension_name}
                                         </span>
                                         <span className="text-xs text-gray-400 font-medium">Period {cycle?.cycle_number}</span>
                                     </div>
@@ -573,7 +586,7 @@ export default function Knowledge() {
                                             )}
                                             style={selectedDimId === dim.id ? { backgroundColor: dim.color_code } : {}}
                                         >
-                                            <DynamicIcon name={dim.icon_name || ''} size={24} className="mb-[2px]" />
+                                            <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} size={24} className="mb-[2px]" />
                                             {dim.dimension_name}
                                         </button>
                                     ))}

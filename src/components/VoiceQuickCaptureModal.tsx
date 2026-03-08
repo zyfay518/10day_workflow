@@ -49,7 +49,11 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setDraft(null);
     setMessage('');
     resetTranscript();
-    if (isSupported) startListening();
+
+    const micGranted = localStorage.getItem('voice_quick_mic_granted') === '1';
+    if (isSupported && micGranted) {
+      startListening();
+    }
   }, [open]);
 
   useEffect(() => {
@@ -57,6 +61,12 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setText(prev => (prev ? `${prev}\n${transcript}` : transcript));
     resetTranscript();
   }, [transcript]);
+
+  useEffect(() => {
+    if (isListening) {
+      localStorage.setItem('voice_quick_mic_granted', '1');
+    }
+  }, [isListening]);
 
   useEffect(() => {
     if (!open || !isListening) return;
@@ -261,27 +271,29 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         </div>
 
         {!draft && (
-          <div className="flex gap-2 mt-3">
+          <div className="mt-3 space-y-2">
             <button
               onClick={() => (isListening ? stopListening() : startListening())}
-              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-[#E8E3DD] text-[#6D6A66]' : 'bg-[#EEF1F4] text-[#6D6A66]'}`}
+              className={`w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-[#E8E3DD] text-[#6D6A66]' : 'bg-[#EEF1F4] text-[#6D6A66]'}`}
             >
-              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? 'Pause' : 'Resume'}
+              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? 'Pause' : 'Start Listening'}
             </button>
-            <button
-              onClick={handleParse}
-              disabled={saving || analyzing || !text.trim()}
-              className="flex-1 h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Sparkles size={16} /> Parse & Review
-            </button>
-            <button
-              onClick={handleSaveLibrary}
-              disabled={saving || analyzing || !text.trim()}
-              className="flex-1 h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <BookOpen size={16} /> Save to Library
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleParse}
+                disabled={saving || analyzing || !text.trim()}
+                className="h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Sparkles size={16} /> Parse & Review
+              </button>
+              <button
+                onClick={handleSaveLibrary}
+                disabled={saving || analyzing || !text.trim()}
+                className="h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <BookOpen size={16} /> Save to Library
+              </button>
+            </div>
           </div>
         )}
 
