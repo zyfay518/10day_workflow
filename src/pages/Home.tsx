@@ -222,6 +222,20 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          {/* Matrix color legend */}
+          <div className="w-full mt-3 px-2">
+            <div className="rounded-full h-2.5 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1]" />
+            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+              <span>0%</span>
+              <span>Completion Rate</span>
+              <span>100%</span>
+            </div>
+            <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-gray-500">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#E8C996]" />
+              <span>Yellow = Current Period</span>
+            </div>
+          </div>
         </section>
 
         <section className="w-full mb-5">
