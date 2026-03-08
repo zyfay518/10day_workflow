@@ -292,14 +292,17 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           <div className="text-xs text-gray-500">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</div>
         </div>
 
-        <div className="w-full min-h-[140px] max-h-[220px] overflow-y-auto p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm leading-relaxed">
-          {text || liveTranscript ? (
-            <>
-              {text && <div className="text-gray-700 whitespace-pre-wrap">{text}</div>}
-              {liveTranscript && <div className="text-blue-600 whitespace-pre-wrap">{liveTranscript}</div>}
-            </>
-          ) : (
-            <span className="text-gray-400">Live transcript will appear here...</span>
+        <div className="w-full rounded-xl border border-gray-200 bg-gray-50 p-2">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Live transcript will appear here... You can edit manually."
+            className="w-full min-h-[140px] max-h-[220px] p-2 bg-white border border-gray-200 rounded-lg text-sm leading-relaxed text-gray-700 outline-none resize-y"
+          />
+          {liveTranscript && (
+            <div className="mt-2 px-2 py-1.5 rounded-md bg-blue-50 text-blue-600 text-xs whitespace-pre-wrap">
+              Listening: {liveTranscript}
+            </div>
           )}
         </div>
 
