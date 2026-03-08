@@ -127,13 +127,13 @@ export default function BottomNav() {
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <svg className="absolute inset-0 w-24 h-24 pointer-events-none z-40" viewBox="0 0 96 96" aria-hidden="true">
                 <defs>
-                  <path id="ring-left-mid" d="M30 78 A36 36 0 0 1 30 18" />
-                  <path id="ring-right-mid" d="M66 18 A36 36 0 0 1 66 78" />
+                  <path id="ring-left-mid" d="M28 80 A38 38 0 0 1 28 16" />
+                  <path id="ring-right-mid" d="M68 16 A38 38 0 0 1 68 80" />
                 </defs>
-                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.35">
+                <text fill="#8F9BA9" fontSize="4.5" fontWeight="600" letterSpacing="0.2">
                   <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.35">
+                <text fill="#8F9BA9" fontSize="4.5" fontWeight="600" letterSpacing="0.2">
                   <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
