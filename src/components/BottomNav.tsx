@@ -127,12 +127,14 @@ export default function BottomNav() {
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <svg className="absolute inset-0 w-20 h-20" viewBox="0 0 80 80" aria-hidden="true">
                 <defs>
-                  <path id="voice-ring-text-path" d="M40,40 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
+                  <path id="voice-ring-top" d="M10 40a30 30 0 0 1 60 0" />
+                  <path id="voice-ring-bottom" d="M70 40a30 30 0 0 1-60 0" />
                 </defs>
                 <text fill="#9AA6B4" fontSize="6.2" fontWeight="600" letterSpacing="1.2">
-                  <textPath href="#voice-ring-text-path" startOffset="0%">
-                    HOLD FOR VOICE • HOLD FOR VOICE •
-                  </textPath>
+                  <textPath href="#voice-ring-top" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
+                </text>
+                <text fill="#9AA6B4" fontSize="6.2" fontWeight="600" letterSpacing="1.2">
+                  <textPath href="#voice-ring-bottom" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
 
@@ -153,8 +155,8 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute top-[7px] left-1/2 -translate-x-1/2 z-10 w-5 h-5 rounded-full bg-white border border-[#E7EBF0] flex items-center justify-center shadow-sm">
-                <Mic size={11} strokeWidth={2.2} className="text-[#8FA7C0]" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[22px] z-20 w-4 h-4 rounded-full bg-white/95 border border-[#E7EBF0] flex items-center justify-center shadow-sm pointer-events-none">
+                <Mic size={9} strokeWidth={2.4} className="text-[#8FA7C0]" />
               </div>
 
               <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
