@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { LayoutGrid, Flag, User, History, Library, FileText, PenLine } from "lucide-react";
+import { LayoutGrid, Flag, User, History, Library, FileText, Mic } from "lucide-react";
 
 export default function BottomNav() {
   const location = useLocation();
@@ -68,7 +68,7 @@ export default function BottomNav() {
             to="/record"
             className="absolute -top-8 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_8px_16px_-4px_rgba(157,197,239,0.5)] hover:shadow-[0_12px_20px_-4px_rgba(157,197,239,0.6)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 z-50"
           >
-            <PenLine size={24} strokeWidth={2.5} />
+            <Mic size={24} strokeWidth={2.5} />
           </Link>
         </div>
 
