@@ -130,10 +130,10 @@ export default function BottomNav() {
                   <path id="ring-left-mid" d="M28 80 A38 38 0 0 1 28 16" />
                   <path id="ring-right-mid" d="M68 16 A38 38 0 0 1 68 80" />
                 </defs>
-                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.25">
+                <text fill="#8F9BA9" fontSize="5.5" fontWeight="600" letterSpacing="0.28">
                   <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.25">
+                <text fill="#8F9BA9" fontSize="5.5" fontWeight="600" letterSpacing="0.28">
                   <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
@@ -155,7 +155,7 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-[6px] -translate-x-1/2 z-30 pointer-events-none">
+              <div className="absolute left-1/2 top-[2px] -translate-x-1/2 z-30 pointer-events-none">
                 <Mic size={11} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
