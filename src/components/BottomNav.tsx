@@ -125,9 +125,16 @@ export default function BottomNav() {
               aria-label="Click to record, hold 2 seconds for voice"
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
-              <span className="absolute -top-4 px-2 py-0.5 rounded-full bg-white border border-[#E7EBF0] text-[10px] font-semibold text-[#8B97A6] whitespace-nowrap shadow-sm">
-                Hold 2s for voice
-              </span>
+              <svg className="absolute inset-0 w-20 h-20" viewBox="0 0 80 80" aria-hidden="true">
+                <defs>
+                  <path id="voice-ring-text-path" d="M40,40 m-30,0 a30,30 0 1,1 60,0 a30,30 0 1,1 -60,0" />
+                </defs>
+                <text fill="#9AA6B4" fontSize="6.2" fontWeight="600" letterSpacing="1.2">
+                  <textPath href="#voice-ring-text-path" startOffset="0%">
+                    HOLD FOR VOICE • HOLD FOR VOICE •
+                  </textPath>
+                </text>
+              </svg>
 
               {holdProgress > 0 && (
                 <svg className="absolute inset-0 w-20 h-20 -rotate-90" viewBox="0 0 80 80">
@@ -146,11 +153,14 @@ export default function BottomNav() {
                 </svg>
               )}
 
+              <div className="absolute top-[7px] left-1/2 -translate-x-1/2 z-10 w-5 h-5 rounded-full bg-white border border-[#E7EBF0] flex items-center justify-center shadow-sm">
+                <Mic size={11} strokeWidth={2.2} className="text-[#8FA7C0]" />
+              </div>
+
               <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
                 <span className="text-[10px] leading-none font-semibold tracking-wide">Click</span>
-                <div className="flex items-center gap-1 mt-1">
+                <div className="flex items-center mt-1">
                   <PenLine size={12} strokeWidth={2.2} />
-                  <Mic size={12} strokeWidth={2.2} />
                 </div>
               </div>
             </button>
