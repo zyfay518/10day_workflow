@@ -34,13 +34,12 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const { user } = useAuth();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
-  const { transcript, isListening, isSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
+  const { transcript, liveTranscript, isListening, isSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
   const { parseVoiceQuickEntry, classifyVoiceDimension, analyzing } = useAIAnalysis(user?.id);
 
   const [text, setText] = useState('');
   const [seconds, setSeconds] = useState(0);
   const [draft, setDraft] = useState<VoiceParsedResult | null>(null);
-  const [draftText, setDraftText] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -49,7 +48,6 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setText('');
     setSeconds(0);
     setDraft(null);
-    setDraftText('');
     setMessage('');
     resetTranscript();
     if (isSupported) startListening();
@@ -100,16 +98,15 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       return;
     }
     setDraft(parsed);
-    setDraftText(JSON.stringify(parsed, null, 2));
     await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
   };
 
   const handleApplyParsed = async () => {
-    if (!user?.id || !currentCycle?.id) return;
+    if (!user?.id || !currentCycle?.id || !draft) return;
 
     try {
       setSaving(true);
-      const payload = JSON.parse(draftText) as VoiceParsedResult;
+      const payload = draft;
       const today = getLocalDateString();
 
       for (const rec of payload.records || []) {
@@ -162,7 +159,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
-      setMessage('确认写入失败，请检查 JSON 格式');
+      setMessage('确认写入失败，请重试');
     } finally {
       setSaving(false);
     }
@@ -202,8 +199,8 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/40 flex items-end justify-center">
-      <div className="w-full max-w-md bg-white rounded-t-3xl p-4 pb-6 shadow-2xl">
+    <div className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-gray-800">Voice Quick Capture</h3>
           <button onClick={() => { stopListening(); onClose(); }} className="p-2 rounded-full hover:bg-gray-100">
@@ -212,52 +209,83 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         </div>
 
         <div className="flex items-center justify-between mb-2">
-          <div className="text-xs text-gray-500">{isListening ? 'Listening…' : 'Stopped'}</div>
+          <div className="flex items-center gap-2 text-xs text-gray-500">
+            <span className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
+            {isListening ? 'Listening…' : 'Stopped'}
+          </div>
           <div className="text-xs text-gray-500">{Math.floor(remain / 60)}:{String(remain % 60).padStart(2, '0')}</div>
         </div>
 
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="语音转文字会显示在这里..."
-          className="w-full h-40 p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm outline-none"
-        />
-
-        <div className="flex gap-2 mt-3">
-          <button
-            onClick={() => (isListening ? stopListening() : startListening())}
-            className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`}
-          >
-            {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? 'Stop' : 'Resume'}
-          </button>
-          <button
-            onClick={handleParse}
-            disabled={saving || analyzing || !text.trim()}
-            className="flex-1 h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <Sparkles size={16} /> 解析并确认
-          </button>
-          <button
-            onClick={handleSaveLibrary}
-            disabled={saving || analyzing || !text.trim()}
-            className="flex-1 h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
-          >
-            <BookOpen size={16} /> 直接存库
-          </button>
+        <div className="w-full min-h-[140px] max-h-[220px] overflow-y-auto p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm leading-relaxed">
+          {text || liveTranscript ? (
+            <>
+              {text && <div className="text-gray-700 whitespace-pre-wrap">{text}</div>}
+              {liveTranscript && <div className="text-blue-600 whitespace-pre-wrap">{liveTranscript}</div>}
+            </>
+          ) : (
+            <span className="text-gray-400">语音转文字会实时显示在这里...</span>
+          )}
         </div>
 
+        {!draft && (
+          <div className="flex gap-2 mt-3">
+            <button
+              onClick={() => (isListening ? stopListening() : startListening())}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+            >
+              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? '停止录入' : '继续录入'}
+            </button>
+            <button
+              onClick={handleParse}
+              disabled={saving || analyzing || !text.trim()}
+              className="flex-1 h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <Sparkles size={16} /> 解析并确认
+            </button>
+            <button
+              onClick={handleSaveLibrary}
+              disabled={saving || analyzing || !text.trim()}
+              className="flex-1 h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <BookOpen size={16} /> 直接存库
+            </button>
+          </div>
+        )}
+
         {draft && (
-          <div className="mt-3">
-            <p className="text-xs font-semibold text-gray-600 mb-1">确认面板（可手动编辑 JSON）</p>
-            <textarea
-              value={draftText}
-              onChange={(e) => setDraftText(e.target.value)}
-              className="w-full h-40 p-3 rounded-xl border border-gray-200 bg-gray-50 text-xs font-mono outline-none"
-            />
+          <div className="mt-3 space-y-3">
+            <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-1">摘要</p>
+              <textarea
+                value={draft.summary || ''}
+                onChange={(e) => setDraft(prev => prev ? { ...prev, summary: e.target.value } : prev)}
+                className="w-full h-16 bg-white border border-gray-200 rounded-lg p-2 text-sm"
+              />
+            </div>
+
+            <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">记录（可改）</p>
+              <div className="space-y-2 max-h-36 overflow-y-auto">
+                {(draft.records || []).map((r, i) => (
+                  <textarea
+                    key={i}
+                    value={r.content}
+                    onChange={(e) => setDraft(prev => {
+                      if (!prev) return prev;
+                      const next = [...(prev.records || [])];
+                      next[i] = { ...next[i], content: e.target.value };
+                      return { ...prev, records: next };
+                    })}
+                    className="w-full h-16 bg-white border border-gray-200 rounded-lg p-2 text-sm"
+                  />
+                ))}
+              </div>
+            </div>
+
             <button
               onClick={handleApplyParsed}
               disabled={saving}
-              className="mt-2 w-full h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
+              className="w-full h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
             >
               一键确认写入记录/目标
             </button>

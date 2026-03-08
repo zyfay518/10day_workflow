@@ -121,21 +121,21 @@ export default function BottomNav() {
               onPointerUp={onFabPointerUp}
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
-              className="absolute -top-8 flex items-center justify-center w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_8px_16px_-4px_rgba(157,197,239,0.5)] hover:shadow-[0_12px_20px_-4px_rgba(157,197,239,0.6)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 z-50"
+              className="absolute -top-10 flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_10px_20px_-4px_rgba(157,197,239,0.55)] hover:shadow-[0_12px_22px_-4px_rgba(157,197,239,0.65)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 z-50"
             >
               {holdProgress > 0 && (
-                <svg className="absolute inset-0 w-14 h-14 -rotate-90" viewBox="0 0 56 56">
-                  <circle cx="28" cy="28" r="25" stroke="rgba(255,255,255,0.35)" strokeWidth="3" fill="none" />
+                <svg className="absolute inset-0 w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.35)" strokeWidth="3" fill="none" />
                   <circle
-                    cx="28"
-                    cy="28"
-                    r="25"
+                    cx="32"
+                    cy="32"
+                    r="28"
                     stroke="white"
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 25}
-                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 25}
+                    strokeDasharray={2 * Math.PI * 28}
+                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 28}
                   />
                 </svg>
               )}

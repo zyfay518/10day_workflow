@@ -323,7 +323,13 @@ Return ONLY valid JSON with this exact shape:
 }
 Rules:
 - If unsure, use dimension = Other.
-- Do not invent numbers/dates.
+- Distinguish goals carefully:
+  - cycle_goals: cross-day objectives, no strict day deadline.
+  - daily_goals: explicitly for today/this day/短期当天任务.
+- Time parsing:
+  - If user gave explicit date, use it.
+  - If no date mentioned, default to CURRENT DATE for record_date / goal_date / expense_date.
+- Do not invent money or exact dates if truly unclear.
 - Empty arrays when not applicable.
 - No markdown, no explanation.
 

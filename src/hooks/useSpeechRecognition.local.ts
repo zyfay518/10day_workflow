@@ -14,6 +14,7 @@ interface IWindow extends Window {
 
 export function useSpeechRecognition() {
   const [transcript, setTranscript] = useState('');
+  const [liveTranscript, setLiveTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
 
@@ -31,22 +32,28 @@ export function useSpeechRecognition() {
       // 初始化语音识别
       const recognition = new SpeechRecognition();
       recognition.continuous = true; // 持续识别
-      recognition.interimResults = false; // 只接收最终结果，避免重复拼接
+      recognition.interimResults = true; // 实时临时结果，用于UI即时展示
       recognition.lang = 'zh-CN'; // 中文识别
 
       recognition.onresult = (event: any) => {
-        let finalTranscript = '';
+        let finalChunk = '';
+        let interimChunk = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
+          const text = event.results[i][0].transcript;
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            finalChunk += text;
+          } else {
+            interimChunk += text;
           }
         }
 
-        const text = finalTranscript.trim();
-        if (text) {
+        setLiveTranscript((finalChunk + interimChunk).trim());
+
+        const finalText = finalChunk.trim();
+        if (finalText) {
           // 只回传本次最终识别片段，由调用方负责拼接
-          setTranscript(text);
+          setTranscript(finalText);
         }
       };
 
@@ -99,10 +106,12 @@ export function useSpeechRecognition() {
   // 重置文本
   const resetTranscript = useCallback(() => {
     setTranscript('');
+    setLiveTranscript('');
   }, []);
 
   return {
     transcript,
+    liveTranscript,
     isListening,
     isSupported,
     startListening,
