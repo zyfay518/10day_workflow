@@ -88,6 +88,45 @@ User's raw text:
 {{content}}`
   },
 
+  // Voice Quick Capture - 语音结构化解析
+  VOICE_QUICK_PARSE: {
+    key: 'voice_quick_parse',
+    name: 'Voice Quick Parse',
+    description: 'Parse voice transcript into records, cycle goals, daily goals, and expenses',
+    defaultPrompt: `You are a strict JSON extractor for a life-tracking app.
+Current date: {{currentDate}}
+Timezone: {{timezone}}
+Return ONLY valid JSON with this exact shape:
+{
+  "summary": "string",
+  "dimension": "Health|Work|Study|Wealth|Family|Other",
+  "records": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","record_date":"YYYY-MM-DD"}],
+  "cycle_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
+  "daily_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","goal_date":"YYYY-MM-DD","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
+  "expenses": [{"category":"string","item_name":"string","amount":0,"expense_date":"YYYY-MM-DD"}],
+  "confidence": 0.0
+}
+Rules:
+- If unsure, use dimension = Other.
+- CRITICAL GOAL SPLIT:
+  - cycle_goals: long-range / this period / this 10-day cycle targets.
+  - daily_goals: today/tomorrow/this day tasks only.
+- If user explicitly says "本周期" / "这个周期" / "这十天" / "10天", you MUST output at least one cycle_goals item.
+- Time parsing is strict:
+  - 今天 => {{currentDate}}
+  - 明天 => current date + 1 day
+  - 后天 => current date + 2 days
+  - If explicit date exists, use it.
+  - If no date, default to {{currentDate}} for record/goal/expense date fields.
+  - NEVER output hallucinated past year dates unless explicitly spoken.
+- Do not invent money or exact dates if unclear.
+- Empty arrays when not applicable.
+- No markdown, no explanation.
+
+User transcript:
+{{content}}`
+  },
+
   // History页面 - 名言金句生成
   HISTORY_QUOTE: {
     key: 'history_quote',

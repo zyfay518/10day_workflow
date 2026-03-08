@@ -316,37 +316,10 @@ export function useAIAnalysis(userId?: string) {
             const currentDate = options?.currentDate || new Date().toISOString().slice(0, 10);
             const timezone = options?.timezone || 'Asia/Singapore';
 
-            const prompt = `You are a strict JSON extractor for a life-tracking app.
-Current date: ${currentDate}
-Timezone: ${timezone}
-Return ONLY valid JSON with this exact shape:
-{
-  "summary": "string",
-  "dimension": "Health|Work|Study|Wealth|Family|Other",
-  "records": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","record_date":"YYYY-MM-DD"}],
-  "cycle_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
-  "daily_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","goal_date":"YYYY-MM-DD","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
-  "expenses": [{"category":"string","item_name":"string","amount":0,"expense_date":"YYYY-MM-DD"}],
-  "confidence": 0.0
-}
-Rules:
-- If unsure, use dimension = Other.
-- Distinguish goals carefully:
-  - cycle_goals: cross-day objectives, no strict day deadline.
-  - daily_goals: explicitly for today/this day/明天/后天/短期当天任务.
-- Time parsing is STRICT:
-  - "今天" => ${currentDate}
-  - "明天" => current date + 1 day
-  - "后天" => current date + 2 days
-  - If user gave explicit date, use it.
-  - If no date mentioned, default to CURRENT DATE for record_date / goal_date / expense_date.
-  - NEVER output far-past hallucinated years (e.g. 2023) unless explicitly spoken by user.
-- Do not invent money or exact dates if truly unclear.
-- Empty arrays when not applicable.
-- No markdown, no explanation.
-
-User transcript:
-${content}`;
+            let prompt = getPrompt('voice_quick_parse');
+            prompt = prompt.replace(/\{\{currentDate\}\}/g, currentDate);
+            prompt = prompt.replace(/\{\{timezone\}\}/g, timezone);
+            prompt = prompt.replace(/\{\{content\}\}/g, content);
 
             const response = await fetch(DEEPSEEK_API_URL, {
                 method: 'POST',

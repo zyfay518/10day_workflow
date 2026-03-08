@@ -124,6 +124,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
     const saysTomorrow = /明天/.test(text);
     const saysToday = /今天/.test(text);
+    const saysCycleGoal = /(本周期|这个周期|本轮|这十天|10天)/.test(text);
 
     parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
       ...g,
@@ -143,6 +144,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       ...e,
       expense_date: normalizeDate(e.expense_date, today),
     }));
+
+    // Heuristic guard: explicit cycle intent must produce at least one cycle goal
+    if (saysCycleGoal && (!parsed.cycle_goals || parsed.cycle_goals.length === 0)) {
+      const seed = (parsed.daily_goals && parsed.daily_goals[0]?.content)
+        || (parsed.records && parsed.records[0]?.content)
+        || parsed.summary
+        || text;
+
+      parsed.cycle_goals = [{
+        dimension: parsed.dimension || 'Other',
+        content: seed,
+        evaluation_criteria: 'Voice quick capture cycle goal',
+        target_type: 'qualitative',
+        target_value: null,
+        target_unit: null,
+      }];
+    }
 
     setDraft(parsed);
     const voiceEntryId = await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
