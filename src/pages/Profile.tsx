@@ -136,7 +136,7 @@ export default function Profile() {
         setShowSuccess(true);
         setTimeout(() => setShowSuccess(false), 2000);
       } else {
-        alert('Avatar upload failed. Please check Storage bucket "avatars" and RLS policy.');
+        alert('Avatar update failed. Please use an image under 5MB and try again.');
       }
     }
   };

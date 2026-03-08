@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X } from "lucide-react";
 import DynamicIcon from "../components/DynamicIcon";
+import { getDimensionIconName } from "../lib/dimensionIcon";
 import { useAuth } from "../hooks/useAuth";
 import { useKnowledgeBase } from "../hooks/useKnowledgeBase";
 import { useDimensions } from "../hooks/useDimensions";
@@ -10,19 +11,6 @@ import { useBooks } from "../hooks/useBooks";
 import { useWeight } from "../hooks/useWeight";
 import { useExpenses } from "../hooks/useExpenses";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
-
-const defaultDimensionIcon = (name: string) => {
-    if (name.includes('工作') || name.toLowerCase().includes('work')) return 'work';
-    if (name.includes('阅读') || name.includes('学习') || name.toLowerCase().includes('study')) return 'auto_stories';
-    if (name.includes('健康') || name.toLowerCase().includes('health')) return 'health_and_safety';
-    if (name.includes('开销') || name.toLowerCase().includes('wealth')) return 'payments';
-    if (name.includes('家') || name.toLowerCase().includes('family')) return 'diversity_3';
-    return 'psychology';
-};
-
-const getDimensionIconName = (dimensionName: string, iconName?: string | null) => {
-    return iconName && iconName.trim().length > 0 ? iconName : defaultDimensionIcon(dimensionName);
-};
 
 export default function Knowledge() {
     const { user } = useAuth();

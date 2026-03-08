@@ -105,7 +105,7 @@ export function useAIPrompts(userId?: string) {
         getPrompt,
         savePrompt,
         resetPrompt,
-        getAllPromptConfigs: () => Object.values(AI_PROMPTS),
+        getAllPromptConfigs: () => Object.values(AI_PROMPTS).filter((p) => p.key !== 'history_quote'),
         isCustomized: (key: string) => !!customPrompts[key],
     };
 }

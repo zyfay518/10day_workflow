@@ -104,6 +104,14 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
     if (!userId) return null;
 
     try {
+      const MAX_SIZE_MB = 5;
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please upload an image file.');
+      }
+      if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+        throw new Error(`Image is too large. Max ${MAX_SIZE_MB}MB.`);
+      }
+
       // 1. 上传文件到 Storage
       const fileExt = file.name.split('.').pop();
       const fileName = `${userId}/avatar.${fileExt}`;
@@ -112,10 +120,21 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
         .from('avatars')
         .upload(fileName, file, {
           cacheControl: '3600',
-          upsert: true, // 覆盖已存在的文件
+          upsert: true,
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        // Fallback: store as data URL if storage bucket/policy is not ready
+        const dataUrl: string = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ''));
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+
+        await updateProfile({ avatar_url: dataUrl });
+        return dataUrl;
+      }
 
       // 2. 获取公开 URL
       const {

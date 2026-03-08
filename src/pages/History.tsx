@@ -11,6 +11,7 @@ import DateRangePicker from "../components/DateRangePicker";
 import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 import { useMilestones } from "../hooks/useMilestones";
 import DynamicIcon from "../components/DynamicIcon";
+import { getDimensionIconName } from "../lib/dimensionIcon";
 
 type Record = Database['public']['Tables']['records']['Row'];
 type Milestone = Database['public']['Tables']['milestones']['Row'];
@@ -503,7 +504,7 @@ export default function History() {
                         <div className="flex items-center gap-2">
                           {dim && (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-white/80 shadow-sm">
-                              <DynamicIcon name={dim.icon_name} color={dim.color_code} size={16} />
+                              <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} color={dim.color_code} size={16} />
                               <span className="text-xs font-medium text-gray-700">{dim.dimension_name}</span>
                             </div>
                           )}

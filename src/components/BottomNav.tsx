@@ -104,17 +104,17 @@ export default function BottomNav() {
       <nav
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 flex justify-between items-center z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)] w-full max-w-md mx-auto px-2 pt-2"
         style={{
-          height: 'calc(84px + env(safe-area-inset-bottom))',
-          paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))'
+          height: 'calc(88px + env(safe-area-inset-bottom))',
+          paddingBottom: 'calc(1.3rem + env(safe-area-inset-bottom))'
         }}
       >
         <div className="flex justify-between w-full relative">
-          <div className="flex justify-around flex-1">
+          <div className="flex justify-around w-1/2 pr-8">
             {navItemsLeft.map(renderItem)}
           </div>
 
             {/* Floating Action Button (hard-centered) */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-10 z-50">
+          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-50">
             <button
               type="button"
               onPointerDown={onFabPointerDown}
@@ -143,7 +143,7 @@ export default function BottomNav() {
             </button>
           </div>
 
-          <div className="flex justify-around flex-1">
+          <div className="flex justify-around w-1/2 pl-8">
             {navItemsRight.map(renderItem)}
           </div>
         </div>
