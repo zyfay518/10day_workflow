@@ -19,11 +19,26 @@ import Splash from "./pages/Splash";
 import { useAuth } from "./hooks/useAuth";
 import { initTestData } from "./lib/localStorage";
 
+function AppLoadingScreen() {
+  return (
+    <div className="fixed inset-0 z-[90] bg-[#F9FAFB] flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="w-2.5 h-2.5 rounded-full bg-[#9DC5EF] animate-bounce" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#C7B6A6] animate-bounce [animation-delay:120ms]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#D8AFAF] animate-bounce [animation-delay:240ms]" />
+        </div>
+        <p className="text-xs tracking-wide text-gray-500">Loading your workspace...</p>
+      </div>
+    </div>
+  );
+}
+
 // Protected Route Wrapper
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
-  if (loading) return null; // Or a simple spinner if needed after splash
+  if (loading) return <AppLoadingScreen />;
   if (!user) return <Navigate to="/auth" replace />;
 
   return <>{children}</>;
@@ -40,6 +55,7 @@ export default function App() {
   return (
     <BrowserRouter>
       {showSplash && <Splash onFinish={() => setShowSplash(false)} />}
+      {!showSplash && authLoading && <AppLoadingScreen />}
 
       {!showSplash && (
         <Routes>
