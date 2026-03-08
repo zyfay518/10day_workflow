@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
+import { getLocalDateString } from '../lib/utils';
 
 type Cycle = Database['public']['Tables']['cycles']['Row'];
 
@@ -22,6 +23,26 @@ interface UseCyclesReturn {
   loading: boolean;
   error: string | null;
   refreshCycles: () => Promise<void>;
+}
+
+function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
+  if (!cycles.length) return null;
+
+  // 1) Prefer explicit backend status when correct
+  const activeByStatus = cycles.find((c) => c.status === 'active');
+  if (activeByStatus) return activeByStatus;
+
+  // 2) Fallback by local date window (fixes stale status issue)
+  const today = getLocalDateString();
+  const byDate = cycles.find((c) => c.start_date <= today && c.end_date >= today);
+  if (byDate) return byDate;
+
+  // 3) Final fallback: latest started cycle or first cycle
+  const started = cycles
+    .filter((c) => c.start_date <= today)
+    .sort((a, b) => b.cycle_number - a.cycle_number);
+
+  return started[0] || cycles[0] || null;
 }
 
 export function useCycles(userId?: string): UseCyclesReturn {
@@ -63,11 +84,11 @@ export function useCycles(userId?: string): UseCyclesReturn {
 
       if (fetchError) throw fetchError;
 
-      setCycles(data || []);
+      const nextCycles = data || [];
+      setCycles(nextCycles);
 
-      // 查找当前周期
-      const current = data?.find((c) => c.status === 'active') || null;
-      setCurrentCycle(current);
+      // 查找当前周期（优先 active，兜底按日期）
+      setCurrentCycle(resolveCurrentCycle(nextCycles));
 
       setError(null);
     } catch (err) {
@@ -99,15 +120,12 @@ export function useCycles(userId?: string): UseCyclesReturn {
         (payload) => {
           const updatedCycle = payload.new as Cycle;
 
-          // 更新本地周期列表
-          setCycles((prev) =>
-            prev.map((c) => (c.id === updatedCycle.id ? updatedCycle : c))
-          );
-
-          // 更新当前周期
-          if (updatedCycle.status === 'active') {
-            setCurrentCycle(updatedCycle);
-          }
+          // 更新本地周期列表并重新推导当前周期
+          setCycles((prev) => {
+            const next = prev.map((c) => (c.id === updatedCycle.id ? updatedCycle : c));
+            setCurrentCycle(resolveCurrentCycle(next));
+            return next;
+          });
         }
       )
       .subscribe();

@@ -44,6 +44,13 @@ export default function Home() {
   const today = getLocalDateString();
   const { goals: dailyGoals } = useDailyGoals(user?.id, today);
 
+  const getCycleDisplayStatus = (cycle: { start_date: string; end_date: string; status: string }) => {
+    const today = getLocalDateString();
+    if (cycle.start_date <= today && cycle.end_date >= today) return 'current';
+    if (cycle.end_date < today) return 'complete';
+    return 'future';
+  };
+
   // Generate 37 dots representing cycles (use real cycle data where available)
   const totalDots = 37;
   const dots = Array.from({ length: totalDots }, (_, i) => {
@@ -51,8 +58,9 @@ export default function Home() {
     const cycle = filteredCycles[cycleIndex];
 
     if (cycle) {
-      // Use real cycle data
-      if (cycle.status === 'completed') {
+      const displayStatus = getCycleDisplayStatus(cycle);
+
+      if (displayStatus === 'complete') {
         return {
           status: "complete" as const,
           completion: cycle.completion_rate,
@@ -60,7 +68,8 @@ export default function Home() {
           cycleNumber: cycle.cycle_number
         };
       }
-      if (cycle.status === 'active') {
+
+      if (displayStatus === 'current') {
         return {
           status: "current" as const,
           completion: cycle.completion_rate,
@@ -68,7 +77,7 @@ export default function Home() {
           cycleNumber: cycle.cycle_number
         };
       }
-      // not_started
+
       return {
         status: "future" as const,
         completion: 0,
