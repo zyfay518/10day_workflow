@@ -3,19 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useState } from "react";
+import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
-import Expense from "./pages/Expense";
-import Goals from "./pages/Goals";
-import History from "./pages/History";
 import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import Record from "./pages/Record";
-import Report from "./pages/Report";
-import Knowledge from "./pages/Knowledge";
 import Auth from "./pages/Auth";
 import Splash from "./pages/Splash";
+
+const Expense = lazy(() => import("./pages/Expense"));
+const Goals = lazy(() => import("./pages/Goals"));
+const History = lazy(() => import("./pages/History"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Record = lazy(() => import("./pages/Record"));
+const Report = lazy(() => import("./pages/Report"));
+const Knowledge = lazy(() => import("./pages/Knowledge"));
 import { useAuth } from "./hooks/useAuth";
 import { initTestData } from "./lib/localStorage";
 
@@ -63,15 +64,15 @@ export default function App() {
 
           <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route path="/" element={<Home />} />
-            <Route path="/goals" element={<Goals />} />
-            <Route path="/history" element={<History />} />
-            <Route path="/report" element={<Report />} />
-            <Route path="/knowledge" element={<Knowledge />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route path="/goals" element={<Suspense fallback={<AppLoadingScreen />}><Goals /></Suspense>} />
+            <Route path="/history" element={<Suspense fallback={<AppLoadingScreen />}><History /></Suspense>} />
+            <Route path="/report" element={<Suspense fallback={<AppLoadingScreen />}><Report /></Suspense>} />
+            <Route path="/knowledge" element={<Suspense fallback={<AppLoadingScreen />}><Knowledge /></Suspense>} />
+            <Route path="/profile" element={<Suspense fallback={<AppLoadingScreen />}><Profile /></Suspense>} />
           </Route>
 
-          <Route path="/record" element={<ProtectedRoute><Record /></ProtectedRoute>} />
-          <Route path="/expense" element={<ProtectedRoute><Expense /></ProtectedRoute>} />
+          <Route path="/record" element={<ProtectedRoute><Suspense fallback={<AppLoadingScreen />}><Record /></Suspense></ProtectedRoute>} />
+          <Route path="/expense" element={<ProtectedRoute><Suspense fallback={<AppLoadingScreen />}><Expense /></Suspense></ProtectedRoute>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

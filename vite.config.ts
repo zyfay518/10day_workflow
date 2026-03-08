@@ -22,7 +22,6 @@ export default defineConfig(({mode}) => {
             react: ['react', 'react-dom', 'react-router-dom'],
             supabase: ['@supabase/supabase-js'],
             charts: ['recharts'],
-            motion: ['motion'],
             icons: ['lucide-react'],
           },
         },
