@@ -155,8 +155,8 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-[22px] z-20 w-4 h-4 rounded-full bg-white/95 border border-[#E7EBF0] flex items-center justify-center shadow-sm pointer-events-none">
-                <Mic size={9} strokeWidth={2.4} className="text-[#8FA7C0]" />
+              <div className="absolute left-1/2 top-2.5 -translate-x-1/2 z-30 w-5 h-5 rounded-full bg-[#F7FAFD] border border-[#D8E2EE] flex items-center justify-center shadow-sm pointer-events-none">
+                <Mic size={11} strokeWidth={2.4} className="text-[#6F8EAF]" />
               </div>
 
               <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
