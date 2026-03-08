@@ -32,11 +32,31 @@ function formatDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+function normalizeCycles(cycles: Cycle[]): Cycle[] {
+  const byNumber = new Map<number, Cycle>();
+
+  for (const cycle of cycles) {
+    const prev = byNumber.get(cycle.cycle_number);
+    if (!prev) {
+      byNumber.set(cycle.cycle_number, cycle);
+      continue;
+    }
+
+    const prevTime = new Date(prev.updated_at || prev.created_at).getTime();
+    const currTime = new Date(cycle.updated_at || cycle.created_at).getTime();
+    if (currTime >= prevTime) {
+      byNumber.set(cycle.cycle_number, cycle);
+    }
+  }
+
+  return Array.from(byNumber.values()).sort((a, b) => a.cycle_number - b.cycle_number);
+}
+
 function buildExpectedCycles(userId: string, year: number, existingCycles: Cycle[]) {
   const today = getLocalDateString();
   const existingByNumber = new Map(existingCycles.map((c) => [c.cycle_number, c]));
 
-  const expected: Array<Database['public']['Tables']['cycles']['Insert']> = [];
+  const expected: Array<{ cycleNumber: number; payload: Database['public']['Tables']['cycles']['Insert']; existing?: Cycle }> = [];
 
   let currentStart = new Date(year, 0, 1);
   for (let i = 1; i <= 37; i++) {
@@ -66,13 +86,17 @@ function buildExpectedCycles(userId: string, year: number, existingCycles: Cycle
 
     if (needsUpsert) {
       expected.push({
-        user_id: userId,
-        cycle_number: i,
-        start_date: startDate,
-        end_date: endDate,
-        total_days: daysInCycle,
-        completion_rate: existing?.completion_rate ?? (status === 'completed' ? 100 : 0),
-        status,
+        cycleNumber: i,
+        existing,
+        payload: {
+          user_id: userId,
+          cycle_number: i,
+          start_date: startDate,
+          end_date: endDate,
+          total_days: daysInCycle,
+          completion_rate: existing?.completion_rate ?? (status === 'completed' ? 100 : 0),
+          status,
+        }
       });
     }
 
@@ -85,20 +109,39 @@ function buildExpectedCycles(userId: string, year: number, existingCycles: Cycle
 
 async function syncCyclesIfNeeded(userId: string, cycles: Cycle[]): Promise<boolean> {
   const currentYear = new Date().getFullYear();
-  const toUpsert = buildExpectedCycles(userId, currentYear, cycles);
+  const expected = buildExpectedCycles(userId, currentYear, cycles);
 
-  if (toUpsert.length === 0) return false;
+  if (expected.length === 0) return false;
 
-  const { error } = await supabase
-    .from('cycles')
-    .upsert(toUpsert, { onConflict: 'user_id,cycle_number' });
+  let changed = false;
 
-  if (error) {
-    console.error('Failed to sync cycles:', error);
-    return false;
+  for (const item of expected) {
+    if (item.existing?.id) {
+      const { error } = await supabase
+        .from('cycles')
+        .update(item.payload)
+        .eq('id', item.existing.id)
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error(`Failed to update cycle ${item.cycleNumber}:`, error);
+      } else {
+        changed = true;
+      }
+    } else {
+      const { error } = await supabase
+        .from('cycles')
+        .insert(item.payload);
+
+      if (error) {
+        console.error(`Failed to insert cycle ${item.cycleNumber}:`, error);
+      } else {
+        changed = true;
+      }
+    }
   }
 
-  return true;
+  return changed;
 }
 
 function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
@@ -164,7 +207,7 @@ export function useCycles(userId?: string): UseCyclesReturn {
 
       if (fetchError) throw fetchError;
 
-      let nextCycles = data || [];
+      let nextCycles = normalizeCycles(data || []);
 
       // 底层修复：自动补齐/纠正 37 个周期和状态
       const synced = await syncCyclesIfNeeded(userId, nextCycles);
@@ -176,7 +219,7 @@ export function useCycles(userId?: string): UseCyclesReturn {
           .order('cycle_number', { ascending: true });
 
         if (!refreshError) {
-          nextCycles = refreshed || [];
+          nextCycles = normalizeCycles(refreshed || []);
         }
       }
 
