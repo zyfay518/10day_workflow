@@ -4,7 +4,7 @@ import {
   LineChart, Line, CartesianGrid, Legend,
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar
 } from "recharts";
-import { X, TrendingUp, Target, Tag, Brain } from "lucide-react";
+import { X, TrendingUp, Target, Brain } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
@@ -12,7 +12,7 @@ import { useCycles } from "../hooks/useCycles";
 import { useDimensions } from "../hooks/useDimensions";
 import { useGoalEvaluations } from "../hooks/useGoalEvaluations";
 import { useReports } from "../hooks/useReports";
-import { useGrowthTags } from "../hooks/useGrowthTags";
+import { supabase } from "../lib/supabase";
 
 export default function Report() {
   const { user } = useAuth();
@@ -35,11 +35,8 @@ export default function Report() {
   }, [completedCycles, selectedCycleId]);
 
   const { reports } = useReports(user?.id, selectedCycleId ?? undefined);
-  const { tags } = useGrowthTags(user?.id);
-
-  const topTags = useMemo(() => {
-    return [...tags].sort((a, b) => b.frequency - a.frequency).slice(0, 15);
-  }, [tags]);
+  const [savedProfile, setSavedProfile] = useState<any | null>(null);
+  const [profileTableAvailable, setProfileTableAvailable] = useState(true);
 
   // --- Process Data for Charts ---
 
@@ -98,7 +95,7 @@ export default function Report() {
 
   const selectedCycle = completedCycles.find(c => c.id === selectedCycleId);
 
-  const cognitiveProfile = useMemo(() => {
+  const generatedProfile = useMemo(() => {
     if (!selectedCycle) return null;
 
     const currentIndex = completedCycles.findIndex(c => c.id === selectedCycle.id);
@@ -151,6 +148,86 @@ export default function Report() {
       suggestions,
     };
   }, [selectedCycle, completedCycles, currentCycleAvgScore, evaluations, reports]);
+
+  const cognitiveProfile = useMemo(() => {
+    if (savedProfile) {
+      return {
+        stage: savedProfile.stage,
+        currentAvg: savedProfile.average_score,
+        delta: savedProfile.delta_score,
+        metrics: savedProfile.metrics || [],
+        evidence: savedProfile.evidence || [],
+        suggestions: savedProfile.suggestions || [],
+      };
+    }
+
+    return generatedProfile;
+  }, [savedProfile, generatedProfile]);
+
+  useEffect(() => {
+    async function loadSavedProfile() {
+      if (!user?.id || !selectedCycleId || !profileTableAvailable) {
+        setSavedProfile(null);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('cognitive_profiles' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('cycle_id', selectedCycleId)
+          .maybeSingle();
+
+        if (error) throw error;
+        setSavedProfile(data || null);
+      } catch (e: any) {
+        if (String(e?.message || '').includes('cognitive_profiles')) {
+          setProfileTableAvailable(false);
+        }
+        setSavedProfile(null);
+      }
+    }
+
+    loadSavedProfile();
+  }, [user?.id, selectedCycleId, profileTableAvailable]);
+
+  useEffect(() => {
+    async function persistProfile() {
+      if (!user?.id || !selectedCycleId || !generatedProfile || !profileTableAvailable) return;
+
+      // If already exists, don't overwrite manually tuned content
+      if (savedProfile) return;
+
+      try {
+        const payload = {
+          user_id: user.id,
+          cycle_id: selectedCycleId,
+          stage: generatedProfile.stage,
+          average_score: generatedProfile.currentAvg,
+          delta_score: generatedProfile.delta,
+          metrics: generatedProfile.metrics,
+          evidence: generatedProfile.evidence,
+          suggestions: generatedProfile.suggestions,
+        };
+
+        const { data, error } = await supabase
+          .from('cognitive_profiles' as any)
+          .insert(payload)
+          .select('*')
+          .single();
+
+        if (error) throw error;
+        setSavedProfile(data);
+      } catch (e: any) {
+        if (String(e?.message || '').includes('cognitive_profiles')) {
+          setProfileTableAvailable(false);
+        }
+      }
+    }
+
+    persistProfile();
+  }, [user?.id, selectedCycleId, generatedProfile, savedProfile, profileTableAvailable]);
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB] relative pb-28">
@@ -305,21 +382,6 @@ export default function Report() {
                   </section>
                 )}
 
-                {topTags.length > 0 && (
-                  <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                    <h2 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                      <Tag size={24} className="text-indigo-400" />
-                      Growth Tags
-                    </h2>
-                    <div className="flex flex-wrap gap-2">
-                      {topTags.map((tag) => (
-                        <div key={tag.id} className="px-3 py-1.5 rounded-lg border bg-blue-50 border-blue-100 text-blue-600 text-sm">
-                          {tag.tag_name} <span className="text-[10px] opacity-70 ml-1">{tag.frequency}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                )}
 
                 <section className="space-y-3 pb-8">
                   <h2 className="font-bold text-gray-800 flex items-center gap-2">
