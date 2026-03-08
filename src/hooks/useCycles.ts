@@ -28,14 +28,15 @@ interface UseCyclesReturn {
 function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
   if (!cycles.length) return null;
 
-  // 1) Prefer explicit backend status when correct
-  const activeByStatus = cycles.find((c) => c.status === 'active');
-  if (activeByStatus) return activeByStatus;
-
-  // 2) Fallback by local date window (fixes stale status issue)
   const today = getLocalDateString();
+
+  // 1) Prefer date window to avoid stale backend status causing wrong cycle
   const byDate = cycles.find((c) => c.start_date <= today && c.end_date >= today);
   if (byDate) return byDate;
+
+  // 2) Fallback to explicit active status
+  const activeByStatus = cycles.find((c) => c.status === 'active');
+  if (activeByStatus) return activeByStatus;
 
   // 3) Final fallback: latest started cycle or first cycle
   const started = cycles

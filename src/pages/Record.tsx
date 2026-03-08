@@ -20,11 +20,16 @@ import { getLocalDateString } from "../lib/utils";
 export default function Record() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { currentCycle } = useCycles(user?.id);
+  const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
   const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const dateInputRef = useRef<HTMLInputElement>(null);
+
+  const selectedCycle = React.useMemo(() => {
+    const byDate = cycles.find((c) => c.start_date <= selectedDate && c.end_date >= selectedDate);
+    return byDate || currentCycle || null;
+  }, [cycles, currentCycle, selectedDate]);
 
   // No more tabs, we default to the entire day's record view.
   // The 'activeDimension' logic below will be refactored in Phase 3.
@@ -35,7 +40,7 @@ export default function Record() {
 
   const { record, saving, saveRecord } = useRecords({
     userId: user?.id,
-    cycleId: currentCycle?.id,
+    cycleId: selectedCycle?.id,
     dimensionId: defaultDimension?.id,
     date: selectedDate,
   });
@@ -86,14 +91,14 @@ export default function Record() {
   const [overviewStatus, setOverviewStatus] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (!user || !currentCycle) return;
+    if (!user || !selectedCycle) return;
 
     const fetchOverviewStatus = async () => {
       const { data, error } = await supabase
         .from('records')
         .select('dimension_id, status')
         .eq('user_id', user.id)
-        .eq('cycle_id', currentCycle.id)
+        .eq('cycle_id', selectedCycle.id)
         .eq('record_date', selectedDate);
 
       if (error) {
@@ -111,7 +116,7 @@ export default function Record() {
     };
 
     fetchOverviewStatus();
-  }, [user, currentCycle, selectedDate, dimensions, record?.status]);
+  }, [user, selectedCycle, selectedDate, dimensions, record?.status]);
 
   // Show custom dialog
   const showCustomDialog = (title: string, message: string, onConfirm?: () => void) => {
@@ -213,6 +218,11 @@ export default function Record() {
   const handleConfirmAI = async (items: SplitDimensionItem[]) => {
     setShowAIModal(false);
 
+    if (!selectedCycle) {
+      showCustomDialog('Notice', 'Cannot find cycle for selected date');
+      return;
+    }
+
     if (items.length === 0) {
       handleSkipAI();
       return;
@@ -226,7 +236,7 @@ export default function Record() {
         const { data: existing } = await supabase.from('records')
           .select('*')
           .eq('user_id', user!.id)
-          .eq('cycle_id', currentCycle!.id)
+          .eq('cycle_id', selectedCycle!.id)
           .eq('dimension_id', dim.id)
           .eq('record_date', selectedDate)
           .maybeSingle();
@@ -247,7 +257,7 @@ export default function Record() {
         } else {
           const insertPayload = {
             user_id: user!.id,
-            cycle_id: currentCycle!.id,
+            cycle_id: selectedCycle.id,
             dimension_id: dim.id,
             record_date: selectedDate,
             content: finalContent,
@@ -270,7 +280,7 @@ export default function Record() {
               const newExpenses = parsedExpenses.map(exp => ({
                 record_id: savedRecordId,
                 user_id: user!.id,
-                cycle_id: currentCycle!.id,
+                cycle_id: selectedCycle.id,
                 category: exp.category || 'Other',
                 item_name: exp.name || 'Expense',
                 amount: exp.amount,
