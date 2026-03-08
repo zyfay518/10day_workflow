@@ -25,6 +25,82 @@ interface UseCyclesReturn {
   refreshCycles: () => Promise<void>;
 }
 
+function formatDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function buildExpectedCycles(userId: string, year: number, existingCycles: Cycle[]) {
+  const today = getLocalDateString();
+  const existingByNumber = new Map(existingCycles.map((c) => [c.cycle_number, c]));
+
+  const expected: Array<Database['public']['Tables']['cycles']['Insert']> = [];
+
+  let currentStart = new Date(year, 0, 1);
+  for (let i = 1; i <= 37; i++) {
+    const isLast = i === 37;
+    const end = new Date(currentStart);
+
+    const daysInCycle = isLast
+      ? Math.round((new Date(year, 11, 31).getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      : 10;
+
+    end.setDate(currentStart.getDate() + daysInCycle - 1);
+
+    const startDate = formatDate(currentStart);
+    const endDate = formatDate(end);
+
+    const status: 'not_started' | 'active' | 'completed' =
+      today < startDate ? 'not_started' : today > endDate ? 'completed' : 'active';
+
+    const existing = existingByNumber.get(i);
+
+    const needsUpsert =
+      !existing ||
+      existing.start_date !== startDate ||
+      existing.end_date !== endDate ||
+      existing.total_days !== daysInCycle ||
+      existing.status !== status;
+
+    if (needsUpsert) {
+      expected.push({
+        user_id: userId,
+        cycle_number: i,
+        start_date: startDate,
+        end_date: endDate,
+        total_days: daysInCycle,
+        completion_rate: existing?.completion_rate ?? (status === 'completed' ? 100 : 0),
+        status,
+      });
+    }
+
+    currentStart = new Date(end);
+    currentStart.setDate(end.getDate() + 1);
+  }
+
+  return expected;
+}
+
+async function syncCyclesIfNeeded(userId: string, cycles: Cycle[]): Promise<boolean> {
+  const currentYear = new Date().getFullYear();
+  const toUpsert = buildExpectedCycles(userId, currentYear, cycles);
+
+  if (toUpsert.length === 0) return false;
+
+  const { error } = await supabase
+    .from('cycles')
+    .upsert(toUpsert, { onConflict: 'user_id,cycle_number' });
+
+  if (error) {
+    console.error('Failed to sync cycles:', error);
+    return false;
+  }
+
+  return true;
+}
+
 function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
   if (!cycles.length) return null;
 
@@ -88,10 +164,25 @@ export function useCycles(userId?: string): UseCyclesReturn {
 
       if (fetchError) throw fetchError;
 
-      const nextCycles = data || [];
+      let nextCycles = data || [];
+
+      // 底层修复：自动补齐/纠正 37 个周期和状态
+      const synced = await syncCyclesIfNeeded(userId, nextCycles);
+      if (synced) {
+        const { data: refreshed, error: refreshError } = await supabase
+          .from('cycles')
+          .select('*')
+          .eq('user_id', userId)
+          .order('cycle_number', { ascending: true });
+
+        if (!refreshError) {
+          nextCycles = refreshed || [];
+        }
+      }
+
       setCycles(nextCycles);
 
-      // 查找当前周期（优先 active，兜底按日期）
+      // 查找当前周期（优先按日期）
       setCurrentCycle(resolveCurrentCycle(nextCycles));
 
       setError(null);
@@ -116,20 +207,14 @@ export function useCycles(userId?: string): UseCyclesReturn {
       .on(
         'postgres_changes',
         {
-          event: 'UPDATE',
+          event: '*',
           schema: 'public',
           table: 'cycles',
           filter: `user_id=eq.${userId}`,
         },
-        (payload) => {
-          const updatedCycle = payload.new as Cycle;
-
-          // 更新本地周期列表并重新推导当前周期
-          setCycles((prev) => {
-            const next = prev.map((c) => (c.id === updatedCycle.id ? updatedCycle : c));
-            setCurrentCycle(resolveCurrentCycle(next));
-            return next;
-          });
+        () => {
+          // 插入/更新/删除都直接全量刷新，避免周期数量变化导致本地状态错误
+          fetchCycles();
         }
       )
       .subscribe();
