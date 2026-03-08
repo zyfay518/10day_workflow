@@ -124,7 +124,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
     const saysTomorrow = /明天/.test(text);
     const saysToday = /今天/.test(text);
-    const saysCycleGoal = /(本周期|这个周期|本轮|这十天|10天)/.test(text);
+    const saysCycleGoal = /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(text);
 
     parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
       ...g,
@@ -147,7 +147,13 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
     // Heuristic guard: explicit cycle intent must produce at least one cycle goal
     if (saysCycleGoal && (!parsed.cycle_goals || parsed.cycle_goals.length === 0)) {
-      const seed = (parsed.daily_goals && parsed.daily_goals[0]?.content)
+      const sentence = text
+        .split(/[。！!？?\n]/)
+        .map(s => s.trim())
+        .find(s => /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(s));
+
+      const seed = sentence
+        || (parsed.daily_goals && parsed.daily_goals[0]?.content)
         || (parsed.records && parsed.records[0]?.content)
         || parsed.summary
         || text;
@@ -183,17 +189,24 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   };
 
   const handleApplyParsed = async () => {
-    if (!user?.id || !currentCycle?.id || !draft) return;
+    if (!user?.id || !draft) return;
+    if (!currentCycle?.id) {
+      setMessage('Current cycle is missing. Please refresh Home first.');
+      return;
+    }
 
     try {
       setSaving(true);
       const payload = draft;
       const today = getLocalDateString();
+      let savedRecords = 0;
+      let savedCycleGoals = 0;
+      let savedDailyGoals = 0;
 
       for (const rec of payload.records || []) {
         const dimensionId = mapDimensionId(dimensions, rec.dimension);
         if (!dimensionId || !rec.content?.trim()) continue;
-        await supabase.from('records').insert({
+        const { error } = await supabase.from('records').insert({
           user_id: user.id,
           cycle_id: currentCycle.id,
           dimension_id: dimensionId,
@@ -202,12 +215,13 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           word_count: rec.content.length,
           status: 'published',
         });
+        if (!error) savedRecords++;
       }
 
       for (const goal of payload.cycle_goals || []) {
         const dimensionId = mapDimensionId(dimensions, goal.dimension);
         if (!dimensionId || !goal.content?.trim()) continue;
-        await supabase.from('cycle_goals').insert({
+        const { error } = await supabase.from('cycle_goals').insert({
           user_id: user.id,
           cycle_id: currentCycle.id,
           dimension_id: dimensionId,
@@ -217,12 +231,13 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           target_value: goal.target_value ?? null,
           target_unit: goal.target_unit ?? null,
         });
+        if (!error) savedCycleGoals++;
       }
 
       for (const goal of payload.daily_goals || []) {
         const dimensionId = mapDimensionId(dimensions, goal.dimension);
         if (!dimensionId || !goal.content?.trim()) continue;
-        await supabase.from('daily_goals').insert({
+        const { error } = await supabase.from('daily_goals').insert({
           user_id: user.id,
           cycle_id: currentCycle.id,
           goal_date: goal.goal_date || today,
@@ -233,6 +248,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           target_value: goal.target_value ?? null,
           target_unit: goal.target_unit ?? null,
         });
+        if (!error) savedDailyGoals++;
       }
 
       await persistVoiceEntry('parsed_to_records_goals', payload, 'applied');
@@ -245,7 +261,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           .eq('user_id', user.id);
       }
 
-      setMessage('Parsed and saved to records/goals.');
+      setMessage(`Saved: records ${savedRecords}, cycle goals ${savedCycleGoals}, daily goals ${savedDailyGoals}.`);
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
@@ -380,6 +396,28 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                 ))}
               </div>
             </div>
+
+            {(draft.cycle_goals || []).length > 0 && (
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">Cycle Goals (editable)</p>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {(draft.cycle_goals || []).map((g, i) => (
+                    <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
+                      <textarea
+                        value={g.content}
+                        onChange={(e) => setDraft(prev => {
+                          if (!prev) return prev;
+                          const next = [...(prev.cycle_goals || [])];
+                          next[i] = { ...next[i], content: e.target.value };
+                          return { ...prev, cycle_goals: next };
+                        })}
+                        className="w-full h-14 text-sm border border-gray-200 rounded p-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {(draft.daily_goals || []).length > 0 && (
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
