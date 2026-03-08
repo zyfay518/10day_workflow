@@ -134,19 +134,18 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       const now = new Date().toISOString();
 
       // 1) Try normal update first (works when profile row already exists)
-      const { data: updated, error: updateError } = await supabase
+      const { data: updatedRows, error: updateError } = await supabase
         .from('user_profiles')
         .update({
           ...updates,
           updated_at: now,
         })
         .eq('user_id', userId)
-        .select('*')
-        .maybeSingle();
+        .select('*');
 
       if (updateError) throw updateError;
 
-      let next = updated as UserProfile | null;
+      let next = (updatedRows && updatedRows.length > 0 ? updatedRows[0] : null) as UserProfile | null;
 
       // 2) If no row existed (e.g. manually cleaned data), create it with fallback nickname
       if (!next) {
