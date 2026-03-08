@@ -17,6 +17,31 @@ export interface SplitDimensionItem {
     content: string;
 }
 
+export interface VoiceParsedResult {
+    summary: string;
+    dimension: string;
+    records: { dimension: string; content: string; record_date?: string }[];
+    cycle_goals: {
+        dimension: string;
+        content: string;
+        evaluation_criteria: string;
+        target_type: 'quantitative' | 'qualitative';
+        target_value?: number | null;
+        target_unit?: string | null;
+    }[];
+    daily_goals: {
+        dimension: string;
+        goal_date?: string;
+        content: string;
+        evaluation_criteria: string;
+        target_type: 'quantitative' | 'qualitative';
+        target_value?: number | null;
+        target_unit?: string | null;
+    }[];
+    expenses: { category: string; item_name: string; amount: number; expense_date?: string }[];
+    confidence?: number;
+}
+
 export function useAIAnalysis(userId?: string) {
     const [analyzing, setAnalyzing] = useState(false);
     const [result, setResult] = useState<string | null>(null);
@@ -277,6 +302,99 @@ export function useAIAnalysis(userId?: string) {
         [getPrompt]
     );
 
+    const parseVoiceQuickEntry = useCallback(async (content: string): Promise<VoiceParsedResult | null> => {
+        const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+        if (!apiKey || !content.trim()) return null;
+
+        setAnalyzing(true);
+        setError(null);
+
+        try {
+            const prompt = `You are a strict JSON extractor for a life-tracking app.
+Return ONLY valid JSON with this exact shape:
+{
+  "summary": "string",
+  "dimension": "Health|Work|Study|Wealth|Family|Other",
+  "records": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","record_date":"YYYY-MM-DD"}],
+  "cycle_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
+  "daily_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","goal_date":"YYYY-MM-DD","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
+  "expenses": [{"category":"string","item_name":"string","amount":0,"expense_date":"YYYY-MM-DD"}],
+  "confidence": 0.0
+}
+Rules:
+- If unsure, use dimension = Other.
+- Do not invent numbers/dates.
+- Empty arrays when not applicable.
+- No markdown, no explanation.
+
+User transcript:
+${content}`;
+
+            const response = await fetch(DEEPSEEK_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: 'Return strict JSON only.' },
+                        { role: 'user', content: prompt },
+                    ],
+                    temperature: 0.1,
+                    max_tokens: 1400,
+                }),
+            });
+
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+
+            const data = await response.json();
+            let aiText = data.choices[0]?.message?.content?.trim() || '{}';
+            const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) aiText = jsonMatch[0];
+
+            return JSON.parse(aiText) as VoiceParsedResult;
+        } catch (err) {
+            console.error('parseVoiceQuickEntry failed:', err);
+            return null;
+        } finally {
+            setAnalyzing(false);
+        }
+    }, [profile?.ai_api_key]);
+
+    const classifyVoiceDimension = useCallback(async (content: string): Promise<string> => {
+        const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+        if (!apiKey || !content.trim()) return 'Other';
+
+        try {
+            const response = await fetch(DEEPSEEK_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: 'Classify into one label only: Health, Work, Study, Wealth, Family, Other.' },
+                        { role: 'user', content },
+                    ],
+                    temperature: 0,
+                    max_tokens: 20,
+                }),
+            });
+
+            if (!response.ok) return 'Other';
+            const data = await response.json();
+            const label = String(data.choices[0]?.message?.content || 'Other').trim();
+            const normalized = ['Health', 'Work', 'Study', 'Wealth', 'Family', 'Other'].find(d => label.includes(d));
+            return normalized || 'Other';
+        } catch {
+            return 'Other';
+        }
+    }, [profile?.ai_api_key]);
+
     return {
         analyzing,
         result,
@@ -286,6 +404,8 @@ export function useAIAnalysis(userId?: string) {
         generateQuote,
         parseExpenseResult,
         extractTags,
+        parseVoiceQuickEntry,
+        classifyVoiceDimension,
         clearResult: () => { setResult(null); setError(null); },
     };
 }
