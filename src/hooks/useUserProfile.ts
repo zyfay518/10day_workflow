@@ -15,6 +15,9 @@ import { Database } from '../types/database';
 
 type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 
+const profileCache = new Map<string, UserProfile>();
+const cacheKey = (userId: string) => `profile_cache_${userId}`;
+
 interface UseUserProfileReturn {
   profile: UserProfile | null;
   loading: boolean;
@@ -24,8 +27,20 @@ interface UseUserProfileReturn {
 }
 
 export function useUserProfile(userId?: string): UseUserProfileReturn {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const initialProfile = (() => {
+    if (!userId) return null;
+    const mem = profileCache.get(userId);
+    if (mem) return mem;
+    try {
+      const raw = localStorage.getItem(cacheKey(userId));
+      return raw ? (JSON.parse(raw) as UserProfile) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const [profile, setProfile] = useState<UserProfile | null>(initialProfile);
+  const [loading, setLoading] = useState(!initialProfile);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,11 +64,28 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
         .from('user_profiles')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (fetchError) throw fetchError;
 
-      setProfile(data);
+      // Create a minimal profile row if missing, so downstream updates are stable
+      let nextProfile = data as UserProfile | null;
+      if (!nextProfile) {
+        const { data: created, error: createError } = await supabase
+          .from('user_profiles')
+          .upsert({ user_id: userId }, { onConflict: 'user_id' })
+          .select('*')
+          .single();
+        if (createError) throw createError;
+        nextProfile = created as UserProfile;
+      }
+
+      if (nextProfile) {
+        profileCache.set(userId, nextProfile);
+        try { localStorage.setItem(cacheKey(userId), JSON.stringify(nextProfile)); } catch {}
+      }
+
+      setProfile(nextProfile);
       setError(null);
     } catch (err) {
       console.error('Failed to fetch user profile:', err);
@@ -88,7 +120,10 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       if (upsertError) throw upsertError;
 
       // 更新本地状态
-      setProfile(data as UserProfile);
+      const next = data as UserProfile;
+      setProfile(next);
+      profileCache.set(userId, next);
+      try { localStorage.setItem(cacheKey(userId), JSON.stringify(next)); } catch {}
       setError(null);
       return true;
     } catch (err) {

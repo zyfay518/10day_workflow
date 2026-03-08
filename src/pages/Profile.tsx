@@ -178,7 +178,7 @@ export default function Profile() {
             </label>
           </div>
           <h2 className="text-lg font-bold text-gray-800 mb-0.5">{profile?.nickname || 'User'}</h2>
-          <p className="text-sm text-gray-500 font-normal">{user?.phone || 'N/A'}</p>
+          <p className="text-sm text-gray-500 font-normal">{user?.email || user?.phone || 'Account'}</p>
           <div className="mt-4 flex gap-3">
             <span className="px-3 py-1 bg-green-50 text-[#A8C3A9] text-xs font-medium rounded-full border border-green-100">Free Plan</span>
             <span className="px-3 py-1 bg-blue-50 text-[#9DC5EF] text-xs font-medium rounded-full border border-blue-100">Joined 2026</span>
