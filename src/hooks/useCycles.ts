@@ -94,7 +94,7 @@ function buildExpectedCycles(userId: string, year: number, existingCycles: Cycle
           start_date: startDate,
           end_date: endDate,
           total_days: daysInCycle,
-          completion_rate: existing?.completion_rate ?? (status === 'completed' ? 100 : 0),
+          completion_rate: existing?.completion_rate ?? 0,
           status,
         }
       });
