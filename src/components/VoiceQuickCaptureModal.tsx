@@ -40,6 +40,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const [seconds, setSeconds] = useState(0);
   const [draft, setDraft] = useState<VoiceParsedResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [draftRowId, setDraftRowId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -47,6 +48,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setText('');
     setSeconds(0);
     setDraft(null);
+    setDraftRowId(null);
     setMessage('');
     resetTranscript();
 
@@ -77,17 +79,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   }, [open, isListening]);
 
   const persistVoiceEntry = async (mode: 'parsed_to_records_goals' | 'saved_to_library', parseResult: any, status: 'confirmed' | 'applied') => {
-    if (!user?.id) return;
-    await supabase.from('voice_quick_entries' as any).insert({
-      user_id: user.id,
-      cycle_id: currentCycle?.id || null,
-      source_page: sourcePage,
-      transcript: text,
-      duration_sec: seconds,
-      parse_mode: mode,
-      parse_result: parseResult || {},
-      status,
-    });
+    if (!user?.id) return null;
+    const { data } = await supabase
+      .from('voice_quick_entries' as any)
+      .insert({
+        user_id: user.id,
+        cycle_id: currentCycle?.id || null,
+        source_page: sourcePage,
+        transcript: text,
+        duration_sec: seconds,
+        parse_mode: mode,
+        parse_result: parseResult || {},
+        status,
+      })
+      .select('id')
+      .single();
+
+    return data?.id ?? null;
   };
 
   const normalizeDate = (value: string | undefined, fallback: string) => {
@@ -137,7 +145,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     }));
 
     setDraft(parsed);
-    await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
+    const voiceEntryId = await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
+
+    if (voiceEntryId && user?.id) {
+      const { data } = await supabase
+        .from('voice_parsed_drafts' as any)
+        .upsert({
+          voice_entry_id: voiceEntryId,
+          user_id: user.id,
+          draft_payload: parsed,
+          confirmed: false,
+          applied: false,
+        }, { onConflict: 'voice_entry_id' })
+        .select('id')
+        .single();
+
+      setDraftRowId(data?.id ?? null);
+    }
   };
 
   const handleApplyParsed = async () => {
@@ -194,6 +218,15 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       }
 
       await persistVoiceEntry('parsed_to_records_goals', payload, 'applied');
+
+      if (draftRowId && user?.id) {
+        await supabase
+          .from('voice_parsed_drafts' as any)
+          .update({ confirmed: true, applied: true, draft_payload: payload })
+          .eq('id', draftRowId)
+          .eq('user_id', user.id);
+      }
+
       setMessage('Parsed and saved to records/goals.');
       setTimeout(() => onClose(), 600);
     } catch (e) {

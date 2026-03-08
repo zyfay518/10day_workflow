@@ -11,7 +11,7 @@ export default function Profile() {
   const { profile, updateProfile, uploadAvatar } = useUserProfile(user?.id);
   const { getPrompt, savePrompt, resetPrompt, getAllPromptConfigs, isCustomized, loading: promptsLoading } = useAIPrompts(user?.id);
 
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications_enabled') !== '0');
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
   const [apiKey, setApiKey] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -67,6 +67,12 @@ export default function Profile() {
   const handleLogout = async () => {
     await signOut();
     window.location.href = '/';
+  };
+
+  const handleToggleNotifications = () => {
+    const next = !notifications;
+    setNotifications(next);
+    localStorage.setItem('notifications_enabled', next ? '1' : '0');
   };
 
   // Prompt management handlers
@@ -151,8 +157,12 @@ export default function Profile() {
           </Link>
           <h1 className="text-[18px] font-bold text-gray-800">Settings</h1>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <Bell size={24} />
+        <button
+          onClick={handleToggleNotifications}
+          className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${notifications ? 'text-[#9DC5EF] bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}
+          title={notifications ? 'Notifications enabled' : 'Notifications disabled'}
+        >
+          <Bell size={20} />
         </button>
       </header>
 
