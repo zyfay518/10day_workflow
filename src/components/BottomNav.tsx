@@ -125,18 +125,14 @@ export default function BottomNav() {
               aria-label="Click to record, hold 2 seconds for voice"
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
-              <svg className="absolute inset-0 w-24 h-24" viewBox="0 0 96 96" aria-hidden="true">
-                <defs>
-                  <path id="voice-ring-left" d="M48 48 m-36 0 a36 36 0 0 1 20 -31" />
-                  <path id="voice-ring-right" d="M48 48 m36 0 a36 36 0 0 0 -20 -31" />
-                </defs>
-                <text fill="#9AA6B4" fontSize="5.2" fontWeight="600" letterSpacing="0.45">
-                  <textPath href="#voice-ring-left" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
-                </text>
-                <text fill="#9AA6B4" fontSize="5.2" fontWeight="600" letterSpacing="0.45">
-                  <textPath href="#voice-ring-right" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
-                </text>
-              </svg>
+              <div className="absolute inset-0 w-24 h-24 pointer-events-none">
+                <span className="absolute left-[4px] top-1/2 -translate-y-1/2 -rotate-[78deg] origin-center text-[8px] font-semibold tracking-[0.06em] text-[#9AA6B4] whitespace-nowrap">
+                  HOLD FOR VOICE
+                </span>
+                <span className="absolute right-[4px] top-1/2 -translate-y-1/2 rotate-[78deg] origin-center text-[8px] font-semibold tracking-[0.06em] text-[#9AA6B4] whitespace-nowrap">
+                  HOLD FOR VOICE
+                </span>
+              </div>
 
               {holdProgress > 0 && (
                 <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
