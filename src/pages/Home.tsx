@@ -9,7 +9,7 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
 import { useRecords } from "../hooks/useRecords";
 
-import { getLocalDateString } from "../lib/utils";
+import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 
 export default function Home() {
   const { user } = useAuth();
@@ -44,13 +44,12 @@ export default function Home() {
   const today = getLocalDateString();
   const { goals: dailyGoals } = useDailyGoals(user?.id, today);
 
-  const getCycleDisplayStatus = (cycle: { id: number; start_date: string; end_date: string }) => {
-    const today = getLocalDateString();
-    if (currentCycle && cycle.id === currentCycle.id) return 'current';
-    if (cycle.end_date < today) return 'complete';
-    if (cycle.start_date > today) return 'future';
-    // overlap/dirty data fallback
-    return 'complete';
+  const getDotStatus = (cycle: { id: number; start_date: string; end_date: string }) => {
+    if (currentCycle && cycle.id === currentCycle.id) return 'current' as const;
+    const status = getCycleDisplayStatus(cycle, getLocalDateString());
+    if (status === 'completed') return 'complete' as const;
+    if (status === 'ongoing') return 'current' as const;
+    return 'future' as const;
   };
 
   // Generate 37 dots representing cycles (use real cycle data where available)
@@ -60,7 +59,7 @@ export default function Home() {
     const cycle = filteredCycles[cycleIndex];
 
     if (cycle) {
-      const displayStatus = getCycleDisplayStatus(cycle);
+      const displayStatus = getDotStatus(cycle);
 
       if (displayStatus === 'complete') {
         return {

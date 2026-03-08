@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
-import { getLocalDateString } from '../lib/utils';
+import { getLocalDateString, getCycleDisplayStatus, isDateInCycle } from '../lib/utils';
 
 type Cycle = Database['public']['Tables']['cycles']['Row'];
 
@@ -33,7 +33,7 @@ function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
   // 1) Prefer date window to avoid stale backend status causing wrong cycle
   // If dirty data causes overlap, choose the latest cycle_number.
   const dateMatched = cycles
-    .filter((c) => c.start_date <= today && c.end_date >= today)
+    .filter((c) => isDateInCycle(c, today))
     .sort((a, b) => b.cycle_number - a.cycle_number);
   if (dateMatched.length > 0) return dateMatched[0];
 
@@ -43,7 +43,7 @@ function resolveCurrentCycle(cycles: Cycle[]): Cycle | null {
 
   // 3) Final fallback: latest started cycle or first cycle
   const started = cycles
-    .filter((c) => c.start_date <= today)
+    .filter((c) => getCycleDisplayStatus(c, today) !== 'not_started')
     .sort((a, b) => b.cycle_number - a.cycle_number);
 
   return started[0] || cycles[0] || null;

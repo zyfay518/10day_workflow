@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
-import { getLocalDateString } from "../lib/utils";
+import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -54,16 +54,9 @@ export default function Goals() {
     updateEvaluation
   } = useGoalEvaluations(user?.id, expandedCycleId || selectedCycleForDaily || undefined);
 
-  const getCycleDisplayStatus = (cycle: Cycle): 'completed' | 'ongoing' | 'not_started' => {
-    const today = getLocalDateString();
-    if (cycle.end_date < today) return 'completed';
-    if (cycle.start_date <= today && cycle.end_date >= today) return 'ongoing';
-    return 'not_started';
-  };
-
   // Get filtered cycles based on date-derived status (not stale DB status)
   const filteredCycles = cycles.filter(cycle => {
-    const displayStatus = getCycleDisplayStatus(cycle);
+    const displayStatus = getCycleDisplayStatus(cycle, getLocalDateString());
     if (cycleStatusTab === 'completed') return displayStatus === 'completed';
     if (cycleStatusTab === 'ongoing') return displayStatus === 'ongoing';
     if (cycleStatusTab === 'not_started') return displayStatus === 'not_started';

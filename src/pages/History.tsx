@@ -8,7 +8,7 @@ import { useDimensions } from "../hooks/useDimensions";
 import { supabase } from "../lib/supabase";
 import { Database } from "../types/database";
 import DateRangePicker from "../components/DateRangePicker";
-import { getLocalDateString } from "../lib/utils";
+import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 import { useMilestones } from "../hooks/useMilestones";
 import DynamicIcon from "../components/DynamicIcon";
 
@@ -56,7 +56,7 @@ export default function History() {
 
     const today = getLocalDateString();
     const dateMatched = cycles
-      .filter(c => c.start_date <= today && c.end_date >= today)
+      .filter(c => getCycleDisplayStatus(c, today) === 'ongoing')
       .sort((a, b) => b.cycle_number - a.cycle_number);
 
     return dateMatched[0] || currentCycle;

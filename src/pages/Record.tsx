@@ -15,7 +15,7 @@ import { supabase } from "../lib/supabase";
 import AIResultModal from "../components/AIResultModal";
 import { SplitDimensionItem } from "../hooks/useAIAnalysis";
 
-import { getLocalDateString } from "../lib/utils";
+import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 
 export default function Record() {
   const navigate = useNavigate();
@@ -27,7 +27,10 @@ export default function Record() {
   const dateInputRef = useRef<HTMLInputElement>(null);
 
   const selectedCycle = React.useMemo(() => {
-    const byDate = cycles.find((c) => c.start_date <= selectedDate && c.end_date >= selectedDate);
+    const byDate = cycles
+      .filter((c) => getCycleDisplayStatus(c, selectedDate) === 'ongoing')
+      .sort((a, b) => b.cycle_number - a.cycle_number)[0];
+
     return byDate || currentCycle || null;
   }, [cycles, currentCycle, selectedDate]);
 
