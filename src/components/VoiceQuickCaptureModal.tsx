@@ -52,10 +52,30 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setMessage('');
     resetTranscript();
 
-    const micGranted = localStorage.getItem('voice_quick_mic_granted') === '1';
-    if (isSupported && micGranted) {
-      startListening();
-    }
+    const autoStartIfGranted = async () => {
+      if (!isSupported) return;
+      const micGranted = localStorage.getItem('voice_quick_mic_granted') === '1';
+      if (!micGranted) return;
+
+      try {
+        const nav: any = navigator as any;
+        if (nav?.permissions?.query) {
+          const status = await nav.permissions.query({ name: 'microphone' as PermissionName });
+          // only auto-start when browser already has persistent grant
+          if (status.state === 'granted') {
+            startListening();
+          }
+          return;
+        }
+      } catch {
+        // ignore and fallback
+      }
+
+      // Fallback for browsers without Permissions API:
+      // do NOT auto-request to avoid repeated permission prompts
+    };
+
+    autoStartIfGranted();
   }, [open]);
 
   useEffect(() => {
