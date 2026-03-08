@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
-import { LayoutGrid, Flag, User, History, Library, FileText, Mic } from "lucide-react";
+import { LayoutGrid, Flag, User, History, Library, FileText, Mic, PenLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import VoiceQuickCaptureModal from "./VoiceQuickCaptureModal";
 
@@ -114,32 +114,45 @@ export default function BottomNav() {
           </div>
 
             {/* Floating Action Button (hard-centered) */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-12 z-50">
+          <div className="absolute left-1/2 -translate-x-1/2 -top-14 z-50">
             <button
               type="button"
               onPointerDown={onFabPointerDown}
               onPointerUp={onFabPointerUp}
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
-              className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] text-white shadow-[0_10px_20px_-4px_rgba(157,197,239,0.55)] hover:shadow-[0_12px_22px_-4px_rgba(157,197,239,0.65)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200"
+              className="relative flex items-center justify-center w-20 h-20 rounded-full text-white transition-all duration-200"
+              aria-label="Click to record, hold 2 seconds for voice"
             >
+              <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
+              <span className="absolute -top-4 px-2 py-0.5 rounded-full bg-white border border-[#E7EBF0] text-[10px] font-semibold text-[#8B97A6] whitespace-nowrap shadow-sm">
+                Hold 2s for voice
+              </span>
+
               {holdProgress > 0 && (
-                <svg className="absolute inset-0 w-16 h-16 -rotate-90" viewBox="0 0 64 64">
-                  <circle cx="32" cy="32" r="28" stroke="rgba(255,255,255,0.35)" strokeWidth="3" fill="none" />
+                <svg className="absolute inset-0 w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                  <circle cx="40" cy="40" r="34" stroke="rgba(157,197,239,0.25)" strokeWidth="3" fill="none" />
                   <circle
-                    cx="32"
-                    cy="32"
-                    r="28"
-                    stroke="white"
+                    cx="40"
+                    cy="40"
+                    r="34"
+                    stroke="#9DC5EF"
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 28}
-                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 28}
+                    strokeDasharray={2 * Math.PI * 34}
+                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 34}
                   />
                 </svg>
               )}
-              <Mic size={24} strokeWidth={2.5} />
+
+              <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
+                <span className="text-[10px] leading-none font-semibold tracking-wide">Click</span>
+                <div className="flex items-center gap-1 mt-1">
+                  <PenLine size={12} strokeWidth={2.2} />
+                  <Mic size={12} strokeWidth={2.2} />
+                </div>
+              </div>
             </button>
           </div>
 

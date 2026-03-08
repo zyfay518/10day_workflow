@@ -73,18 +73,22 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
     if (!userId) return false;
 
     try {
-      const { error: updateError } = await supabase
-        .from('user_profiles')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', userId);
+      const payload = {
+        user_id: userId,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
 
-      if (updateError) throw updateError;
+      const { data, error: upsertError } = await supabase
+        .from('user_profiles')
+        .upsert(payload, { onConflict: 'user_id' })
+        .select('*')
+        .single();
+
+      if (upsertError) throw upsertError;
 
       // 更新本地状态
-      setProfile((prev) => (prev ? { ...prev, ...updates } : null));
+      setProfile(data as UserProfile);
       setError(null);
       return true;
     } catch (err) {
