@@ -155,7 +155,7 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-[10px] -translate-x-1/2 z-30 pointer-events-none">
+              <div className="absolute left-1/2 top-[6px] -translate-x-1/2 z-30 pointer-events-none">
                 <Mic size={11} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
