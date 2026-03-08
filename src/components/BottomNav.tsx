@@ -125,14 +125,18 @@ export default function BottomNav() {
               aria-label="Click to record, hold 2 seconds for voice"
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
-              <div className="absolute inset-0 w-24 h-24 pointer-events-none z-40">
-                <span className="absolute left-[6px] top-1/2 -translate-y-1/2 -rotate-90 origin-center text-[7px] font-semibold tracking-[0.02em] text-[#8F9BA9] whitespace-nowrap drop-shadow-[0_1px_0_rgba(255,255,255,0.9)]">
-                  HOLD FOR VOICE
-                </span>
-                <span className="absolute right-[6px] top-1/2 -translate-y-1/2 rotate-90 origin-center text-[7px] font-semibold tracking-[0.02em] text-[#8F9BA9] whitespace-nowrap drop-shadow-[0_1px_0_rgba(255,255,255,0.9)]">
-                  HOLD FOR VOICE
-                </span>
-              </div>
+              <svg className="absolute inset-0 w-24 h-24 pointer-events-none z-40" viewBox="0 0 96 96" aria-hidden="true">
+                <defs>
+                  <path id="ring-left-mid" d="M30 78 A36 36 0 0 1 30 18" />
+                  <path id="ring-right-mid" d="M66 18 A36 36 0 0 1 66 78" />
+                </defs>
+                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.35">
+                  <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
+                </text>
+                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.35">
+                  <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
+                </text>
+              </svg>
 
               {holdProgress > 0 && (
                 <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
@@ -151,7 +155,7 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-[5px] -translate-x-1/2 z-30 pointer-events-none">
+              <div className="absolute left-1/2 top-[10px] -translate-x-1/2 z-30 pointer-events-none">
                 <Mic size={11} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
