@@ -127,13 +127,13 @@ export default function BottomNav() {
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <svg className="absolute inset-0 w-20 h-20" viewBox="0 0 80 80" aria-hidden="true">
                 <defs>
-                  <path id="voice-ring-left" d="M12 40 A28 28 0 0 1 40 12" />
-                  <path id="voice-ring-right" d="M40 12 A28 28 0 0 1 68 40" />
+                  <path id="voice-ring-left" d="M12 42 A30 30 0 0 1 22 20" />
+                  <path id="voice-ring-right" d="M58 20 A30 30 0 0 1 68 42" />
                 </defs>
-                <text fill="#9AA6B4" fontSize="5.5" fontWeight="600" letterSpacing="0.9">
+                <text fill="#9AA6B4" fontSize="4.9" fontWeight="600" letterSpacing="0.75">
                   <textPath href="#voice-ring-left" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#9AA6B4" fontSize="5.5" fontWeight="600" letterSpacing="0.9">
+                <text fill="#9AA6B4" fontSize="4.9" fontWeight="600" letterSpacing="0.75">
                   <textPath href="#voice-ring-right" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
@@ -155,7 +155,7 @@ export default function BottomNav() {
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-[8px] -translate-x-1/2 z-30 w-5 h-5 rounded-full bg-[#F7FAFD] border border-[#D8E2EE] flex items-center justify-center shadow-sm pointer-events-none">
+              <div className="absolute left-1/2 top-[2px] -translate-x-1/2 z-30 w-5 h-5 rounded-full bg-[#F7FAFD] border border-[#D8E2EE] flex items-center justify-center shadow-sm pointer-events-none">
                 <Mic size={11} strokeWidth={2.4} className="text-[#6F8EAF]" />
               </div>
 
