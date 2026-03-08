@@ -114,32 +114,32 @@ export default function BottomNav() {
           </div>
 
             {/* Floating Action Button (hard-centered) */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-[72px] z-50">
+          <div className="absolute left-1/2 -translate-x-1/2 -top-[76px] z-50">
             <button
               type="button"
               onPointerDown={onFabPointerDown}
               onPointerUp={onFabPointerUp}
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
-              className="relative flex items-center justify-center w-24 h-24 rounded-full text-white transition-all duration-200"
+              className="relative flex items-center justify-center w-[clamp(96px,24vw,108px)] h-[clamp(96px,24vw,108px)] rounded-full text-white transition-all duration-200"
               aria-label="Click to record, hold 2 seconds for voice"
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
-              <svg className="absolute inset-0 w-24 h-24 pointer-events-none z-40" viewBox="0 0 96 96" aria-hidden="true">
+              <svg className="absolute inset-0 w-full h-full pointer-events-none z-40" viewBox="0 0 96 96" aria-hidden="true">
                 <defs>
                   <path id="ring-left-mid" d="M28 80 A38 38 0 0 1 28 16" />
                   <path id="ring-right-mid" d="M68 16 A38 38 0 0 1 68 80" />
                 </defs>
-                <text fill="#8F9BA9" fontSize="4.5" fontWeight="600" letterSpacing="0.2">
+                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.25">
                   <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#8F9BA9" fontSize="4.5" fontWeight="600" letterSpacing="0.2">
+                <text fill="#8F9BA9" fontSize="5.1" fontWeight="600" letterSpacing="0.25">
                   <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
 
               {holdProgress > 0 && (
-                <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 96 96">
                   <circle cx="48" cy="48" r="41" stroke="rgba(157,197,239,0.25)" strokeWidth="3" fill="none" />
                   <circle
                     cx="48"
@@ -159,10 +159,10 @@ export default function BottomNav() {
                 <Mic size={11} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
-              <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
-                <span className="text-[10px] leading-none font-semibold tracking-wide">Click</span>
+              <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
+                <span className="text-[11px] leading-none font-semibold tracking-wide">Click</span>
                 <div className="flex items-center mt-1">
-                  <PenLine size={11} strokeWidth={2.2} />
+                  <PenLine size={12} strokeWidth={2.2} />
                 </div>
               </div>
             </button>
