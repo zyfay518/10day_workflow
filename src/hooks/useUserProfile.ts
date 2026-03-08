@@ -18,6 +18,24 @@ type UserProfile = Database['public']['Tables']['user_profiles']['Row'];
 const profileCache = new Map<string, UserProfile>();
 const cacheKey = (userId: string) => `profile_cache_${userId}`;
 
+const readCachedProfile = (userId?: string): UserProfile | null => {
+  if (!userId) return null;
+  const mem = profileCache.get(userId);
+  if (mem) return mem;
+  try {
+    const raw = localStorage.getItem(cacheKey(userId));
+    return raw ? (JSON.parse(raw) as UserProfile) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedProfile = (userId: string, profile: UserProfile) => {
+  profileCache.set(userId, profile);
+  try { localStorage.setItem(cacheKey(userId), JSON.stringify(profile)); } catch {}
+  window.dispatchEvent(new CustomEvent('profile-updated', { detail: { userId, profile } }));
+};
+
 interface UseUserProfileReturn {
   profile: UserProfile | null;
   loading: boolean;
@@ -27,17 +45,7 @@ interface UseUserProfileReturn {
 }
 
 export function useUserProfile(userId?: string): UseUserProfileReturn {
-  const initialProfile = (() => {
-    if (!userId) return null;
-    const mem = profileCache.get(userId);
-    if (mem) return mem;
-    try {
-      const raw = localStorage.getItem(cacheKey(userId));
-      return raw ? (JSON.parse(raw) as UserProfile) : null;
-    } catch {
-      return null;
-    }
-  })();
+  const initialProfile = readCachedProfile(userId);
 
   const [profile, setProfile] = useState<UserProfile | null>(initialProfile);
   const [loading, setLoading] = useState(!initialProfile);
@@ -45,21 +53,40 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
 
   useEffect(() => {
     if (!userId) {
+      setProfile(null);
       setLoading(false);
       return;
     }
 
-    fetchProfile();
+    const cached = readCachedProfile(userId);
+    if (cached) {
+      setProfile(cached);
+      setLoading(false);
+      fetchProfile(true);
+    } else {
+      fetchProfile(false);
+    }
+
+    const onProfileUpdated = (event: Event) => {
+      const custom = event as CustomEvent<{ userId: string; profile: UserProfile }>;
+      if (custom.detail?.userId === userId) {
+        setProfile(custom.detail.profile);
+        setLoading(false);
+      }
+    };
+
+    window.addEventListener('profile-updated', onProfileUpdated as EventListener);
+    return () => window.removeEventListener('profile-updated', onProfileUpdated as EventListener);
   }, [userId]);
 
   /**
    * 查询用户配置信息
    */
-  const fetchProfile = async () => {
+  const fetchProfile = async (background = false) => {
     if (!userId) return;
 
     try {
-      setLoading(true);
+      if (!background) setLoading(true);
       const { data, error: fetchError } = await supabase
         .from('user_profiles')
         .select('*')
@@ -81,8 +108,7 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       }
 
       if (nextProfile) {
-        profileCache.set(userId, nextProfile);
-        try { localStorage.setItem(cacheKey(userId), JSON.stringify(nextProfile)); } catch {}
+        writeCachedProfile(userId, nextProfile);
       }
 
       setProfile(nextProfile);
@@ -122,8 +148,7 @@ export function useUserProfile(userId?: string): UseUserProfileReturn {
       // 更新本地状态
       const next = data as UserProfile;
       setProfile(next);
-      profileCache.set(userId, next);
-      try { localStorage.setItem(cacheKey(userId), JSON.stringify(next)); } catch {}
+      writeCachedProfile(userId, next);
       setError(null);
       return true;
     } catch (err) {
