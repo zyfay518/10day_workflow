@@ -126,10 +126,10 @@ export default function BottomNav() {
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <div className="absolute inset-0 w-24 h-24 pointer-events-none">
-                <span className="absolute left-[4px] top-1/2 -translate-y-1/2 -rotate-[78deg] origin-center text-[8px] font-semibold tracking-[0.06em] text-[#9AA6B4] whitespace-nowrap">
+                <span className="absolute left-[8px] top-1/2 -translate-y-1/2 -rotate-90 origin-center text-[6px] font-semibold tracking-[0.02em] text-[#9AA6B4] whitespace-nowrap">
                   HOLD FOR VOICE
                 </span>
-                <span className="absolute right-[4px] top-1/2 -translate-y-1/2 rotate-[78deg] origin-center text-[8px] font-semibold tracking-[0.06em] text-[#9AA6B4] whitespace-nowrap">
+                <span className="absolute right-[8px] top-1/2 -translate-y-1/2 rotate-90 origin-center text-[6px] font-semibold tracking-[0.02em] text-[#9AA6B4] whitespace-nowrap">
                   HOLD FOR VOICE
                 </span>
               </div>
