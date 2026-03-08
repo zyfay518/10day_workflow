@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Mic, Square, Sparkles, BookOpen } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useCycles } from '../hooks/useCycles';
@@ -14,7 +14,6 @@ interface Props {
   sourcePage?: string;
 }
 
-const MAX_DURATION_SEC = 120;
 
 function mapDimensionId(dimensions: { id: number; dimension_name: string }[], aiDim?: string) {
   const key = (aiDim || '').toLowerCase();
@@ -62,19 +61,10 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   useEffect(() => {
     if (!open || !isListening) return;
     const timer = setInterval(() => {
-      setSeconds(prev => {
-        const next = prev + 1;
-        if (next >= MAX_DURATION_SEC) {
-          stopListening();
-          return MAX_DURATION_SEC;
-        }
-        return next;
-      });
+      setSeconds(prev => prev + 1);
     }, 1000);
     return () => clearInterval(timer);
   }, [open, isListening]);
-
-  const remain = useMemo(() => Math.max(0, MAX_DURATION_SEC - seconds), [seconds]);
 
   const persistVoiceEntry = async (mode: 'parsed_to_records_goals' | 'saved_to_library', parseResult: any, status: 'confirmed' | 'applied') => {
     if (!user?.id) return;
@@ -110,7 +100,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
     const parsed = await parseVoiceQuickEntry(text, { currentDate: today, timezone: 'Asia/Singapore' });
     if (!parsed) {
-      setMessage('解析失败，请重试');
+      setMessage('Parsing failed. Please try again.');
       return;
     }
 
@@ -194,11 +184,11 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       }
 
       await persistVoiceEntry('parsed_to_records_goals', payload, 'applied');
-      setMessage('已解析并写入记录/目标');
+      setMessage('Parsed and saved to records/goals.');
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
-      setMessage('确认写入失败，请重试');
+      setMessage('Save failed. Please review and try again.');
     } finally {
       setSaving(false);
     }
@@ -214,7 +204,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       const today = getLocalDateString();
 
       if (!dimensionId) {
-        setMessage('找不到维度配置，请先创建维度');
+        setMessage('No dimension configuration found. Please set up dimensions first.');
         return;
       }
 
@@ -228,7 +218,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       });
 
       await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
-      setMessage('已保存到 Library');
+      setMessage('Saved to Library.');
       setTimeout(() => onClose(), 600);
     } finally {
       setSaving(false);
@@ -239,7 +229,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
   return (
     <div className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100">
+      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100 font-['Inter','SF_Pro_Text',system-ui,sans-serif]">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-base font-bold text-gray-800">Voice Quick Capture</h3>
           <button onClick={() => { stopListening(); onClose(); }} className="p-2 rounded-full hover:bg-gray-100">
@@ -249,10 +239,14 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span className={`w-2 h-2 rounded-full ${isListening ? 'bg-red-500 animate-pulse' : 'bg-gray-300'}`} />
-            {isListening ? 'Listening…' : 'Stopped'}
+            <div className="flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#A8B6C8] animate-bounce' : 'bg-gray-300'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#C7B6A6] animate-bounce [animation-delay:120ms]' : 'bg-gray-300'}`} />
+              <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#D8AFAF] animate-bounce [animation-delay:240ms]' : 'bg-gray-300'}`} />
+            </div>
+            {isListening ? 'Listening' : 'Paused'}
           </div>
-          <div className="text-xs text-gray-500">{Math.floor(remain / 60)}:{String(remain % 60).padStart(2, '0')}</div>
+          <div className="text-xs text-gray-500">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</div>
         </div>
 
         <div className="w-full min-h-[140px] max-h-[220px] overflow-y-auto p-3 rounded-xl border border-gray-200 bg-gray-50 text-sm leading-relaxed">
@@ -262,7 +256,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               {liveTranscript && <div className="text-blue-600 whitespace-pre-wrap">{liveTranscript}</div>}
             </>
           ) : (
-            <span className="text-gray-400">语音转文字会实时显示在这里...</span>
+            <span className="text-gray-400">Live transcript will appear here...</span>
           )}
         </div>
 
@@ -270,23 +264,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => (isListening ? stopListening() : startListening())}
-              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-700'}`}
+              className={`flex-1 h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-[#E8E3DD] text-[#6D6A66]' : 'bg-[#EEF1F4] text-[#6D6A66]'}`}
             >
-              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? '停止录入' : '继续录入'}
+              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? 'Pause' : 'Resume'}
             </button>
             <button
               onClick={handleParse}
               disabled={saving || analyzing || !text.trim()}
               className="flex-1 h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <Sparkles size={16} /> 解析并确认
+              <Sparkles size={16} /> Parse & Review
             </button>
             <button
               onClick={handleSaveLibrary}
               disabled={saving || analyzing || !text.trim()}
               className="flex-1 h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              <BookOpen size={16} /> 直接存库
+              <BookOpen size={16} /> Save to Library
             </button>
           </div>
         )}
@@ -294,7 +288,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         {draft && (
           <div className="mt-3 space-y-3">
             <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 mb-1">摘要</p>
+              <p className="text-xs text-gray-500 mb-1">Summary</p>
               <textarea
                 value={draft.summary || ''}
                 onChange={(e) => setDraft(prev => prev ? { ...prev, summary: e.target.value } : prev)}
@@ -303,7 +297,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
             </div>
 
             <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">记录（可改）</p>
+              <p className="text-xs text-gray-500 mb-2">Records (editable)</p>
               <div className="space-y-2 max-h-36 overflow-y-auto">
                 {(draft.records || []).map((r, i) => (
                   <textarea
@@ -323,7 +317,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
             {(draft.daily_goals || []).length > 0 && (
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Daily Goals（可改日期）</p>
+                <p className="text-xs text-gray-500 mb-2">Daily Goals (editable date)</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {(draft.daily_goals || []).map((g, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
@@ -359,7 +353,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               disabled={saving}
               className="w-full h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
             >
-              一键确认写入记录/目标
+Confirm & Save to Records/Goals
             </button>
           </div>
         )}
