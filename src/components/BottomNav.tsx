@@ -114,55 +114,55 @@ export default function BottomNav() {
           </div>
 
             {/* Floating Action Button (hard-centered) */}
-          <div className="absolute left-1/2 -translate-x-1/2 -top-14 z-50">
+          <div className="absolute left-1/2 -translate-x-1/2 -top-[72px] z-50">
             <button
               type="button"
               onPointerDown={onFabPointerDown}
               onPointerUp={onFabPointerUp}
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
-              className="relative flex items-center justify-center w-20 h-20 rounded-full text-white transition-all duration-200"
+              className="relative flex items-center justify-center w-24 h-24 rounded-full text-white transition-all duration-200"
               aria-label="Click to record, hold 2 seconds for voice"
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
-              <svg className="absolute inset-0 w-20 h-20" viewBox="0 0 80 80" aria-hidden="true">
+              <svg className="absolute inset-0 w-24 h-24" viewBox="0 0 96 96" aria-hidden="true">
                 <defs>
-                  <path id="voice-ring-left" d="M13 52 A27 27 0 0 1 34 16" />
-                  <path id="voice-ring-right" d="M46 16 A27 27 0 0 1 67 52" />
+                  <path id="voice-ring-left" d="M48 48 m-36 0 a36 36 0 0 1 20 -31" />
+                  <path id="voice-ring-right" d="M48 48 m36 0 a36 36 0 0 0 -20 -31" />
                 </defs>
-                <text fill="#9AA6B4" fontSize="4.4" fontWeight="600" letterSpacing="0.35">
+                <text fill="#9AA6B4" fontSize="5.2" fontWeight="600" letterSpacing="0.45">
                   <textPath href="#voice-ring-left" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
-                <text fill="#9AA6B4" fontSize="4.4" fontWeight="600" letterSpacing="0.35">
+                <text fill="#9AA6B4" fontSize="5.2" fontWeight="600" letterSpacing="0.45">
                   <textPath href="#voice-ring-right" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
                 </text>
               </svg>
 
               {holdProgress > 0 && (
-                <svg className="absolute inset-0 w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-                  <circle cx="40" cy="40" r="34" stroke="rgba(157,197,239,0.25)" strokeWidth="3" fill="none" />
+                <svg className="absolute inset-0 w-24 h-24 -rotate-90" viewBox="0 0 96 96">
+                  <circle cx="48" cy="48" r="41" stroke="rgba(157,197,239,0.25)" strokeWidth="3" fill="none" />
                   <circle
-                    cx="40"
-                    cy="40"
-                    r="34"
+                    cx="48"
+                    cy="48"
+                    r="41"
                     stroke="#9DC5EF"
                     strokeWidth="3"
                     fill="none"
                     strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 34}
-                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 34}
+                    strokeDasharray={2 * Math.PI * 41}
+                    strokeDashoffset={(1 - holdProgress) * 2 * Math.PI * 41}
                   />
                 </svg>
               )}
 
-              <div className="absolute left-1/2 top-[3px] -translate-x-1/2 z-30 pointer-events-none">
-                <Mic size={10} strokeWidth={2.3} className="text-[#7B95AF]" />
+              <div className="absolute left-1/2 top-[5px] -translate-x-1/2 z-30 pointer-events-none">
+                <Mic size={11} strokeWidth={2.3} className="text-[#7B95AF]" />
               </div>
 
-              <div className="relative z-10 w-12 h-12 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
-                <span className="text-[9px] leading-none font-semibold tracking-wide">Click</span>
-                <div className="flex items-center mt-0.5">
-                  <PenLine size={10} strokeWidth={2.2} />
+              <div className="relative z-10 w-14 h-14 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
+                <span className="text-[10px] leading-none font-semibold tracking-wide">Click</span>
+                <div className="flex items-center mt-1">
+                  <PenLine size={11} strokeWidth={2.2} />
                 </div>
               </div>
             </button>
