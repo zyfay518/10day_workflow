@@ -98,6 +98,60 @@ export default function Report() {
 
   const selectedCycle = completedCycles.find(c => c.id === selectedCycleId);
 
+  const cognitiveProfile = useMemo(() => {
+    if (!selectedCycle) return null;
+
+    const currentIndex = completedCycles.findIndex(c => c.id === selectedCycle.id);
+    const prevCycle = currentIndex > 0 ? completedCycles[currentIndex - 1] : null;
+
+    const currentAvg = currentCycleAvgScore;
+
+    const prevEvals = prevCycle
+      ? evaluations.filter(e => e.cycle_id === prevCycle.id && e.final_score !== null)
+      : [];
+    const prevAvg = prevEvals.length > 0
+      ? Math.round(prevEvals.reduce((sum, e) => sum + (e.final_score || 0), 0) / prevEvals.length)
+      : 0;
+
+    const delta = prevCycle ? currentAvg - prevAvg : 0;
+
+    const stage = currentAvg >= 80
+      ? 'System Builder'
+      : currentAvg >= 65
+        ? 'Reflective Executor'
+        : 'Foundation Explorer';
+
+    const metrics = [
+      { label: 'Goal Clarity', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.92 + 6))) },
+      { label: 'Execution Stability', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.88 + 8))) },
+      { label: 'Review Depth', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.9 + 5))) },
+      { label: 'Cross-domain Transfer', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.84 + 10))) },
+      { label: 'Long-term Consistency', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.86 + 9))) },
+    ];
+
+    const evidence = reports
+      .map(r => r.content?.replace(/<br\s*\/?>/g, '\n').replace(/\n+/g, ' ').trim())
+      .filter(Boolean)
+      .slice(0, 2) as string[];
+
+    const suggestions = [
+      delta < 0
+        ? '本周期有回落，建议把目标数量收敛到 2-3 个，先恢复稳定执行节奏。'
+        : '保持当前节奏，把有效行动固化成固定时间块，减少临时决策损耗。',
+      '每个维度每周至少保留 1 条“可复盘证据”（结果+原因+下一步），提升复盘质量。',
+      '下周期优先选择 1 个薄弱维度做集中突破，避免平均用力。',
+    ];
+
+    return {
+      stage,
+      currentAvg,
+      delta,
+      metrics,
+      evidence,
+      suggestions,
+    };
+  }, [selectedCycle, completedCycles, currentCycleAvgScore, evaluations, reports]);
+
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB] relative pb-28">
       {/* Header */}
@@ -186,6 +240,70 @@ export default function Report() {
                     </ResponsiveContainer>
                   </div>
                 </section>
+
+                {cognitiveProfile && (
+                  <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <div className="flex items-start justify-between mb-4">
+                      <h2 className="font-bold text-gray-800 flex items-center gap-2">
+                        <Brain size={22} className="text-[#9DC5EF]" />
+                        Cognitive Profile
+                      </h2>
+                      <div className="text-right">
+                        <p className="text-[10px] text-gray-400">Current Stage</p>
+                        <p className="text-sm font-bold bg-gradient-to-r from-[#7AA5D8] to-[#E89CAB] bg-clip-text text-transparent">{cognitiveProfile.stage}</p>
+                      </div>
+                    </div>
+
+                    <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-pink-50 border border-gray-100 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500">Period Score</p>
+                        <p className="text-xl font-black text-gray-800">{cognitiveProfile.currentAvg}</p>
+                      </div>
+                      <div className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", cognitiveProfile.delta >= 0 ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600")}>
+                        {cognitiveProfile.delta >= 0 ? `+${cognitiveProfile.delta}` : `${cognitiveProfile.delta}`} vs prev
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 mb-4">
+                      {cognitiveProfile.metrics.map((m) => (
+                        <div key={m.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-gray-600">{m.label}</span>
+                            <span className="font-semibold text-gray-700">{m.value}</span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-full bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] rounded-full" style={{ width: `${m.value}%` }} />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {cognitiveProfile.evidence.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-bold text-gray-500 mb-2">Evidence from this period</p>
+                        <div className="space-y-2">
+                          {cognitiveProfile.evidence.map((item, idx) => (
+                            <div key={idx} className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 leading-relaxed">
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="text-xs font-bold text-gray-500 mb-2">Next-period strategy</p>
+                      <ul className="space-y-1.5">
+                        {cognitiveProfile.suggestions.map((s, idx) => (
+                          <li key={idx} className="text-xs text-gray-700 leading-relaxed flex gap-2">
+                            <span className="text-[#9DC5EF] font-bold">•</span>
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </section>
+                )}
 
                 {topTags.length > 0 && (
                   <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
