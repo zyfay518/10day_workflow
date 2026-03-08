@@ -302,7 +302,10 @@ export function useAIAnalysis(userId?: string) {
         [getPrompt]
     );
 
-    const parseVoiceQuickEntry = useCallback(async (content: string): Promise<VoiceParsedResult | null> => {
+    const parseVoiceQuickEntry = useCallback(async (
+        content: string,
+        options?: { currentDate?: string; timezone?: string }
+    ): Promise<VoiceParsedResult | null> => {
         const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
         if (!apiKey || !content.trim()) return null;
 
@@ -310,7 +313,12 @@ export function useAIAnalysis(userId?: string) {
         setError(null);
 
         try {
+            const currentDate = options?.currentDate || new Date().toISOString().slice(0, 10);
+            const timezone = options?.timezone || 'Asia/Singapore';
+
             const prompt = `You are a strict JSON extractor for a life-tracking app.
+Current date: ${currentDate}
+Timezone: ${timezone}
 Return ONLY valid JSON with this exact shape:
 {
   "summary": "string",
@@ -325,10 +333,14 @@ Rules:
 - If unsure, use dimension = Other.
 - Distinguish goals carefully:
   - cycle_goals: cross-day objectives, no strict day deadline.
-  - daily_goals: explicitly for today/this day/短期当天任务.
-- Time parsing:
+  - daily_goals: explicitly for today/this day/明天/后天/短期当天任务.
+- Time parsing is STRICT:
+  - "今天" => ${currentDate}
+  - "明天" => current date + 1 day
+  - "后天" => current date + 2 days
   - If user gave explicit date, use it.
   - If no date mentioned, default to CURRENT DATE for record_date / goal_date / expense_date.
+  - NEVER output far-past hallucinated years (e.g. 2023) unless explicitly spoken by user.
 - Do not invent money or exact dates if truly unclear.
 - Empty arrays when not applicable.
 - No markdown, no explanation.

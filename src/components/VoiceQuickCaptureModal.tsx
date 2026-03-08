@@ -90,13 +90,52 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     });
   };
 
+  const normalizeDate = (value: string | undefined, fallback: string) => {
+    if (!value) return fallback;
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return fallback;
+    const year = d.getFullYear();
+    const nowYear = new Date(fallback).getFullYear();
+    if (year < nowYear - 1 || year > nowYear + 1) return fallback;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
   const handleParse = async () => {
     if (!text.trim()) return;
-    const parsed = await parseVoiceQuickEntry(text);
+
+    const today = getLocalDateString();
+    const tomorrowDate = new Date(today);
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = getLocalDateString(tomorrowDate);
+
+    const parsed = await parseVoiceQuickEntry(text, { currentDate: today, timezone: 'Asia/Singapore' });
     if (!parsed) {
       setMessage('解析失败，请重试');
       return;
     }
+
+    const saysTomorrow = /明天/.test(text);
+    const saysToday = /今天/.test(text);
+
+    parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
+      ...g,
+      goal_date: saysTomorrow
+        ? tomorrow
+        : saysToday
+          ? today
+          : normalizeDate(g.goal_date, today),
+    }));
+
+    parsed.records = (parsed.records || []).map((r) => ({
+      ...r,
+      record_date: normalizeDate(r.record_date, today),
+    }));
+
+    parsed.expenses = (parsed.expenses || []).map((e) => ({
+      ...e,
+      expense_date: normalizeDate(e.expense_date, today),
+    }));
+
     setDraft(parsed);
     await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
   };
@@ -281,6 +320,39 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                 ))}
               </div>
             </div>
+
+            {(draft.daily_goals || []).length > 0 && (
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">Daily Goals（可改日期）</p>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {(draft.daily_goals || []).map((g, i) => (
+                    <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
+                      <input
+                        type="date"
+                        value={g.goal_date || ''}
+                        onChange={(e) => setDraft(prev => {
+                          if (!prev) return prev;
+                          const next = [...(prev.daily_goals || [])];
+                          next[i] = { ...next[i], goal_date: e.target.value };
+                          return { ...prev, daily_goals: next };
+                        })}
+                        className="w-full text-xs border border-gray-200 rounded px-2 py-1 mb-2"
+                      />
+                      <textarea
+                        value={g.content}
+                        onChange={(e) => setDraft(prev => {
+                          if (!prev) return prev;
+                          const next = [...(prev.daily_goals || [])];
+                          next[i] = { ...next[i], content: e.target.value };
+                          return { ...prev, daily_goals: next };
+                        })}
+                        className="w-full h-14 text-sm border border-gray-200 rounded p-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <button
               onClick={handleApplyParsed}
