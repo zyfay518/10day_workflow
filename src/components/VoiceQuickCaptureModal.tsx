@@ -194,6 +194,10 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       setMessage('Current cycle is missing. Please refresh Home first.');
       return;
     }
+    if (!dimensions || dimensions.length === 0) {
+      setMessage('Dimensions are not ready. Please reopen this panel in 1-2 seconds.');
+      return;
+    }
 
     try {
       setSaving(true);
