@@ -328,8 +328,19 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       }
 
       const dim = await classifyVoiceDimension(text);
-      const dimensionId = mapDimensionId((workingDimensions || []) as any, dim);
+      let dimensionId = mapDimensionId((workingDimensions || []) as any, dim);
       const today = getLocalDateString();
+
+      if (!dimensionId && user.id) {
+        const { data: fallbackDim } = await supabase
+          .from('dimensions')
+          .select('id')
+          .eq('user_id', user.id)
+          .order('display_order', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        dimensionId = fallbackDim?.id;
+      }
 
       if (!dimensionId) {
         setMessage(tr('voice_msg_no_dimension', 'No dimension configuration found. Please set up dimensions first.'));
@@ -352,7 +363,8 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
-      setMessage(tr('voice_msg_save_failed', 'Save failed. Please review and try again.'));
+      const detail = e instanceof Error ? ` (${e.message})` : '';
+      setMessage(`${tr('voice_msg_save_failed', 'Save failed. Please review and try again.')}${detail}`);
     } finally {
       setIsSavingLibrary(false);
       setSaving(false);
