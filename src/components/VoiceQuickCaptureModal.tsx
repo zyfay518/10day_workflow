@@ -44,6 +44,8 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const [saving, setSaving] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [isSavingLibrary, setIsSavingLibrary] = useState(false);
+  const [libDimensionId, setLibDimensionId] = useState<number | null>(null);
+  const [libDimensions, setLibDimensions] = useState<{ id: number; dimension_name: string }[]>([]);
   const [draftRowId, setDraftRowId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
@@ -53,6 +55,8 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     setSeconds(0);
     setDraft(null);
     setDraftRowId(null);
+    setLibDimensionId(null);
+    setLibDimensions([]);
     setMessage('');
     resetTranscript();
 
@@ -327,26 +331,44 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         workingDimensions = (dimRows as any[]) || [];
       }
 
-      const dim = await classifyVoiceDimension(text);
-      let dimensionId = mapDimensionId((workingDimensions || []) as any, dim);
-      const today = getLocalDateString();
-
-      if (!dimensionId && user.id) {
-        const { data: fallbackDim } = await supabase
-          .from('dimensions')
-          .select('id')
-          .eq('user_id', user.id)
-          .order('display_order', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-        dimensionId = fallbackDim?.id;
-      }
-
-      if (!dimensionId) {
+      if (!workingDimensions || workingDimensions.length === 0) {
         setMessage(tr('voice_msg_no_dimension', 'No dimension configuration found. Please set up dimensions first.'));
         return;
       }
 
+      const dim = await classifyVoiceDimension(text);
+      let detectedId = mapDimensionId((workingDimensions || []) as any, dim);
+
+      if (!detectedId) {
+        detectedId = workingDimensions[0]?.id;
+      }
+      if (!detectedId) {
+        setMessage(tr('voice_msg_no_dimension', 'No dimension configuration found. Please set up dimensions first.'));
+        return;
+      }
+
+      setLibDimensions(workingDimensions as any);
+      setLibDimensionId(detectedId);
+      setMessage(`已识别维度：${dim || 'Other'}，可手动调整后确认保存。`);
+    } catch (e: any) {
+      console.error(e);
+      const detail = e?.message ? ` (${e.message})` : '';
+      setMessage(`${tr('voice_msg_save_failed', 'Save failed. Please review and try again.')}${detail}`);
+    } finally {
+      setIsSavingLibrary(false);
+      setSaving(false);
+    }
+  };
+
+  const handleConfirmSaveLibrary = async () => {
+    if (!user?.id || !text.trim() || !libDimensionId) return;
+
+    try {
+      setSaving(true);
+      setIsSavingLibrary(true);
+      setMessage('');
+
+      const today = getLocalDateString();
       let cycleId = currentCycle?.id ?? null;
       if (!cycleId) {
         const { data: matchedCycle } = await supabase
@@ -364,15 +386,14 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       const { error } = await supabase.from('knowledge_base').insert({
         user_id: user.id,
         cycle_id: cycleId,
-        dimension_id: dimensionId,
+        dimension_id: libDimensionId,
         record_date: today,
         content: text,
         media_urls: null,
       });
-
       if (error) throw error;
 
-      await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
+      await persistVoiceEntry('saved_to_library', { dimension_id: libDimensionId }, 'applied');
       setMessage(tr('voice_msg_saved_library', 'Saved to Library.'));
       setTimeout(() => onClose(), 600);
     } catch (e: any) {
@@ -468,11 +489,32 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                   </>
                 ) : (
                   <>
-                    <BookOpen size={16} /> {tr('voice_save_library', 'Save to Library')}
+                    <BookOpen size={16} /> 识别维度
                   </>
                 )}
               </button>
             </div>
+
+            {libDimensionId && (
+              <div className="mt-2 p-2 rounded-lg border border-blue-100 bg-blue-50/40 space-y-2">
+                <select
+                  value={libDimensionId}
+                  onChange={(e) => setLibDimensionId(Number(e.target.value))}
+                  className="w-full h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm"
+                >
+                  {libDimensions.map((d) => (
+                    <option key={d.id} value={d.id}>{d.dimension_name}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleConfirmSaveLibrary}
+                  disabled={saving || isSavingLibrary}
+                  className="w-full h-10 rounded-lg bg-blue-600 text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {isSavingLibrary ? tr('voice_saving_library', 'Saving...') : tr('voice_save_library', 'Save to Library')}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
