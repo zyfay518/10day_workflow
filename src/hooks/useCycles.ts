@@ -17,6 +17,15 @@ import { getLocalDateString, getCycleDisplayStatus, isDateInCycle } from '../lib
 
 type Cycle = Database['public']['Tables']['cycles']['Row'];
 
+type CyclesCacheEntry = {
+  cycles: Cycle[];
+  currentCycle: Cycle | null;
+  ts: number;
+};
+
+const cyclesCache = new Map<string, CyclesCacheEntry>();
+const CACHE_TTL_MS = 60_000;
+
 interface UseCyclesReturn {
   cycles: Cycle[];
   currentCycle: Cycle | null;
@@ -180,7 +189,20 @@ export function useCycles(userId?: string): UseCyclesReturn {
       return;
     }
 
-    fetchCycles();
+    const cached = cyclesCache.get(userId);
+    const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
+
+    if (cached) {
+      setCycles(cached.cycles);
+      setCurrentCycle(cached.currentCycle);
+      setLoading(false);
+      // Refresh in background only when stale
+      if (!isFresh) {
+        fetchCycles(false);
+      }
+    } else {
+      fetchCycles(true);
+    }
 
     // 设置实时订阅
     const channel = subscribeToCycleChanges(userId);
@@ -193,11 +215,11 @@ export function useCycles(userId?: string): UseCyclesReturn {
   /**
    * 查询用户所有周期
    */
-  const fetchCycles = async () => {
+  const fetchCycles = async (showLoading = true) => {
     if (!userId) return;
 
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
 
       const { data, error: fetchError } = await supabase
         .from('cycles')
@@ -223,10 +245,17 @@ export function useCycles(userId?: string): UseCyclesReturn {
         }
       }
 
+      const resolvedCurrent = resolveCurrentCycle(nextCycles);
       setCycles(nextCycles);
 
       // 查找当前周期（优先按日期）
-      setCurrentCycle(resolveCurrentCycle(nextCycles));
+      setCurrentCycle(resolvedCurrent);
+
+      cyclesCache.set(userId, {
+        cycles: nextCycles,
+        currentCycle: resolvedCurrent,
+        ts: Date.now(),
+      });
 
       setError(null);
     } catch (err) {
@@ -257,7 +286,7 @@ export function useCycles(userId?: string): UseCyclesReturn {
         },
         () => {
           // 插入/更新/删除都直接全量刷新，避免周期数量变化导致本地状态错误
-          fetchCycles();
+          fetchCycles(false);
         }
       )
       .subscribe();

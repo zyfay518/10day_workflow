@@ -8,7 +8,7 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
 
 const Auth = lazy(() => import("./pages/Auth"));
-const Splash = lazy(() => import("./pages/Splash"));
+import Splash from "./pages/Splash";
 const Home = lazy(() => import("./pages/Home"));
 const Expense = lazy(() => import("./pages/Expense"));
 const Goals = lazy(() => import("./pages/Goals"));
@@ -56,12 +56,10 @@ export default function App() {
   if (showSplash || authLoading) {
     return (
       <BrowserRouter>
-        <Suspense fallback={<AppLoadingScreen />}>
-          <Splash
-            onFinish={showSplash ? () => setShowSplash(false) : undefined}
-            loading={!showSplash}
-          />
-        </Suspense>
+        <Splash
+          onFinish={showSplash ? () => setShowSplash(false) : undefined}
+          loading={!showSplash}
+        />
       </BrowserRouter>
     );
   }
