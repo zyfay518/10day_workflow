@@ -5,6 +5,10 @@ import { Database } from '../types/database';
 type GoalEvaluation = Database['public']['Tables']['goal_evaluations']['Row'];
 type GoalEvaluationInsert = Database['public']['Tables']['goal_evaluations']['Insert'];
 
+type EvalCacheEntry = { items: GoalEvaluation[]; ts: number };
+const evalCache = new Map<string, EvalCacheEntry>();
+const EVAL_TTL_MS = 60_000;
+
 export function useGoalEvaluations(userId: string | undefined, cycleId: number | undefined) {
     const [evaluations, setEvaluations] = useState<GoalEvaluation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,7 +29,9 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
                 .eq('cycle_id', cycleId);
 
             if (error) throw error;
-            setEvaluations(data || []);
+            const rows = data || [];
+            setEvaluations(rows);
+            evalCache.set(`${userId}:${cycleId || 'all'}`, { items: rows, ts: Date.now() });
         } catch (err) {
             console.error('Failed to load goal evaluations:', err);
         } finally {
@@ -47,7 +53,9 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
                 .eq('user_id', userId);
 
             if (error) throw error;
-            setEvaluations(data || []);
+            const rows = data || [];
+            setEvaluations(rows);
+            evalCache.set(`${userId}:all`, { items: rows, ts: Date.now() });
         } catch (err) {
             console.error('Failed to load all goal evaluations:', err);
         } finally {
@@ -56,8 +64,22 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
     }, [userId]);
 
     useEffect(() => {
-        loadEvaluations();
-    }, [loadEvaluations]);
+        const key = `${userId || ''}:${cycleId || 'all'}`;
+        const cached = evalCache.get(key);
+        const isFresh = cached && Date.now() - cached.ts < EVAL_TTL_MS;
+
+        if (cached) {
+            setEvaluations(cached.items);
+            setLoading(false);
+            if (!isFresh) {
+                if (cycleId) loadEvaluations();
+                else loadAllEvaluations();
+            }
+        } else {
+            if (cycleId) loadEvaluations();
+            else loadAllEvaluations();
+        }
+    }, [userId, cycleId, loadEvaluations, loadAllEvaluations]);
 
     const addEvaluation = async (evaluationData: Omit<GoalEvaluationInsert, 'id' | 'created_at' | 'updated_at'>) => {
         if (!userId || !cycleId) return null;

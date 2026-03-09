@@ -14,6 +14,10 @@ import { Database } from '../types/database';
 
 type Dimension = Database['public']['Tables']['dimensions']['Row'];
 
+type DimensionsCacheEntry = { dimensions: Dimension[]; ts: number };
+const dimensionsCache = new Map<string, DimensionsCacheEntry>();
+const DIM_CACHE_TTL_MS = 60_000;
+
 interface UseDimensionsReturn {
   dimensions: Dimension[];
   loading: boolean;
@@ -35,17 +39,26 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
       return;
     }
 
-    fetchDimensions();
+    const cached = dimensionsCache.get(userId);
+    const isFresh = cached && Date.now() - cached.ts < DIM_CACHE_TTL_MS;
+
+    if (cached) {
+      setDimensions(cached.dimensions);
+      setLoading(false);
+      if (!isFresh) fetchDimensions(false);
+    } else {
+      fetchDimensions(true);
+    }
   }, [userId]);
 
   /**
    * 查询用户的维度
    */
-  const fetchDimensions = async () => {
+  const fetchDimensions = async (showLoading = true) => {
     if (!userId) return;
 
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
 
       const { data, error: fetchError } = await supabase
         .from('dimensions')
@@ -116,6 +129,7 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
       }
 
       setDimensions(next);
+      dimensionsCache.set(userId, { dimensions: next, ts: Date.now() });
       setError(null);
     } catch (err) {
       console.error('Failed to fetch dimensions:', err);
