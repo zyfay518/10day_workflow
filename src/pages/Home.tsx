@@ -10,9 +10,11 @@ import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
 import { useRecords } from "../hooks/useRecords";
 
 import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Home() {
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { profile } = useUserProfile(user?.id);
   const { cycles, currentCycle, loading: cyclesLoading, refreshCycles } = useCycles(user?.id);
   const { dimensions, loading: dimensionsLoading } = useDimensions(user?.id);
@@ -129,7 +131,7 @@ export default function Home() {
   if (cyclesLoading || dimensionsLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <p className="text-lg">Loading...</p>
+        <p className="text-lg">{tr('home_loading', 'Loading...')}</p>
       </div>
     );
   }
@@ -228,12 +230,12 @@ export default function Home() {
             <div className="rounded-full h-2.5 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1]" />
             <div className="flex justify-between text-[10px] text-gray-400 mt-1">
               <span>0%</span>
-              <span>Completion Rate</span>
+              <span>{tr('home_completion_rate', 'Completion Rate')}</span>
               <span>100%</span>
             </div>
             <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-gray-500">
               <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#E8C996]" />
-              <span>Yellow = Current Period</span>
+              <span>{tr('home_yellow_current', 'Yellow = Current Period')}</span>
             </div>
           </div>
         </section>
@@ -247,7 +249,7 @@ export default function Home() {
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-lg font-bold text-gray-800">
-                    Period {currentCycle?.cycle_number || 1}
+                    {tr('home_period', 'Period')} {currentCycle?.cycle_number || 1}
                   </h2>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
@@ -266,13 +268,13 @@ export default function Home() {
             </div>
             <div className="flex justify-between text-[10px] text-gray-400 mt-1">
               <span>Day {Math.floor((currentCycle?.completion_rate || 0) / 20) + 1} of {currentCycle?.total_days || 10}</span>
-              <span>{currentCycle?.total_days || 10} days total</span>
+              <span>{currentCycle?.total_days || 10} {tr('home_days_total', 'days total')}</span>
             </div>
 
             {/* Cycle Goals Summary */}
             {cycleGoals.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100">
-                <p className="text-[10px] text-gray-400 mb-1.5 font-medium">Period Goals:</p>
+                <p className="text-[10px] text-gray-400 mb-1.5 font-medium">{tr('home_period_goals', 'Period Goals:')}</p>
                 <p className="text-xs text-gray-600 line-clamp-2">
                   {cycleGoals.map((goal, index) => {
                     const dim = dimensions.find(d => d.id === goal.dimension_id);

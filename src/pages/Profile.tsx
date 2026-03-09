@@ -28,6 +28,7 @@ export default function Profile() {
 
   // AI Prompts state
   const [showPromptsDialog, setShowPromptsDialog] = useState(false);
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false);
   const [selectedPrompt, setSelectedPrompt] = useState<AIPromptConfig | null>(null);
   const [editingPrompt, setEditingPrompt] = useState("");
   const [promptSaveSuccess, setPromptSaveSuccess] = useState(false);
@@ -217,31 +218,6 @@ export default function Profile() {
           </section>
 
           <section>
-            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{tr('profile_language', 'Language')}</h3>
-            <div className="bg-white rounded-[12px] shadow-sm p-3">
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { key: 'system', label: tr('profile_follow_system', 'Follow System') },
-                  { key: 'zh', label: '中文' },
-                  { key: 'en', label: 'English' },
-                ] as const).map((opt) => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setSetting(opt.key)}
-                    className={`h-9 rounded-lg text-xs font-semibold border transition-colors ${setting === opt.key
-                      ? 'bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white border-transparent'
-                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                      }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-[11px] text-gray-400">{tr('profile_language_desc', 'Non-Chinese system languages default to English.')}</p>
-            </div>
-          </section>
-
-          <section>
             <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{tr('profile_integration', 'Integration')}</h3>
             <div className="bg-white rounded-[12px] shadow-sm overflow-hidden divide-y divide-gray-50">
               <button
@@ -274,6 +250,28 @@ export default function Profile() {
                     <span className="text-sm font-medium text-gray-700">AI Prompts</span>
                     <span className="text-[10px] text-gray-400">
                       Customize AI behavior and responses
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-400" />
+              </button>
+
+              <button
+                onClick={() => setShowLanguageDialog(true)}
+                className="w-full px-5 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-[#9DC5EF]">
+                    <Bell size={18} />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm font-medium text-gray-700">{tr('profile_language', 'Language')}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {setting === 'system'
+                        ? tr('profile_follow_system', 'Follow System')
+                        : setting === 'zh'
+                          ? tr('profile_language_value_zh', '中文')
+                          : tr('profile_language_value_en', 'English')}
                     </span>
                   </div>
                 </div>
@@ -322,6 +320,38 @@ export default function Profile() {
                 Save Key
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showLanguageDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-[12px] p-5 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-800 mb-3">{tr('profile_select_language', 'Select Language')}</h3>
+            <div className="space-y-2">
+              {([
+                { key: 'system', label: tr('profile_follow_system', 'Follow System') },
+                { key: 'zh', label: tr('profile_language_value_zh', '中文') },
+                { key: 'en', label: tr('profile_language_value_en', 'English') },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.key}
+                  onClick={() => { setSetting(opt.key); setShowLanguageDialog(false); }}
+                  className={`w-full h-10 rounded-lg text-sm font-semibold border ${setting === opt.key
+                    ? 'bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white border-transparent'
+                    : 'bg-white text-gray-700 border-gray-200'} `}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px] text-gray-400">{tr('profile_language_desc', 'Non-Chinese system languages default to English.')}</p>
+            <button
+              onClick={() => setShowLanguageDialog(false)}
+              className="mt-4 w-full h-10 rounded-[8px] border border-gray-300 text-gray-700"
+            >
+              {tr('profile_cancel', 'Cancel')}
+            </button>
           </div>
         </div>
       )}

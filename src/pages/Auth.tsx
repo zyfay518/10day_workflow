@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { Sparkles, Infinity as InfinityIcon, Lock, Mail, ArrowRight, Loader2, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Auth() {
     const [isLogin, setIsLogin] = useState(true);
@@ -13,6 +14,7 @@ export default function Auth() {
     const [successMsg, setSuccessMsg] = useState("");
 
     const { signIn, signUp, user } = useAuth();
+    const { tr } = useLocale();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -63,7 +65,7 @@ export default function Auth() {
                         10-Day Flow
                     </h1>
                     <p className="text-gray-500 text-center font-medium">
-                        {isLogin ? "Welcome back to your journey" : "Start your growth loop today"}
+                        {isLogin ? tr('auth_welcome_back', 'Welcome back to your journey') : tr('auth_start_growth', 'Start your growth loop today')}
                     </p>
                 </div>
 
@@ -83,7 +85,7 @@ export default function Auth() {
 
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Email</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">{tr('auth_email', 'Email')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Mail size={18} className="text-gray-400" />
@@ -94,13 +96,13 @@ export default function Auth() {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#849B87]/30 focus:border-[#849B87] transition-all"
-                                    placeholder="Enter your email"
+                                    placeholder={tr('auth_enter_email', 'Enter your email')}
                                 />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
+                            <label className="block text-sm font-semibold text-gray-700 mb-1.5 ml-1">{tr('auth_password', 'Password')}</label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Lock size={18} className="text-gray-400" />
@@ -111,7 +113,7 @@ export default function Auth() {
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-[16px] text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#849B87]/30 focus:border-[#849B87] transition-all"
-                                    placeholder={isLogin ? "Enter your password" : "Create a password (min 6 chars)"}
+                                    placeholder={isLogin ? tr('auth_enter_password', 'Enter your password') : tr('auth_create_password', 'Create a password (min 6 chars)')}
                                     minLength={6}
                                 />
                             </div>
@@ -127,7 +129,7 @@ export default function Auth() {
                             <Loader2 size={20} className="animate-spin" />
                         ) : (
                             <>
-                                {isLogin ? "Log In" : "Sign Up"}
+                                {isLogin ? tr('auth_log_in', 'Log In') : tr('auth_sign_up', 'Sign Up')}
                                 <ArrowRight size={18} />
                             </>
                         )}
@@ -136,7 +138,7 @@ export default function Auth() {
 
                 <div className="relative z-10 mt-8 text-center">
                     <p className="text-sm text-gray-500">
-                        {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+                        {isLogin ? tr('auth_no_account', "Don't have an account?") : tr('auth_have_account', 'Already have an account?')}{" "}
                         <button
                             onClick={() => {
                                 setIsLogin(!isLogin);
@@ -145,7 +147,7 @@ export default function Auth() {
                             }}
                             className="font-bold text-gray-900 hover:text-gray-600 transition-colors"
                         >
-                            {isLogin ? "Sign up" : "Log in"}
+                            {isLogin ? tr('auth_sign_up_lower', 'Sign up') : tr('auth_log_in_lower', 'Log in')}
                         </button>
                     </p>
                 </div>
