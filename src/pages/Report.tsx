@@ -13,9 +13,11 @@ import { useDimensions } from "../hooks/useDimensions";
 import { useGoalEvaluations } from "../hooks/useGoalEvaluations";
 import { useReports } from "../hooks/useReports";
 import { supabase } from "../lib/supabase";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Report() {
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { cycles } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { evaluations, loadAllEvaluations } = useGoalEvaluations(user?.id, undefined);
@@ -337,7 +339,7 @@ export default function Report() {
                         <p className="text-xl font-black text-gray-800">{cognitiveProfile.currentAvg}</p>
                       </div>
                       <div className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", cognitiveProfile.delta >= 0 ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600")}>
-                        {cognitiveProfile.delta >= 0 ? `+${cognitiveProfile.delta}` : `${cognitiveProfile.delta}`} vs prev
+                        {cognitiveProfile.delta >= 0 ? `+${cognitiveProfile.delta}` : `${cognitiveProfile.delta}` } {tr('report_vs_prev', 'vs prev')}
                       </div>
                     </div>
 

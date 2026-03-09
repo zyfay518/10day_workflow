@@ -98,6 +98,24 @@ const dict: Record<string, { en: string; zh: string }> = {
   record_processing: { en: 'Processing...', zh: '处理中...' },
   record_save_organize: { en: 'Save & Organize', zh: '保存并整理' },
 
+  report_title: { en: 'Cognitive Report', zh: '认知报告' },
+  report_subtitle: { en: 'Multidimensional analysis', zh: '多维分析' },
+  report_growth_trend: { en: 'Growth Trend', zh: '成长趋势' },
+  report_stage_insights: { en: 'Stage Insights', zh: '阶段洞察' },
+  report_period_snapshot: { en: 'Period Snapshot', zh: '周期快照' },
+  report_avg_score: { en: 'Avg. Score', zh: '平均分' },
+  report_cognitive_profile: { en: 'Cognitive Profile', zh: '认知画像' },
+  report_current_stage: { en: 'Current Stage', zh: '当前阶段' },
+  report_period_score: { en: 'Period Score', zh: '周期评分' },
+  report_vs_prev: { en: 'vs prev', zh: '较上期' },
+  report_evidence: { en: 'Evidence from this period', zh: '本周期证据' },
+  report_strategy: { en: 'Next-period strategy', zh: '下周期策略' },
+
+  knowledge_title: { en: 'Knowledge Base', zh: '知识库' },
+  knowledge_subtitle: { en: 'Your cognitive growth and reflections', zh: '你的认知成长与反思' },
+  knowledge_all_intel: { en: 'All Intel', zh: '全部洞察' },
+  knowledge_no_insights: { en: 'No insights recorded yet.', zh: '暂无沉淀内容。' },
+
   loading_workspace: { en: 'Loading your workspace...', zh: '正在加载你的工作空间...' },
 };
 

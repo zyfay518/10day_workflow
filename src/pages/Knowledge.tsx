@@ -11,9 +11,11 @@ import { useBooks } from "../hooks/useBooks";
 import { useWeight } from "../hooks/useWeight";
 import { useExpenses } from "../hooks/useExpenses";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Knowledge() {
     const { user } = useAuth();
+    const { tr } = useLocale();
     const { entries, addEntry } = useKnowledgeBase(user?.id);
     const { dimensions } = useDimensions(user?.id);
     const { cycles } = useCycles(user?.id);
@@ -175,7 +177,7 @@ export default function Knowledge() {
                         activeTab === "all" ? "bg-gray-800 text-white shadow-sm" : "bg-white text-gray-600 border border-gray-200"
                     )}
                 >
-                    All Intel
+                    {tr('knowledge_all_intel', 'All Intel')}
                 </button>
                 {dimensions.map(dim => (
                     <button
@@ -435,7 +437,7 @@ export default function Knowledge() {
                 ) : displayedEntries.length === 0 ? (
                     <div className="text-center py-10 bg-white rounded-2xl shadow-sm border border-gray-100 mt-4">
                         <BookOpen size={36} className="text-gray-300 mb-2 mx-auto" />
-                        <p className="text-gray-500 text-sm">No insights recorded yet.</p>
+                        <p className="text-gray-500 text-sm">{tr('knowledge_no_insights', 'No insights recorded yet.')}</p>
                     </div>
                 ) : (
                     displayedEntries.map(entry => {
