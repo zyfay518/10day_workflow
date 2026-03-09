@@ -19,6 +19,7 @@ const Report = lazy(() => import("./pages/Report"));
 const Knowledge = lazy(() => import("./pages/Knowledge"));
 import { useAuth } from "./hooks/useAuth";
 import { useLocale } from "./hooks/useLocale";
+import { warmCommonRoutes } from "./lib/prefetch";
 
 function AppLoadingScreen() {
   const { tr } = useLocale();
@@ -50,6 +51,7 @@ export default function App() {
     if (import.meta.env.DEV) {
       import('./lib/localStorage').then((m) => m.initTestData());
     }
+    warmCommonRoutes();
   }, []);
 
   // Keep startup visuals in one flow: splash -> loading on same screen -> app.

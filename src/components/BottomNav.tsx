@@ -5,6 +5,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
 const VoiceQuickCaptureModal = lazy(() => import("./VoiceQuickCaptureModal"));
 import { useLocale } from "../hooks/useLocale";
+import { prefetchRoute } from "../lib/prefetch";
 
 const HOLD_MS = 2000;
 
@@ -47,6 +48,7 @@ export default function BottomNav() {
   };
 
   const onFabPointerDown = () => {
+    prefetchRoute('/record');
     longPressedRef.current = false;
     startTsRef.current = Date.now();
     timerRef.current = window.setInterval(() => {
@@ -78,6 +80,8 @@ export default function BottomNav() {
       <Link
         key={item.name}
         to={item.path}
+        onPointerEnter={() => prefetchRoute(item.path)}
+        onTouchStart={() => prefetchRoute(item.path)}
         className="flex flex-col items-center justify-center w-12 h-10 transition-colors group"
       >
         <Icon
