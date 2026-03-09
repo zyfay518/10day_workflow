@@ -45,6 +45,7 @@ function ProtectedRoute({ children, user }: { children: React.ReactNode; user: u
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [homeReady, setHomeReady] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -52,6 +53,16 @@ export default function App() {
       import('./lib/localStorage').then((m) => m.initTestData());
     }
     warmCommonRoutes();
+  }, []);
+
+  useEffect(() => {
+    const onReady = () => setHomeReady(true);
+    window.addEventListener('home-initial-ready', onReady);
+    const timer = window.setTimeout(() => setHomeReady(true), 5000);
+    return () => {
+      window.removeEventListener('home-initial-ready', onReady);
+      window.clearTimeout(timer);
+    };
   }, []);
 
   // Keep startup visuals in one flow: splash -> loading on same screen -> app.
@@ -66,8 +77,11 @@ export default function App() {
     );
   }
 
+  const showStartupOverlay = !!user && !homeReady;
+
   return (
     <BrowserRouter>
+      {showStartupOverlay && <Splash loading />}
       <Routes>
         <Route path="/auth" element={<Suspense fallback={<AppLoadingScreen />}><Auth /></Suspense>} />
 

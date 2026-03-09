@@ -24,6 +24,7 @@ type CyclesCacheEntry = {
 };
 
 const cyclesCache = new Map<string, CyclesCacheEntry>();
+const cyclesInflight = new Map<string, Promise<void>>();
 const CACHE_TTL_MS = 60_000;
 
 interface UseCyclesReturn {
@@ -218,51 +219,64 @@ export function useCycles(userId?: string): UseCyclesReturn {
   const fetchCycles = async (showLoading = true) => {
     if (!userId) return;
 
-    try {
-      if (showLoading) setLoading(true);
+    const existing = cyclesInflight.get(userId);
+    if (existing) {
+      await existing;
+      return;
+    }
 
-      const { data, error: fetchError } = await supabase
-        .from('cycles')
-        .select('*')
-        .eq('user_id', userId)
-        .order('cycle_number', { ascending: true });
+    const task = (async () => {
+      try {
+        if (showLoading) setLoading(true);
 
-      if (fetchError) throw fetchError;
-
-      let nextCycles = normalizeCycles(data || []);
-
-      // 底层修复：自动补齐/纠正 37 个周期和状态
-      const synced = await syncCyclesIfNeeded(userId, nextCycles);
-      if (synced) {
-        const { data: refreshed, error: refreshError } = await supabase
+        const { data, error: fetchError } = await supabase
           .from('cycles')
           .select('*')
           .eq('user_id', userId)
           .order('cycle_number', { ascending: true });
 
-        if (!refreshError) {
-          nextCycles = normalizeCycles(refreshed || []);
+        if (fetchError) throw fetchError;
+
+        let nextCycles = normalizeCycles(data || []);
+
+        // 底层修复：自动补齐/纠正 37 个周期和状态
+        const synced = await syncCyclesIfNeeded(userId, nextCycles);
+        if (synced) {
+          const { data: refreshed, error: refreshError } = await supabase
+            .from('cycles')
+            .select('*')
+            .eq('user_id', userId)
+            .order('cycle_number', { ascending: true });
+
+          if (!refreshError) {
+            nextCycles = normalizeCycles(refreshed || []);
+          }
         }
+
+        const resolvedCurrent = resolveCurrentCycle(nextCycles);
+        setCycles(nextCycles);
+        setCurrentCycle(resolvedCurrent);
+
+        cyclesCache.set(userId, {
+          cycles: nextCycles,
+          currentCycle: resolvedCurrent,
+          ts: Date.now(),
+        });
+
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch cycles:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
       }
+    })();
 
-      const resolvedCurrent = resolveCurrentCycle(nextCycles);
-      setCycles(nextCycles);
-
-      // 查找当前周期（优先按日期）
-      setCurrentCycle(resolvedCurrent);
-
-      cyclesCache.set(userId, {
-        cycles: nextCycles,
-        currentCycle: resolvedCurrent,
-        ts: Date.now(),
-      });
-
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch cycles:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+    cyclesInflight.set(userId, task);
+    try {
+      await task;
     } finally {
-      setLoading(false);
+      cyclesInflight.delete(userId);
     }
   };
 

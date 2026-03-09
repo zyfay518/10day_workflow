@@ -16,6 +16,7 @@ type Dimension = Database['public']['Tables']['dimensions']['Row'];
 
 type DimensionsCacheEntry = { dimensions: Dimension[]; ts: number };
 const dimensionsCache = new Map<string, DimensionsCacheEntry>();
+const dimensionsInflight = new Map<string, Promise<void>>();
 const DIM_CACHE_TTL_MS = 60_000;
 
 interface UseDimensionsReturn {
@@ -57,18 +58,25 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
   const fetchDimensions = async (showLoading = true) => {
     if (!userId) return;
 
-    try {
-      if (showLoading) setLoading(true);
+    const existingReq = dimensionsInflight.get(userId);
+    if (existingReq) {
+      await existingReq;
+      return;
+    }
 
-      const { data, error: fetchError } = await supabase
-        .from('dimensions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('display_order', { ascending: true });
+    const task = (async () => {
+      try {
+        if (showLoading) setLoading(true);
 
-      if (fetchError) throw fetchError;
+        const { data, error: fetchError } = await supabase
+          .from('dimensions')
+          .select('*')
+          .eq('user_id', userId)
+          .order('display_order', { ascending: true });
 
-      let next = data || [];
+        if (fetchError) throw fetchError;
+
+        let next = data || [];
 
       const defaults = [
         { dimension_name: 'Health', color_code: '#d4b5b0', icon_name: 'health_and_safety', display_order: 0 },
@@ -131,11 +139,19 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
       setDimensions(next);
       dimensionsCache.set(userId, { dimensions: next, ts: Date.now() });
       setError(null);
-    } catch (err) {
-      console.error('Failed to fetch dimensions:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      } catch (err) {
+        console.error('Failed to fetch dimensions:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    dimensionsInflight.set(userId, task);
+    try {
+      await task;
     } finally {
-      setLoading(false);
+      dimensionsInflight.delete(userId);
     }
   };
 

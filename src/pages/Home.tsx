@@ -19,6 +19,7 @@ export default function Home() {
   const { cycles, currentCycle, loading: cyclesLoading, refreshCycles } = useCycles(user?.id);
   const { dimensions, loading: dimensionsLoading } = useDimensions(user?.id);
   const navigate = useNavigate();
+  const readyEmittedRef = React.useRef(false);
 
   // 年份选择
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
@@ -127,6 +128,13 @@ export default function Home() {
   const handleRefresh = () => {
     refreshCycles();
   };
+
+  React.useEffect(() => {
+    if (!cyclesLoading && !dimensionsLoading && !readyEmittedRef.current) {
+      readyEmittedRef.current = true;
+      window.dispatchEvent(new Event('home-initial-ready'));
+    }
+  }, [cyclesLoading, dimensionsLoading]);
 
   if (cyclesLoading || dimensionsLoading) {
     return (
