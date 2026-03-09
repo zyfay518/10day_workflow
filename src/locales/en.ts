@@ -27,6 +27,8 @@ const en = {
   "voice_msg_dim_not_ready": "Dimensions are not ready. Please reopen this panel in 1-2 seconds.",
   "voice_msg_save_failed": "Save failed. Please review and try again.",
   "voice_msg_saved_library": "Saved to Library.",
+  "voice_saving_library": "Saving...",
+  "voice_msg_no_dimension": "No dimension configuration found. Please set up dimensions first.",
   "profile_settings": "Settings",
   "profile_account": "Account",
   "profile_integration": "Integration",

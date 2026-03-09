@@ -43,6 +43,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const [draft, setDraft] = useState<VoiceParsedResult | null>(null);
   const [saving, setSaving] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
+  const [isSavingLibrary, setIsSavingLibrary] = useState(false);
   const [draftRowId, setDraftRowId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
@@ -313,14 +314,25 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
     try {
       setSaving(true);
+      setIsSavingLibrary(true);
       setMessage('');
 
+      let workingDimensions = dimensions;
+      if (!workingDimensions || workingDimensions.length === 0) {
+        const { data: dimRows } = await supabase
+          .from('dimensions')
+          .select('id, dimension_name')
+          .eq('user_id', user.id)
+          .order('display_order', { ascending: true });
+        workingDimensions = (dimRows as any[]) || [];
+      }
+
       const dim = await classifyVoiceDimension(text);
-      const dimensionId = mapDimensionId(dimensions, dim);
+      const dimensionId = mapDimensionId((workingDimensions || []) as any, dim);
       const today = getLocalDateString();
 
       if (!dimensionId) {
-        setMessage('No dimension configuration found. Please set up dimensions first.');
+        setMessage(tr('voice_msg_no_dimension', 'No dimension configuration found. Please set up dimensions first.'));
         return;
       }
 
@@ -333,9 +345,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         media_urls: null,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
       setMessage(tr('voice_msg_saved_library', 'Saved to Library.'));
@@ -344,6 +354,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       console.error(e);
       setMessage(tr('voice_msg_save_failed', 'Save failed. Please review and try again.'));
     } finally {
+      setIsSavingLibrary(false);
       setSaving(false);
     }
   };
@@ -417,10 +428,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               </button>
               <button
                 onClick={handleSaveLibrary}
-                disabled={saving || analyzing || isParsing || !text.trim()}
+                disabled={saving || analyzing || isParsing || isSavingLibrary || !text.trim()}
                 className="h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <BookOpen size={16} /> {tr('voice_save_library', 'Save to Library')}
+                {isSavingLibrary ? (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600/90 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600/90 animate-bounce [animation-delay:120ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-600/90 animate-bounce [animation-delay:240ms]" />
+                    </span>
+                    {tr('voice_saving_library', 'Saving...')}
+                  </>
+                ) : (
+                  <>
+                    <BookOpen size={16} /> {tr('voice_save_library', 'Save to Library')}
+                  </>
+                )}
               </button>
             </div>
           </div>
