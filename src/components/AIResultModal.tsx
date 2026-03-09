@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SplitDimensionItem } from '../hooks/useAIAnalysis';
 import { Bot, Check, X } from 'lucide-react';
+import { useLocale } from '../hooks/useLocale';
 
 interface AIResultModalProps {
     isOpen: boolean;
@@ -13,6 +14,7 @@ interface AIResultModalProps {
 
 export default function AIResultModal({ isOpen, items, availableDimensions, onConfirm, onCancel, onSkip }: AIResultModalProps) {
     const [editedItems, setEditedItems] = useState<SplitDimensionItem[]>([]);
+    const { tr } = useLocale();
 
     useEffect(() => {
         if (isOpen) {
@@ -34,7 +36,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
                 <div className="bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] p-4 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Bot className="text-white" size={24} />
-                        <h2 className="text-white font-bold text-lg">AI Dimension Split</h2>
+                        <h2 className="text-white font-bold text-lg">{tr('aimodal_title','AI Dimension Split')}</h2>
                     </div>
                     <button onClick={onCancel} className="text-white hover:bg-white/20 p-1 rounded-full transition-colors">
                         <X size={20} />
@@ -43,7 +45,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
 
                 <div className="p-4 overflow-y-auto flex-1 bg-gray-50 flex flex-col gap-3">
                     <p className="text-sm text-gray-600 mb-2">
-                        AI has organized your thoughts into dimensions. Adjust the categories if needed.
+                        {tr('aimodal_desc','AI has organized your thoughts into dimensions. Adjust the categories if needed.')}
                     </p>
 
                     {editedItems.map((item, idx) => (
@@ -70,7 +72,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
 
                     {editedItems.length === 0 && (
                         <p className="text-center text-gray-400 py-6 text-sm">
-                            AI couldn't extract any dimensions from your text.
+                            {tr('aimodal_empty',"AI couldn't extract any dimensions from your text.")}
                         </p>
                     )}
                 </div>
@@ -80,14 +82,14 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
                         onClick={() => onConfirm(editedItems)}
                         className="w-full h-12 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
                     >
-                        <Check size={20} /> Confirm Save
+                        <Check size={20} /> {tr('aimodal_confirm', 'Confirm Save')}
                     </button>
 
                     <button
                         onClick={onSkip}
                         className="w-full h-10 rounded-lg text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 active:bg-gray-100 transition-colors"
                     >
-                        Skip AI & Save as General Text
+                        {tr('aimodal_skip','Skip AI & Save as General Text')}
                     </button>
                 </div>
             </div>

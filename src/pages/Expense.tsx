@@ -8,6 +8,7 @@ import { useDimensions } from "../hooks/useDimensions";
 import { useRecords } from "../hooks/useRecords";
 import { useExpenses } from "../hooks/useExpenses";
 import { useAIAnalysis } from "../hooks/useAIAnalysis";
+import { useLocale } from "../hooks/useLocale";
 
 interface ExpenseItem {
   category: string;
@@ -21,6 +22,7 @@ import { getLocalDateString } from "../lib/utils";
 export default function Expense() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
@@ -72,7 +74,7 @@ export default function Expense() {
   // AI parsing
   const handleParse = async () => {
     if (!text.trim()) {
-      showMessage("Please enter expense information");
+      showMessage(tr('expense_msg_enter_info', 'Please enter expense information'));
       return;
     }
 
@@ -81,14 +83,14 @@ export default function Expense() {
       const parsedItems = parseExpenseResult(aiResult);
 
       if (parsedItems.length === 0) {
-        showMessage("AI couldn't parse valid expense items, please check input format");
+        showMessage(tr('expense_msg_parse_invalid', "AI couldn't parse valid expense items, please check input format"));
         return;
       }
 
       setItems(parsedItems);
       setParsed(true);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : "Parse failed");
+      showMessage(error instanceof Error ? error.message : tr('expense_msg_parse_failed', 'Parse failed'));
     }
   };
 
@@ -123,12 +125,12 @@ export default function Expense() {
   // Save expense record
   const handleSave = async () => {
     if (!user || !currentCycle || !expenseDimension || !record) {
-      showMessage("Missing required information, unable to save");
+      showMessage(tr('expense_msg_missing_required', 'Missing required information, unable to save'));
       return;
     }
 
     if (items.length === 0) {
-      showMessage("Please parse expenses or manually add items first");
+      showMessage(tr('expense_msg_parse_or_add', 'Please parse expenses or manually add items first'));
       return;
     }
 
@@ -149,14 +151,14 @@ export default function Expense() {
 
       await saveExpenses(expenseInputs);
 
-      showMessage("Expense record saved!");
+      showMessage(tr('expense_msg_saved', 'Expense record saved!'));
 
       // Delay navigation to Record page
       setTimeout(() => {
         navigate('/record');
       }, 1000);
     } catch (error) {
-      showMessage(error instanceof Error ? error.message : "Save failed");
+      showMessage(error instanceof Error ? error.message : tr('expense_msg_save_failed', 'Save failed'));
     }
   };
 
@@ -175,11 +177,11 @@ export default function Expense() {
 
       <main className="flex-1 px-4 py-2 overflow-y-auto pb-24 hide-scrollbar">
         <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">Quick Input</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2 ml-1">{tr('expense_quick_input', 'Quick Input')}</label>
           <div className="relative group">
             <textarea
               className="w-full p-4 rounded-xl border border-gray-200 bg-gray-50 text-[14px] text-gray-800 focus:ring-1 focus:ring-[#9DC5EF] focus:border-transparent outline-none resize-none transition-all placeholder-gray-400"
-              placeholder="e.g., Lunch 50, Taxi 20, Books 120..."
+              placeholder={tr('expense_placeholder', 'e.g., Lunch 50, Taxi 20, Books 120...')}
               rows={4}
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -201,7 +203,7 @@ export default function Expense() {
             ) : (
               <Bot size={20} className="group-hover:rotate-12 transition-transform" />
             )}
-            {analyzing ? "Parsing..." : "AI Smart Parse"}
+            {analyzing ? tr('expense_parsing', 'Parsing...') : tr('expense_ai_parse', 'AI Smart Parse')}
           </button>
         </div>
 
@@ -210,16 +212,16 @@ export default function Expense() {
             <div className="px-5 py-4 border-b border-gray-50 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles size={20} className="text-[#9DC5EF]" />
-                <h2 className="font-bold text-gray-800 text-sm">AI Parse Result</h2>
+                <h2 className="font-bold text-gray-800 text-sm">{tr('expense_parse_result', 'AI Parse Result')}</h2>
               </div>
-              <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">{items.length} items</span>
+              <span className="text-xs text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-100">{items.length} {tr('expense_items', 'items')}</span>
             </div>
 
             {/* Table Header */}
             <div className="grid grid-cols-[1.5fr_2fr_1.5fr_0.5fr] gap-2 px-4 py-2 bg-gray-50 border-b border-gray-100 text-xs font-semibold text-gray-600">
-              <div>Category</div>
-              <div>Item</div>
-              <div>Amount</div>
+              <div>{tr('expense_category','Category')}</div>
+              <div>{tr('expense_item','Item')}</div>
+              <div>{tr('expense_amount','Amount')}</div>
               <div></div>
             </div>
 
@@ -276,7 +278,7 @@ export default function Expense() {
             </div>
 
             <div className="px-5 py-4 bg-gray-50/50 flex items-center justify-between border-t border-gray-100">
-              <span className="text-sm font-medium text-gray-500">Total Amount</span>
+              <span className="text-sm font-medium text-gray-500">{tr('expense_total', 'Total Amount')}</span>
               <span className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1]">¥{totalAmount.toFixed(2)}</span>
             </div>
           </div>
@@ -288,7 +290,7 @@ export default function Expense() {
             className="text-sm text-gray-400 flex items-center justify-center gap-1 hover:text-gray-600 transition-colors"
           >
             <PlusCircle size={16} />
-            Add Item Manually
+            {tr('expense_add_item', 'Add Item Manually')}
           </button>
         </div>
       </main>
@@ -296,10 +298,10 @@ export default function Expense() {
       <div className="absolute bottom-0 left-0 w-full bg-white border-t border-gray-100 px-5 py-4 pb-8 shadow-[0_-4px_20px_rgba(0,0,0,0.03)] z-10">
         <div className="flex items-center justify-between mb-4 px-1">
           <div className="text-xs text-gray-400">
-            Period: <span className="text-gray-600 font-medium">Cycle {currentCycle?.cycle_number || 1}</span>
+            {tr('expense_cycle', 'Cycle')}: <span className="text-gray-600 font-medium">{tr('expense_cycle', 'Cycle')} {currentCycle?.cycle_number || 1}</span>
           </div>
           <div className="text-xs text-gray-400">
-            Category: <span className="bg-[#D4A5A5]/20 text-[#D4A5A5] px-2 py-0.5 rounded-full font-medium ml-1">Expense</span>
+            {tr('expense_category','Category')}: <span className="bg-[#D4A5A5]/20 text-[#D4A5A5] px-2 py-0.5 rounded-full font-medium ml-1">{tr('expense_dimension_expense','Expense')}</span>
           </div>
         </div>
         <button
@@ -311,7 +313,7 @@ export default function Expense() {
           )}
         >
           <CheckCircle2 size={20} />
-          Confirm and Record
+          {tr('expense_confirm_record', 'Confirm and Record')}
         </button>
       </div>
 

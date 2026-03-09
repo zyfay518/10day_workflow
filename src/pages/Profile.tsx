@@ -163,7 +163,7 @@ export default function Profile() {
         <button
           onClick={handleToggleNotifications}
           className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${notifications ? 'text-[#9DC5EF] bg-blue-50' : 'text-gray-400 hover:text-gray-600'}`}
-          title={notifications ? 'Notifications enabled' : 'Notifications disabled'}
+          title={notifications ? tr('profile_notifications_enabled', 'Notifications enabled') : tr('profile_notifications_disabled', 'Notifications disabled')}
         >
           <Bell size={20} />
         </button>
@@ -181,7 +181,7 @@ export default function Profile() {
                 />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-2xl font-bold border-[3px] border-white">
-                  {profile?.nickname?.charAt(0) || 'U'}
+                  {profile?.nickname?.charAt(0) || tr('profile_user', 'U')}
                 </div>
               )}
             </div>
@@ -190,11 +190,11 @@ export default function Profile() {
               <input type="file" className="hidden" accept="image/*" onChange={handleFileChange} />
             </label>
           </div>
-          <h2 className="text-lg font-bold text-gray-800 mb-0.5">{profile?.nickname || 'User'}</h2>
-          <p className="text-sm text-gray-500 font-normal">{user?.email || user?.phone || 'Account'}</p>
+          <h2 className="text-lg font-bold text-gray-800 mb-0.5">{profile?.nickname || tr('profile_user', 'User')}</h2>
+          <p className="text-sm text-gray-500 font-normal">{user?.email || user?.phone || tr('profile_account', 'Account')}</p>
           <div className="mt-4 flex gap-3">
-            <span className="px-3 py-1 bg-green-50 text-[#A8C3A9] text-xs font-medium rounded-full border border-green-100">Free Plan</span>
-            <span className="px-3 py-1 bg-blue-50 text-[#9DC5EF] text-xs font-medium rounded-full border border-blue-100">Joined 2026</span>
+            <span className="px-3 py-1 bg-green-50 text-[#A8C3A9] text-xs font-medium rounded-full border border-green-100">{tr('profile_free_plan', 'Free Plan')}</span>
+            <span className="px-3 py-1 bg-blue-50 text-[#9DC5EF] text-xs font-medium rounded-full border border-blue-100">{tr('profile_joined_2026', 'Joined 2026')}</span>
           </div>
         </div>
 
@@ -229,9 +229,9 @@ export default function Profile() {
                     <Bot size={18} />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium text-gray-700">AI API Key (DeepSeek)</span>
+                    <span className="text-sm font-medium text-gray-700">{tr('profile_ai_key', 'AI API Key (DeepSeek)')}</span>
                     <span className="text-[10px] text-gray-400">
-                      {profile?.ai_api_key ? `Configured ••••${profile.ai_api_key.slice(-4)}` : 'Not Configured'}
+                      {profile?.ai_api_key ? `Configured ••••${profile.ai_api_key.slice(-4)}` : tr('profile_not_configured', 'Not Configured')}
                     </span>
                   </div>
                 </div>
@@ -247,9 +247,9 @@ export default function Profile() {
                     <FileEdit size={18} />
                   </div>
                   <div className="flex flex-col items-start">
-                    <span className="text-sm font-medium text-gray-700">AI Prompts</span>
+                    <span className="text-sm font-medium text-gray-700">{tr('profile_ai_prompts', 'AI Prompts')}</span>
                     <span className="text-[10px] text-gray-400">
-                      Customize AI behavior and responses
+                      {tr('profile_prompts_customize', 'Customize AI behavior and responses')}
                     </span>
                   </div>
                 </div>
@@ -294,9 +294,9 @@ export default function Profile() {
       {showApiKeyDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-[12px] p-6 max-w-sm mx-4 shadow-xl w-full">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">Configure AI API Key</h3>
+            <h3 className="text-lg font-bold text-gray-800 mb-4">{tr('profile_configure_ai_key', 'Configure AI API Key')}</h3>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">DeepSeek API Key</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{tr('profile_deepseek_key', 'DeepSeek API Key')}</label>
               <input
                 type="text"
                 value={apiKey}
@@ -361,7 +361,7 @@ export default function Profile() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[12px] p-6 max-w-lg w-full shadow-xl max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-800">AI Prompts Management</h3>
+              <h3 className="text-lg font-bold text-gray-800">{tr('profile_prompts_mgmt', 'AI Prompts Management')}</h3>
               <button
                 onClick={() => setShowPromptsDialog(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -406,7 +406,7 @@ export default function Profile() {
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-              placeholder="Enter nickname"
+              placeholder={tr('profile_enter_nickname', 'Enter nickname')}
             />
             <div className="flex gap-3 mt-4">
               <button
@@ -432,7 +432,7 @@ export default function Profile() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-[12px] p-6 max-w-2xl w-full shadow-xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-bold text-gray-800">Edit Prompt</h3>
+              <h3 className="text-lg font-bold text-gray-800">{tr('profile_edit_prompt', 'Edit Prompt')}</h3>
               <button onClick={() => setSelectedPrompt(null)} className="text-gray-400 hover:text-gray-600">
                 <X size={22} />
               </button>
