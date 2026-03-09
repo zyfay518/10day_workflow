@@ -133,10 +133,10 @@ export default function BottomNav() {
                   <path id="ring-right-mid" d="M68 16 A38 38 0 0 1 68 80" />
                 </defs>
                 <text fill="#8F9BA9" fontSize="5.5" fontWeight="600" letterSpacing="0.28">
-                  <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
+                  <textPath href="#ring-left-mid" startOffset="50%" textAnchor="middle">{tr('nav_hold_for_voice', 'HOLD FOR VOICE')}</textPath>
                 </text>
                 <text fill="#8F9BA9" fontSize="5.5" fontWeight="600" letterSpacing="0.28">
-                  <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">HOLD FOR VOICE</textPath>
+                  <textPath href="#ring-right-mid" startOffset="50%" textAnchor="middle">{tr('nav_hold_for_voice', 'HOLD FOR VOICE')}</textPath>
                 </text>
               </svg>
 
@@ -162,7 +162,7 @@ export default function BottomNav() {
               </div>
 
               <div className="relative z-10 w-16 h-16 rounded-full bg-gradient-to-tr from-[#9DC5EF] to-[#FFB3C1] flex flex-col items-center justify-center shadow-[0_10px_20px_-4px_rgba(157,197,239,0.45)]">
-                <span className="text-[11px] leading-none font-semibold tracking-wide">Click</span>
+                <span className="text-[11px] leading-none font-semibold tracking-wide">{tr('nav_click', 'Click')}</span>
                 <div className="flex items-center mt-1">
                   <PenLine size={12} strokeWidth={2.2} />
                 </div>

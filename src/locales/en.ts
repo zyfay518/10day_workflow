@@ -6,6 +6,8 @@ const en = {
   "nav_report": "Report",
   "nav_profile": "Profile",
   "nav_record_hold": "Click to record, hold 2 seconds for voice",
+  "nav_click": "Click",
+  "nav_hold_for_voice": "HOLD FOR VOICE",
   "voice_title": "Voice Quick Capture",
   "voice_listening": "Listening",
   "voice_paused": "Paused",
