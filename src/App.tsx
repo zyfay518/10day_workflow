@@ -6,9 +6,9 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
-import Auth from "./pages/Auth";
-import Splash from "./pages/Splash";
 
+const Auth = lazy(() => import("./pages/Auth"));
+const Splash = lazy(() => import("./pages/Splash"));
 const Home = lazy(() => import("./pages/Home"));
 const Expense = lazy(() => import("./pages/Expense"));
 const Goals = lazy(() => import("./pages/Goals"));
@@ -18,7 +18,6 @@ const Record = lazy(() => import("./pages/Record"));
 const Report = lazy(() => import("./pages/Report"));
 const Knowledge = lazy(() => import("./pages/Knowledge"));
 import { useAuth } from "./hooks/useAuth";
-import { initTestData } from "./lib/localStorage";
 import { useLocale } from "./hooks/useLocale";
 
 function AppLoadingScreen() {
@@ -48,17 +47,21 @@ export default function App() {
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    initTestData();
+    if (import.meta.env.DEV) {
+      import('./lib/localStorage').then((m) => m.initTestData());
+    }
   }, []);
 
   // Keep startup visuals in one flow: splash -> loading on same screen -> app.
   if (showSplash || authLoading) {
     return (
       <BrowserRouter>
-        <Splash
-          onFinish={showSplash ? () => setShowSplash(false) : undefined}
-          loading={!showSplash}
-        />
+        <Suspense fallback={<AppLoadingScreen />}>
+          <Splash
+            onFinish={showSplash ? () => setShowSplash(false) : undefined}
+            loading={!showSplash}
+          />
+        </Suspense>
       </BrowserRouter>
     );
   }
@@ -66,7 +69,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/auth" element={<Auth />} />
+        <Route path="/auth" element={<Suspense fallback={<AppLoadingScreen />}><Auth /></Suspense>} />
 
         <Route element={<ProtectedRoute user={user}><Layout /></ProtectedRoute>}>
           <Route path="/" element={<Suspense fallback={<AppLoadingScreen />}><Home /></Suspense>} />

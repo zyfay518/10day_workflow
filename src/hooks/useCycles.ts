@@ -10,7 +10,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { RealtimeChannel } from '@supabase/supabase-js';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
 import { getLocalDateString, getCycleDisplayStatus, isDateInCycle } from '../lib/utils';
