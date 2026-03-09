@@ -33,7 +33,7 @@ export default function History() {
 
   const { user } = useAuth();
   const { tr, trDimension } = useLocale();
-  const { cycles, currentCycle } = useCycles(user?.id);
+  const { cycles, currentCycle, loading: cyclesLoading } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { milestones, deleteMilestone } = useMilestones(user?.id);
 
@@ -113,6 +113,10 @@ export default function History() {
   useEffect(() => {
     async function fetchHistory() {
       if (!user) return;
+      // Avoid "today-only then jump to cycle range" flicker during cycle hydration.
+      if (dateRangeType === 'current' && cyclesLoading && !selectedCycle) return;
+      if (dateRangeType === 'current' && !selectedCycle) return;
+
       try {
         setLoading(true);
         const { data, error } = await supabase
@@ -151,7 +155,7 @@ export default function History() {
     }
 
     fetchHistory();
-  }, [user, startDate, endDate, dimensions]);
+  }, [user, startDate, endDate, dimensions, dateRangeType, cyclesLoading, selectedCycle]);
 
   const handleDeleteRecord = async (id: number) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
