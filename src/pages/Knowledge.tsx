@@ -458,7 +458,11 @@ export default function Knowledge() {
                                     <div className="flex items-center gap-2">
                                         <span className="text-xs text-gray-400">{entry.record_date}</span>
                                         <button
-                                            onClick={() => removeEntry(entry.id)}
+                                            onClick={() => {
+                                                if (window.confirm('确认删除这条知识吗？删除后无法恢复。')) {
+                                                    removeEntry(entry.id);
+                                                }
+                                            }}
                                             className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                                             title="Delete"
                                         >

@@ -13,7 +13,7 @@ const zh = {
   "voice_paused": "已暂停",
   "voice_start_listening": "开始说话",
   "voice_pause": "暂停",
-  "voice_parse_review": "解析并预览",
+  "voice_parse_review": "AI解析并导入",
   "voice_parsing": "解析中...",
   "voice_save_library": "保存到知识库",
   "voice_save_library_oneclick": "一键保存到知识库",
