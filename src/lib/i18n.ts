@@ -111,6 +111,8 @@ const dict: Record<string, { en: string; zh: string }> = {
   report_vs_prev: { en: 'vs prev', zh: '较上期' },
   report_evidence: { en: 'Evidence from this period', zh: '本周期证据' },
   report_strategy: { en: 'Next-period strategy', zh: '下周期策略' },
+  report_awaiting_data: { en: 'Awaiting Data', zh: '等待数据中' },
+  report_awaiting_desc: { en: 'Your Cognitive Report relies on multi-dimensional AI evaluations generated at the end of each period.\n\nKeep writing daily records and completing your goals! Your radar chart and growth trends will appear here after you finish your first Period.', zh: '认知报告依赖每个周期结束时生成的多维 AI 评估。\n\n继续记录每日内容并完成目标！完成第一个周期后，这里将显示你的雷达图和成长趋势。' },
   report_stage_system_builder: { en: 'System Builder', zh: '系统构建者' },
   report_stage_reflective_executor: { en: 'Reflective Executor', zh: '反思执行者' },
   report_stage_foundation_explorer: { en: 'Foundation Explorer', zh: '基础探索者' },

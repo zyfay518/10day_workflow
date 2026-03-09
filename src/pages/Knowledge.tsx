@@ -164,8 +164,8 @@ export default function Knowledge() {
         <div className="flex flex-col h-full bg-[#F9FAFB] relative pb-24">
 
             <header className="px-4 py-3 sticky top-0 bg-white shadow-sm z-10">
-                <h1 className="text-[20px] font-bold text-gray-800">Knowledge Base</h1>
-                <p className="text-xs text-gray-500">Your cognitive growth and reflections</p>
+                <h1 className="text-[20px] font-bold text-gray-800">{tr('knowledge_title', 'Knowledge Base')}</h1>
+                <p className="text-xs text-gray-500">{tr('knowledge_subtitle', 'Your cognitive growth and reflections')}</p>
             </header>
 
             {/* Dimension Tabs */}

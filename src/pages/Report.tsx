@@ -247,8 +247,8 @@ export default function Report() {
       {/* Header */}
       <header className="px-4 py-3 bg-white flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <div>
-          <h1 className="text-[20px] font-bold text-gray-800">Cognitive Report</h1>
-          <p className="text-xs text-gray-500">Multidimensional analysis</p>
+          <h1 className="text-[20px] font-bold text-gray-800">{tr('report_title', 'Cognitive Report')}</h1>
+          <p className="text-xs text-gray-500">{tr('report_subtitle', 'Multidimensional analysis')}</p>
         </div>
         <Link to="/" className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
           <X size={18} />
@@ -261,10 +261,9 @@ export default function Report() {
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 border border-blue-100">
               <Brain size={32} className="text-[#9DC5EF]" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Awaiting Data</h2>
-            <p className="text-sm text-gray-500 leading-relaxed">
-              Your Cognitive Report relies on multi-dimensional AI evaluations generated at the end of each period.<br /><br />
-              Keep writing daily records and completing your goals! Your radar chart and growth trends will appear here after you finish your first Period.
+            <h2 className="text-xl font-bold text-gray-800 mb-2">{tr('report_awaiting_data', 'Awaiting Data')}</h2>
+            <p className="text-sm text-gray-500 leading-relaxed whitespace-pre-line">
+              {tr('report_awaiting_desc', 'Your Cognitive Report relies on multi-dimensional AI evaluations generated at the end of each period.\n\nKeep writing daily records and completing your goals! Your radar chart and growth trends will appear here after you finish your first Period.')}
             </p>
           </div>
         ) : (
