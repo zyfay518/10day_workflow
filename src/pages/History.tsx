@@ -32,7 +32,7 @@ export default function History() {
   const cycleIdParam = searchParams.get('cycleId');
 
   const { user } = useAuth();
-  const { tr } = useLocale();
+  const { tr, trDimension } = useLocale();
   const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { milestones, deleteMilestone } = useMilestones(user?.id);
@@ -42,7 +42,7 @@ export default function History() {
   const [dateRangeType, setDateRangeType] = useState<"current" | "2weeks" | "1month" | "custom">("current");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
-  const [dimFilter, setDimFilter] = useState<string>(tr('history_all', 'All'));
+  const [dimFilter, setDimFilter] = useState<number | 'all'>('all');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showDimDropdown, setShowDimDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -176,7 +176,7 @@ export default function History() {
   const filteredRecords = useMemo(() => {
     return records.filter(record => {
       // Dimension filter
-      if (dimFilter !== tr('history_all', 'All') && record.dimension_name !== dimFilter) {
+      if (dimFilter !== 'all' && record.dimension_id !== dimFilter) {
         return false;
       }
 
@@ -203,10 +203,7 @@ export default function History() {
       // Date filter
       if (m.event_date < startDate || m.event_date > endDate) return false;
       // Dimension filter
-      if (dimFilter !== tr('history_all', 'All')) {
-        const dim = dimensions.find(d => d.id === m.related_dimension_id);
-        if (dim?.dimension_name !== dimFilter) return false;
-      }
+      if (dimFilter !== 'all' && m.related_dimension_id !== dimFilter) return false;
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -428,7 +425,7 @@ export default function History() {
               }}
               className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-[8px] py-2 px-3 text-sm hover:bg-gray-100 transition-colors"
             >
-              <span className="font-medium text-gray-700">{dimFilter}</span>
+              <span className="font-medium text-gray-700">{dimFilter === 'all' ? tr('history_all', 'All') : trDimension(dimensions.find(d => d.id === dimFilter)?.dimension_name || '')}</span>
               <ChevronDown className="text-gray-400" size={18} />
             </button>
             {showDimDropdown && (
@@ -436,12 +433,12 @@ export default function History() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDimFilter(tr('history_all', 'All'));
+                    setDimFilter('all');
                     setShowDimDropdown(false);
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors",
-                    dimFilter === tr('history_all', 'All') && "bg-blue-50 text-blue-600 font-medium"
+                    dimFilter === 'all' && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
                   All
@@ -451,15 +448,15 @@ export default function History() {
                     key={dim.id}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setDimFilter(dim.dimension_name);
+                      setDimFilter(dim.id);
                       setShowDimDropdown(false);
                     }}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors",
-                      dimFilter === dim.dimension_name && "bg-blue-50 text-blue-600 font-medium"
+                      dimFilter === dim.id && "bg-blue-50 text-blue-600 font-medium"
                     )}
                   >
-                    {dim.dimension_name}
+                    {trDimension(dim.dimension_name)}
                   </button>
                 ))}
               </div>
@@ -507,7 +504,7 @@ export default function History() {
                           {dim && (
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/60 border border-white/80 shadow-sm">
                               <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} color={dim.color_code} size={16} />
-                              <span className="text-xs font-medium text-gray-700">{dim.dimension_name}</span>
+                              <span className="text-xs font-medium text-gray-700">{trDimension(dim.dimension_name)}</span>
                             </div>
                           )}
                           <button
@@ -563,7 +560,7 @@ export default function History() {
                         <span className="w-1 h-1 rounded-full bg-gray-300"></span>
                         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200">
                           <DynamicIcon name={record.dimension_icon} color={record.dimension_color} size={16} />
-                          <span className="text-xs font-medium text-gray-700">{record.dimension_name}</span>
+                          <span className="text-xs font-medium text-gray-700">{trDimension(record.dimension_name)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">

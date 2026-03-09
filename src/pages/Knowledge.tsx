@@ -15,7 +15,7 @@ import { useLocale } from "../hooks/useLocale";
 
 export default function Knowledge() {
     const { user } = useAuth();
-    const { tr } = useLocale();
+    const { tr, trDimension } = useLocale();
     const { entries, addEntry } = useKnowledgeBase(user?.id);
     const { dimensions } = useDimensions(user?.id);
     const { cycles } = useCycles(user?.id);
@@ -109,9 +109,9 @@ export default function Knowledge() {
     };
 
     const activeDimension = dimensions.find(d => d.id === activeTab);
-    const isReadingDimension = activeDimension?.dimension_name === "阅读";
-    const isHealthDimension = activeDimension?.dimension_name === "健康";
-    const isExpenseDimension = activeDimension?.dimension_name === "开销";
+    const isReadingDimension = activeDimension?.dimension_name === "阅读" || activeDimension?.dimension_name === "Study";
+    const isHealthDimension = activeDimension?.dimension_name === "健康" || activeDimension?.dimension_name === "Health";
+    const isExpenseDimension = activeDimension?.dimension_name === "开销" || activeDimension?.dimension_name === "Wealth" || activeDimension?.dimension_name === "财富";
 
     // Process expenses by month
     const monthlyExpenses = React.useMemo(() => {
@@ -190,7 +190,7 @@ export default function Knowledge() {
                         style={activeTab === dim.id ? { backgroundColor: dim.color_code } : {}}
                     >
                         <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} size={16} className="mb-[1px]" />
-                        {dim.dimension_name}
+                        {trDimension(dim.dimension_name)}
                     </button>
                 ))}
             </div>
@@ -577,7 +577,7 @@ export default function Knowledge() {
                                             style={selectedDimId === dim.id ? { backgroundColor: dim.color_code } : {}}
                                         >
                                             <DynamicIcon name={getDimensionIconName(dim.dimension_name, dim.icon_name)} size={24} className="mb-[2px]" />
-                                            {dim.dimension_name}
+                                            {trDimension(dim.dimension_name)}
                                         </button>
                                     ))}
                                 </div>

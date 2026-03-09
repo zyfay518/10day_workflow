@@ -17,7 +17,7 @@ import { useLocale } from "../hooks/useLocale";
 
 export default function Report() {
   const { user } = useAuth();
-  const { tr } = useLocale();
+  const { tr, trDimension } = useLocale();
   const { cycles } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { evaluations, loadAllEvaluations } = useGoalEvaluations(user?.id, undefined);
@@ -53,7 +53,7 @@ export default function Report() {
         : 0;
 
       return {
-        subject: dim.dimension_name,
+        subject: trDimension(dim.dimension_name),
         A: Math.round(avgScore),
         fullMark: 100,
         color: dim.color_code
@@ -83,14 +83,14 @@ export default function Report() {
           ? dimEvals.reduce((sum, e) => sum + e.final_score!, 0) / dimEvals.length
           : 0;
 
-        dataPoint[dim.dimension_name] = Math.round(avgScore);
+        dataPoint[trDimension(dim.dimension_name)] = Math.round(avgScore);
 
         if (avgScore > 0) {
           cycleTotal += avgScore;
           dimCount++;
         }
       });
-      dataPoint.Average = dimCount > 0 ? Math.round(cycleTotal / dimCount) : 0;
+      dataPoint[tr('report_average', 'Average')] = dimCount > 0 ? Math.round(cycleTotal / dimCount) : 0;
       return dataPoint;
     });
   }, [completedCycles, dimensions, evaluations]);
@@ -115,17 +115,17 @@ export default function Report() {
     const delta = prevCycle ? currentAvg - prevAvg : 0;
 
     const stage = currentAvg >= 80
-      ? 'System Builder'
+      ? tr('report_stage_system_builder', 'System Builder')
       : currentAvg >= 65
-        ? 'Reflective Executor'
-        : 'Foundation Explorer';
+        ? tr('report_stage_reflective_executor', 'Reflective Executor')
+        : tr('report_stage_foundation_explorer', 'Foundation Explorer');
 
     const metrics = [
-      { label: 'Goal Clarity', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.92 + 6))) },
-      { label: 'Execution Stability', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.88 + 8))) },
-      { label: 'Review Depth', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.9 + 5))) },
-      { label: 'Cross-domain Transfer', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.84 + 10))) },
-      { label: 'Long-term Consistency', value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.86 + 9))) },
+      { label: tr('report_metric_goal_clarity', 'Goal Clarity'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.92 + 6))) },
+      { label: tr('report_metric_execution_stability', 'Execution Stability'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.88 + 8))) },
+      { label: tr('report_metric_review_depth', 'Review Depth'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.9 + 5))) },
+      { label: tr('report_metric_cross_domain_transfer', 'Cross-domain Transfer'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.84 + 10))) },
+      { label: tr('report_metric_long_term_consistency', 'Long-term Consistency'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.86 + 9))) },
     ];
 
     const evidence = reports
@@ -231,6 +231,17 @@ export default function Report() {
     persistProfile();
   }, [user?.id, selectedCycleId, generatedProfile, savedProfile, profileTableAvailable]);
 
+  const localizeMetricLabel = (label: string) => {
+    const map: Record<string, string> = {
+      'Goal Clarity': tr('report_metric_goal_clarity', 'Goal Clarity'),
+      'Execution Stability': tr('report_metric_execution_stability', 'Execution Stability'),
+      'Review Depth': tr('report_metric_review_depth', 'Review Depth'),
+      'Cross-domain Transfer': tr('report_metric_cross_domain_transfer', 'Cross-domain Transfer'),
+      'Long-term Consistency': tr('report_metric_long_term_consistency', 'Long-term Consistency'),
+    };
+    return map[label] || label;
+  };
+
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB] relative pb-28">
       {/* Header */}
@@ -272,9 +283,9 @@ export default function Report() {
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: "#9CA3AF" }} />
                     <Tooltip />
                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px' }} />
-                    <Line type="monotone" dataKey="Average" stroke="#FFB3C1" strokeWidth={3} dot={{ r: 4, fill: "#FFB3C1", strokeWidth: 0 }} />
+                    <Line type="monotone" dataKey={tr('report_average', 'Average')} stroke="#FFB3C1" strokeWidth={3} dot={{ r: 4, fill: "#FFB3C1", strokeWidth: 0 }} />
                     {dimensions.map(dim => (
-                      <Line key={dim.id} type="monotone" dataKey={dim.dimension_name} stroke={dim.color_code} strokeWidth={1.5} dot={false} opacity={0.6} />
+                      <Line key={dim.id} type="monotone" dataKey={trDimension(dim.dimension_name)} stroke={dim.color_code} strokeWidth={1.5} dot={false} opacity={0.6} />
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
@@ -347,7 +358,7 @@ export default function Report() {
                       {cognitiveProfile.metrics.map((m) => (
                         <div key={m.label}>
                           <div className="flex justify-between text-xs mb-1">
-                            <span className="text-gray-600">{m.label}</span>
+                            <span className="text-gray-600">{localizeMetricLabel(m.label)}</span>
                             <span className="font-semibold text-gray-700">{m.value}</span>
                           </div>
                           <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">

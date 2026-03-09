@@ -101,6 +101,7 @@ const dict: Record<string, { en: string; zh: string }> = {
   report_title: { en: 'Cognitive Report', zh: '认知报告' },
   report_subtitle: { en: 'Multidimensional analysis', zh: '多维分析' },
   report_growth_trend: { en: 'Growth Trend', zh: '成长趋势' },
+  report_average: { en: 'Average', zh: '平均' },
   report_stage_insights: { en: 'Stage Insights', zh: '阶段洞察' },
   report_period_snapshot: { en: 'Period Snapshot', zh: '周期快照' },
   report_avg_score: { en: 'Avg. Score', zh: '平均分' },
@@ -110,6 +111,14 @@ const dict: Record<string, { en: string; zh: string }> = {
   report_vs_prev: { en: 'vs prev', zh: '较上期' },
   report_evidence: { en: 'Evidence from this period', zh: '本周期证据' },
   report_strategy: { en: 'Next-period strategy', zh: '下周期策略' },
+  report_stage_system_builder: { en: 'System Builder', zh: '系统构建者' },
+  report_stage_reflective_executor: { en: 'Reflective Executor', zh: '反思执行者' },
+  report_stage_foundation_explorer: { en: 'Foundation Explorer', zh: '基础探索者' },
+  report_metric_goal_clarity: { en: 'Goal Clarity', zh: '目标清晰度' },
+  report_metric_execution_stability: { en: 'Execution Stability', zh: '执行稳定性' },
+  report_metric_review_depth: { en: 'Review Depth', zh: '复盘深度' },
+  report_metric_cross_domain_transfer: { en: 'Cross-domain Transfer', zh: '跨域迁移能力' },
+  report_metric_long_term_consistency: { en: 'Long-term Consistency', zh: '长期一致性' },
 
   knowledge_title: { en: 'Knowledge Base', zh: '知识库' },
   knowledge_subtitle: { en: 'Your cognitive growth and reflections', zh: '你的认知成长与反思' },
@@ -146,8 +155,28 @@ export function onLocaleChange(cb: () => void) {
   };
 }
 
+const dimMap: Record<string, { en: string; zh: string }> = {
+  Health: { en: 'Health', zh: '健康' },
+  Work: { en: 'Work', zh: '工作' },
+  Study: { en: 'Study', zh: '学习' },
+  Wealth: { en: 'Wealth', zh: '财富' },
+  Family: { en: 'Family', zh: '家庭' },
+  Other: { en: 'Other', zh: '其他' },
+  健康: { en: 'Health', zh: '健康' },
+  工作: { en: 'Work', zh: '工作' },
+  学习: { en: 'Study', zh: '学习' },
+  财富: { en: 'Wealth', zh: '财富' },
+  家庭: { en: 'Family', zh: '家庭' },
+  其他: { en: 'Other', zh: '其他' },
+};
+
 export function t(key: string, locale: LocaleResolved, fallback?: string) {
   const item = dict[key];
   if (!item) return fallback || key;
   return item[locale] || fallback || key;
+}
+
+export function tDimension(name: string, locale: LocaleResolved) {
+  const item = dimMap[name];
+  return item ? item[locale] : name;
 }
