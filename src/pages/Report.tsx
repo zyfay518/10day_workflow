@@ -272,7 +272,7 @@ export default function Report() {
             <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="text-[#9DC5EF]" size={24} />
-                <h2 className="font-bold text-gray-800">Growth Trend</h2>
+                <h2 className="font-bold text-gray-800">{tr('report_growth_trend', 'Growth Trend')}</h2>
               </div>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -294,14 +294,14 @@ export default function Report() {
             {selectedCycle && (
               <>
                 <div className="flex items-center justify-between mt-6 mb-2">
-                  <h2 className="font-bold text-gray-800 text-lg">Stage Insights</h2>
+                  <h2 className="font-bold text-gray-800 text-lg">{tr('report_stage_insights', 'Stage Insights')}</h2>
                   <select
                     value={selectedCycleId || ""}
                     onChange={(e) => setSelectedCycleId(Number(e.target.value))}
                     className="bg-white border border-gray-200 text-gray-700 text-sm rounded-lg block px-3 py-1.5 outline-none"
                   >
                     {completedCycles.map(cycle => (
-                      <option key={cycle.id} value={cycle.id}>Period {cycle.cycle_number}</option>
+                      <option key={cycle.id} value={cycle.id}>{tr('home_period', 'Period')} {cycle.cycle_number}</option>
                     ))}
                   </select>
                 </div>
@@ -310,10 +310,10 @@ export default function Report() {
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                       <Target className="text-[#FFB3C1]" size={24} />
-                      <h2 className="font-bold text-gray-800">Period Snapshot</h2>
+                      <h2 className="font-bold text-gray-800">{tr('report_period_snapshot', 'Period Snapshot')}</h2>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] text-gray-400">Avg. Score</p>
+                      <p className="text-[10px] text-gray-400">{tr('report_avg_score', 'Avg. Score')}</p>
                       <p className="text-2xl font-black text-gray-800">{currentCycleAvgScore}</p>
                     </div>
                   </div>
@@ -335,10 +335,10 @@ export default function Report() {
                     <div className="flex items-start justify-between mb-4">
                       <h2 className="font-bold text-gray-800 flex items-center gap-2">
                         <Brain size={22} className="text-[#9DC5EF]" />
-                        Cognitive Profile
+                        {tr('report_cognitive_profile', 'Cognitive Profile')}
                       </h2>
                       <div className="text-right">
-                        <p className="text-[10px] text-gray-400">Current Stage</p>
+                        <p className="text-[10px] text-gray-400">{tr('report_current_stage', 'Current Stage')}</p>
                         <p className="text-sm font-bold bg-gradient-to-r from-[#7AA5D8] to-[#E89CAB] bg-clip-text text-transparent">{cognitiveProfile.stage}</p>
                       </div>
                     </div>

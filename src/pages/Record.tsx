@@ -347,7 +347,7 @@ export default function Record() {
             <Link to="/" className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors">
               <ChevronLeft className="text-gray-700" size={24} />
             </Link>
-            <h1 className="text-[20px] font-bold text-gray-800">Record</h1>
+            <h1 className="text-[20px] font-bold text-gray-800">{tr('record_title', 'Record')}</h1>
             <div className="w-10"></div>
           </div>
           <div className="flex justify-center items-center gap-2 pb-2">
