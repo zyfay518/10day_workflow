@@ -16,6 +16,7 @@ const en = {
   "voice_parse_review": "Parse & Review",
   "voice_parsing": "Parsing...",
   "voice_save_library": "Save to Library",
+  "voice_save_library_oneclick": "One-click Save to Library",
   "voice_live_placeholder": "Live transcript will appear here... You can edit manually.",
   "voice_summary": "Summary",
   "voice_records_editable": "Records (editable)",

@@ -476,7 +476,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               <button
                 onClick={handleSaveLibrary}
                 disabled={saving || analyzing || isParsing || isSavingLibrary || !text.trim()}
-                className="h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="h-11 rounded-xl bg-gradient-to-r from-[#C7B6A6] to-[#D8AFAF] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {isSavingLibrary ? (
                   <>
@@ -489,7 +489,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                   </>
                 ) : (
                   <>
-                    <BookOpen size={16} /> 识别维度
+                    <BookOpen size={16} /> {tr('voice_save_library_oneclick', 'One-click Save to Library')}
                   </>
                 )}
               </button>

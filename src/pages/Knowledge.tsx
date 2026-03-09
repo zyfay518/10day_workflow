@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X } from "lucide-react";
+import { BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X, Trash2 } from "lucide-react";
 import DynamicIcon from "../components/DynamicIcon";
 import { getDimensionIconName } from "../lib/dimensionIcon";
 import { useAuth } from "../hooks/useAuth";
@@ -16,7 +16,7 @@ import { useLocale } from "../hooks/useLocale";
 export default function Knowledge() {
     const { user } = useAuth();
     const { tr, trDimension } = useLocale();
-    const { entries, addEntry } = useKnowledgeBase(user?.id);
+    const { entries, addEntry, removeEntry } = useKnowledgeBase(user?.id);
     const { dimensions } = useDimensions(user?.id);
     const { cycles } = useCycles(user?.id);
 
@@ -455,7 +455,16 @@ export default function Knowledge() {
                                         </span>
                                         <span className="text-xs text-gray-400 font-medium">Period {cycle?.cycle_number}</span>
                                     </div>
-                                    <span className="text-xs text-gray-400">{entry.record_date}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-400">{entry.record_date}</span>
+                                        <button
+                                            onClick={() => removeEntry(entry.id)}
+                                            className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">{entry.content}</p>
                             </div>

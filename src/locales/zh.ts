@@ -16,6 +16,7 @@ const zh = {
   "voice_parse_review": "解析并预览",
   "voice_parsing": "解析中...",
   "voice_save_library": "保存到知识库",
+  "voice_save_library_oneclick": "一键保存到知识库",
   "voice_live_placeholder": "实时转写会显示在这里…你可以手动编辑。",
   "voice_summary": "摘要",
   "voice_records_editable": "记录（可编辑）",
