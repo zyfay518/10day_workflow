@@ -7,7 +7,7 @@ const VoiceQuickCaptureModal = lazy(() => import("./VoiceQuickCaptureModal"));
 import { useLocale } from "../hooks/useLocale";
 import { prefetchRoute } from "../lib/prefetch";
 
-const HOLD_MS = 2000;
+const HOLD_MS = 1000;
 
 export default function BottomNav() {
   const location = useLocation();

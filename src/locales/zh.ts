@@ -5,7 +5,7 @@ const zh = {
   "nav_history": "历史",
   "nav_report": "报告",
   "nav_profile": "我的",
-  "nav_record_hold": "点击记录，长按2秒语音输入",
+  "nav_record_hold": "点击记录，长按1秒语音输入",
   "nav_click": "点击",
   "nav_hold_for_voice": "长按语音",
   "voice_title": "语音快记",
