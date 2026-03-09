@@ -36,47 +36,50 @@ function AppLoadingScreen() {
 }
 
 // Protected Route Wrapper
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) return <AppLoadingScreen />;
+function ProtectedRoute({ children, user }: { children: React.ReactNode; user: unknown }) {
   if (!user) return <Navigate to="/auth" replace />;
-
   return <>{children}</>;
 }
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     initTestData();
   }, []);
 
+  // Keep startup visuals in one flow: splash -> loading on same screen -> app.
+  if (showSplash || authLoading) {
+    return (
+      <BrowserRouter>
+        <Splash
+          onFinish={showSplash ? () => setShowSplash(false) : undefined}
+          loading={!showSplash}
+        />
+      </BrowserRouter>
+    );
+  }
+
   return (
     <BrowserRouter>
-      {showSplash && <Splash onFinish={() => setShowSplash(false)} />}
-      {!showSplash && authLoading && <AppLoadingScreen />}
+      <Routes>
+        <Route path="/auth" element={<Auth />} />
 
-      {!showSplash && (
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
+        <Route element={<ProtectedRoute user={user}><Layout /></ProtectedRoute>}>
+          <Route path="/" element={<Home />} />
+          <Route path="/goals" element={<Suspense fallback={<AppLoadingScreen />}><Goals /></Suspense>} />
+          <Route path="/history" element={<Suspense fallback={<AppLoadingScreen />}><History /></Suspense>} />
+          <Route path="/report" element={<Suspense fallback={<AppLoadingScreen />}><Report /></Suspense>} />
+          <Route path="/knowledge" element={<Suspense fallback={<AppLoadingScreen />}><Knowledge /></Suspense>} />
+          <Route path="/profile" element={<Suspense fallback={<AppLoadingScreen />}><Profile /></Suspense>} />
+        </Route>
 
-          <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-            <Route path="/" element={<Home />} />
-            <Route path="/goals" element={<Suspense fallback={<AppLoadingScreen />}><Goals /></Suspense>} />
-            <Route path="/history" element={<Suspense fallback={<AppLoadingScreen />}><History /></Suspense>} />
-            <Route path="/report" element={<Suspense fallback={<AppLoadingScreen />}><Report /></Suspense>} />
-            <Route path="/knowledge" element={<Suspense fallback={<AppLoadingScreen />}><Knowledge /></Suspense>} />
-            <Route path="/profile" element={<Suspense fallback={<AppLoadingScreen />}><Profile /></Suspense>} />
-          </Route>
+        <Route path="/record" element={<ProtectedRoute user={user}><Suspense fallback={<AppLoadingScreen />}><Record /></Suspense></ProtectedRoute>} />
+        <Route path="/expense" element={<ProtectedRoute user={user}><Suspense fallback={<AppLoadingScreen />}><Expense /></Suspense></ProtectedRoute>} />
 
-          <Route path="/record" element={<ProtectedRoute><Suspense fallback={<AppLoadingScreen />}><Record /></Suspense></ProtectedRoute>} />
-          <Route path="/expense" element={<ProtectedRoute><Suspense fallback={<AppLoadingScreen />}><Expense /></Suspense></ProtectedRoute>} />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      )}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </BrowserRouter>
   );
 }

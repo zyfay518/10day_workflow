@@ -22,6 +22,12 @@ html,
 body {
   touch-action: manipulation;
   overscroll-behavior-y: none;
+  background: #FDFDFD;
+}
+
+#root {
+  min-height: 100vh;
+  background: #FDFDFD;
 }
 
 /* Handle mobile safe areas (notches, home bars) selectively */
