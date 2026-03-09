@@ -347,9 +347,23 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         return;
       }
 
+      let cycleId = currentCycle?.id ?? null;
+      if (!cycleId) {
+        const { data: matchedCycle } = await supabase
+          .from('cycles')
+          .select('id')
+          .eq('user_id', user.id)
+          .lte('start_date', today)
+          .gte('end_date', today)
+          .order('cycle_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        cycleId = matchedCycle?.id ?? null;
+      }
+
       const { error } = await supabase.from('knowledge_base').insert({
         user_id: user.id,
-        cycle_id: currentCycle?.id ?? null,
+        cycle_id: cycleId,
         dimension_id: dimensionId,
         record_date: today,
         content: text,
@@ -361,9 +375,9 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
       setMessage(tr('voice_msg_saved_library', 'Saved to Library.'));
       setTimeout(() => onClose(), 600);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      const detail = e instanceof Error ? ` (${e.message})` : '';
+      const detail = e?.message ? ` (${e.message})` : '';
       setMessage(`${tr('voice_msg_save_failed', 'Save failed. Please review and try again.')}${detail}`);
     } finally {
       setIsSavingLibrary(false);
