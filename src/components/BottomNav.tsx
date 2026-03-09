@@ -3,11 +3,13 @@ import { cn } from "../lib/utils";
 import { LayoutGrid, Flag, User, History, Library, FileText, Mic, PenLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import VoiceQuickCaptureModal from "./VoiceQuickCaptureModal";
+import { useLocale } from "../hooks/useLocale";
 
 const HOLD_MS = 2000;
 
 export default function BottomNav() {
   const location = useLocation();
+  const { tr } = useLocale();
   const navigate = useNavigate();
   const path = location.pathname;
   const [showVoiceModal, setShowVoiceModal] = useState(false);
@@ -17,15 +19,15 @@ export default function BottomNav() {
   const longPressedRef = useRef(false);
 
   const navItemsLeft = [
-    { name: "Home", icon: LayoutGrid, path: "/" },
-    { name: "Goals", icon: Flag, path: "/goals" },
-    { name: "Lib", icon: Library, path: "/knowledge" },
+    { name: tr('nav_home', 'Home'), icon: LayoutGrid, path: "/" },
+    { name: tr('nav_goals', 'Goals'), icon: Flag, path: "/goals" },
+    { name: tr('nav_lib', 'Lib'), icon: Library, path: "/knowledge" },
   ];
 
   const navItemsRight = [
-    { name: "History", icon: History, path: "/history" },
-    { name: "Report", icon: FileText, path: "/report" },
-    { name: "Profile", icon: User, path: "/profile" },
+    { name: tr('nav_history', 'History'), icon: History, path: "/history" },
+    { name: tr('nav_report', 'Report'), icon: FileText, path: "/report" },
+    { name: tr('nav_profile', 'Profile'), icon: User, path: "/profile" },
   ];
 
   useEffect(() => {
@@ -122,7 +124,7 @@ export default function BottomNav() {
               onPointerLeave={clearHold}
               onPointerCancel={clearHold}
               className="relative flex items-center justify-center w-[clamp(96px,24vw,108px)] h-[clamp(96px,24vw,108px)] rounded-full text-white transition-all duration-200"
-              aria-label="Click to record, hold 2 seconds for voice"
+              aria-label={tr('nav_record_hold', 'Click to record, hold 2 seconds for voice')}
             >
               <div className="absolute inset-0 rounded-full border-2 border-[#D6DEE8] bg-white shadow-[0_8px_16px_-6px_rgba(0,0,0,0.15)]" />
               <svg className="absolute inset-0 w-full h-full pointer-events-none z-40" viewBox="0 0 96 96" aria-hidden="true">

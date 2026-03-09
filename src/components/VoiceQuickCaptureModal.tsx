@@ -7,6 +7,7 @@ import { useSpeechRecognition } from '../hooks/useSpeechRecognition.local';
 import { useAIAnalysis, VoiceParsedResult } from '../hooks/useAIAnalysis';
 import { supabase } from '../lib/supabase';
 import { getLocalDateString } from '../lib/utils';
+import { useLocale } from '../hooks/useLocale';
 
 interface Props {
   open: boolean;
@@ -31,6 +32,7 @@ function mapDimensionId(dimensions: { id: number; dimension_name: string }[], ai
 
 export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'home' }: Props) {
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { transcript, liveTranscript, isListening, isSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
@@ -143,7 +145,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
       const parsed = await parseVoiceQuickEntry(text, { currentDate: today, timezone: 'Asia/Singapore' });
       if (!parsed) {
-        setMessage('Parsing failed. Please try again.');
+        setMessage(tr('voice_msg_parse_failed', 'Parsing failed. Please try again.'));
         return;
       }
 
@@ -219,11 +221,11 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const handleApplyParsed = async () => {
     if (!user?.id || !draft) return;
     if (!currentCycle?.id) {
-      setMessage('Current cycle is missing. Please refresh Home first.');
+      setMessage(tr('voice_msg_cycle_missing', 'Current cycle is missing. Please refresh Home first.'));
       return;
     }
     if (!dimensions || dimensions.length === 0) {
-      setMessage('Dimensions are not ready. Please reopen this panel in 1-2 seconds.');
+      setMessage(tr('voice_msg_dim_not_ready', 'Dimensions are not ready. Please reopen this panel in 1-2 seconds.'));
       return;
     }
 
@@ -297,7 +299,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
-      setMessage('Save failed. Please review and try again.');
+      setMessage(tr('voice_msg_save_failed', 'Save failed. Please review and try again.'));
     } finally {
       setSaving(false);
     }
@@ -327,7 +329,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       });
 
       await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
-      setMessage('Saved to Library.');
+      setMessage(tr('voice_msg_saved_library', 'Saved to Library.'));
       setTimeout(() => onClose(), 600);
     } finally {
       setSaving(false);
@@ -340,7 +342,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
     <div className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100 font-['Inter','SF_Pro_Text',system-ui,sans-serif]">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-base font-bold text-gray-800">Voice Quick Capture</h3>
+          <h3 className="text-base font-bold text-gray-800">{tr('voice_title', 'Voice Quick Capture')}</h3>
           <button onClick={() => { stopListening(); onClose(); }} className="p-2 rounded-full hover:bg-gray-100">
             <X size={18} />
           </button>
@@ -353,7 +355,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#C7B6A6] animate-bounce [animation-delay:120ms]' : 'bg-gray-300'}`} />
               <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#D8AFAF] animate-bounce [animation-delay:240ms]' : 'bg-gray-300'}`} />
             </div>
-            {isListening ? 'Listening' : 'Paused'}
+            {isListening ? tr('voice_listening', 'Listening') : tr('voice_paused', 'Paused')}
           </div>
           <div className="text-xs text-gray-500">{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, '0')}</div>
         </div>
@@ -362,7 +364,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Live transcript will appear here... You can edit manually."
+            placeholder={tr('voice_live_placeholder', 'Live transcript will appear here... You can edit manually.')}
             className="w-full min-h-[140px] max-h-[220px] p-2 bg-white border border-gray-200 rounded-lg text-sm leading-relaxed text-gray-700 outline-none resize-y"
           />
           {liveTranscript && (
@@ -378,7 +380,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               onClick={() => (isListening ? stopListening() : startListening())}
               className={`w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-[#E8E3DD] text-[#6D6A66]' : 'bg-[#EEF1F4] text-[#6D6A66]'}`}
             >
-              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? 'Pause' : 'Start Listening'}
+              {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? tr('voice_pause', 'Pause') : tr('voice_start_listening', 'Start Listening')}
             </button>
             <div className="grid grid-cols-2 gap-2">
               <button
@@ -393,11 +395,11 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                       <span className="w-1.5 h-1.5 rounded-full bg-white/95 animate-bounce [animation-delay:120ms]" />
                       <span className="w-1.5 h-1.5 rounded-full bg-white/95 animate-bounce [animation-delay:240ms]" />
                     </span>
-                    Parsing...
+                    {tr('voice_parsing', 'Parsing...')}
                   </>
                 ) : (
                   <>
-                    <Sparkles size={16} /> Parse & Review
+                    <Sparkles size={16} /> {tr('voice_parse_review', 'Parse & Review')}
                   </>
                 )}
               </button>
@@ -406,7 +408,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                 disabled={saving || analyzing || isParsing || !text.trim()}
                 className="h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <BookOpen size={16} /> Save to Library
+                <BookOpen size={16} /> {tr('voice_save_library', 'Save to Library')}
               </button>
             </div>
           </div>
@@ -415,7 +417,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         {draft && (
           <div className="mt-3 space-y-3">
             <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 mb-1">Summary</p>
+              <p className="text-xs text-gray-500 mb-1">{tr('voice_summary', 'Summary')}</p>
               <textarea
                 value={draft.summary || ''}
                 onChange={(e) => setDraft(prev => prev ? { ...prev, summary: e.target.value } : prev)}
@@ -424,7 +426,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
             </div>
 
             <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Records (editable)</p>
+              <p className="text-xs text-gray-500 mb-2">{tr('voice_records_editable', 'Records (editable)')}</p>
               <div className="space-y-2 max-h-36 overflow-y-auto">
                 {(draft.records || []).map((r, i) => (
                   <textarea
@@ -444,7 +446,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
             {(draft.cycle_goals || []).length > 0 && (
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Cycle Goals (editable)</p>
+                <p className="text-xs text-gray-500 mb-2">{tr('voice_cycle_goals_editable', 'Cycle Goals (editable)')}</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {(draft.cycle_goals || []).map((g, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
@@ -466,7 +468,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
             {(draft.daily_goals || []).length > 0 && (
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">Daily Goals (editable date)</p>
+                <p className="text-xs text-gray-500 mb-2">{tr('voice_daily_goals_editable', 'Daily Goals (editable date)')}</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
                   {(draft.daily_goals || []).map((g, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
@@ -502,7 +504,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               disabled={saving}
               className="w-full h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
             >
-Confirm & Save to Records/Goals
+              {tr('voice_confirm_save', 'Confirm & Save to Records/Goals')}
             </button>
           </div>
         )}

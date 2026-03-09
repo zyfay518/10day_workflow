@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Infinity as InfinityIcon } from "lucide-react";
 import { cn } from "../lib/utils";
+import { useLocale } from "../hooks/useLocale";
 
 interface SplashProps {
     onFinish?: () => void;
@@ -9,6 +10,7 @@ interface SplashProps {
 
 export default function Splash({ onFinish, loading = false }: SplashProps) {
     const [fadeOut, setFadeOut] = useState(false);
+    const { tr } = useLocale();
 
     useEffect(() => {
         if (!onFinish) return;
@@ -51,7 +53,7 @@ export default function Splash({ onFinish, loading = false }: SplashProps) {
                             <span className="w-2.5 h-2.5 rounded-full bg-[#C7B6A6] animate-bounce [animation-delay:120ms]" />
                             <span className="w-2.5 h-2.5 rounded-full bg-[#D8AFAF] animate-bounce [animation-delay:240ms]" />
                         </div>
-                        <p className="text-xs tracking-wide text-gray-500">Loading your workspace...</p>
+                        <p className="text-xs tracking-wide text-gray-500">{tr('loading_workspace', 'Loading your workspace...')}</p>
                     </div>
                 )}
             </div>

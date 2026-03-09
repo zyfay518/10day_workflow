@@ -19,8 +19,10 @@ const Report = lazy(() => import("./pages/Report"));
 const Knowledge = lazy(() => import("./pages/Knowledge"));
 import { useAuth } from "./hooks/useAuth";
 import { initTestData } from "./lib/localStorage";
+import { useLocale } from "./hooks/useLocale";
 
 function AppLoadingScreen() {
+  const { tr } = useLocale();
   return (
     <div className="fixed inset-0 z-[90] bg-[#F9FAFB] flex items-center justify-center">
       <div className="flex flex-col items-center gap-4">
@@ -29,7 +31,7 @@ function AppLoadingScreen() {
           <span className="w-2.5 h-2.5 rounded-full bg-[#C7B6A6] animate-bounce [animation-delay:120ms]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#D8AFAF] animate-bounce [animation-delay:240ms]" />
         </div>
-        <p className="text-xs tracking-wide text-gray-500">Loading your workspace...</p>
+        <p className="text-xs tracking-wide text-gray-500">{tr('loading_workspace', 'Loading your workspace...')}</p>
       </div>
     </div>
   );

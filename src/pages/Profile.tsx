@@ -5,11 +5,13 @@ import { useAuth } from "../hooks/useAuth";
 import { useUserProfile } from "../hooks/useUserProfile";
 import { useAIPrompts } from "../hooks/useAIPrompts";
 import { AIPromptConfig } from "../lib/aiPrompts";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Profile() {
   const { user, signOut } = useAuth();
   const { profile, updateProfile, uploadAvatar } = useUserProfile(user?.id);
   const { getPrompt, savePrompt, resetPrompt, getAllPromptConfigs, isCustomized, loading: promptsLoading } = useAIPrompts(user?.id);
+  const { tr, setting, setSetting } = useLocale();
 
   const [notifications, setNotifications] = useState(() => localStorage.getItem('notifications_enabled') !== '0');
   const [showApiKeyDialog, setShowApiKeyDialog] = useState(false);
@@ -155,7 +157,7 @@ export default function Profile() {
           <Link to="/" className="text-gray-600">
             <ArrowLeft size={24} />
           </Link>
-          <h1 className="text-[18px] font-bold text-gray-800">Settings</h1>
+          <h1 className="text-[18px] font-bold text-gray-800">{tr('profile_settings', 'Settings')}</h1>
         </div>
         <button
           onClick={handleToggleNotifications}
@@ -197,7 +199,7 @@ export default function Profile() {
 
         <div className="mx-4 mb-20 space-y-6">
           <section>
-            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Account</h3>
+            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{tr('profile_account', 'Account')}</h3>
             <div className="bg-white rounded-[12px] shadow-sm overflow-hidden divide-y divide-gray-50">
               <button
                 onClick={handleOpenNicknameDialog}
@@ -207,7 +209,7 @@ export default function Profile() {
                   <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-[#E8C996]">
                     <IdCard size={18} />
                   </div>
-                  <span className="text-sm font-medium text-gray-700">Edit Nickname</span>
+                  <span className="text-sm font-medium text-gray-700">{tr('profile_edit_nickname', 'Edit Nickname')}</span>
                 </div>
                 <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-400" />
               </button>
@@ -215,7 +217,32 @@ export default function Profile() {
           </section>
 
           <section>
-            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">Integration</h3>
+            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{tr('profile_language', 'Language')}</h3>
+            <div className="bg-white rounded-[12px] shadow-sm p-3">
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { key: 'system', label: tr('profile_follow_system', 'Follow System') },
+                  { key: 'zh', label: '中文' },
+                  { key: 'en', label: 'English' },
+                ] as const).map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSetting(opt.key)}
+                    className={`h-9 rounded-lg text-xs font-semibold border transition-colors ${setting === opt.key
+                      ? 'bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white border-transparent'
+                      : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                      }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-gray-400">{tr('profile_language_desc', 'Non-Chinese system languages default to English.')}</p>
+            </div>
+          </section>
+
+          <section>
+            <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wider mb-2 ml-1">{tr('profile_integration', 'Integration')}</h3>
             <div className="bg-white rounded-[12px] shadow-sm overflow-hidden divide-y divide-gray-50">
               <button
                 onClick={handleOpenApiKeyDialog}
@@ -260,7 +287,7 @@ export default function Profile() {
             className="w-full bg-white rounded-[8px] shadow-sm px-5 py-4 flex items-center justify-center gap-2 hover:bg-red-50 transition-colors active:scale-[0.99] transform duration-100 mt-4 border border-gray-100"
           >
             <LogOut size={20} className="text-red-500" />
-            <span className="text-sm font-bold text-red-500">Logout</span>
+            <span className="text-sm font-bold text-red-500">{tr('profile_logout', 'Logout')}</span>
           </button>
         </div>
       </main>
