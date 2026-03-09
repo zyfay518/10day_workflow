@@ -513,7 +513,7 @@ export default function Knowledge() {
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center">
                     <div className="bg-white max-w-md w-full rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-gray-800">Track New Book</h2>
+                            <h2 className="text-lg font-bold text-gray-800">添加阅读书籍</h2>
                             <button onClick={() => setIsBookModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
                             </button>

@@ -70,7 +70,7 @@ export default function DateRangePicker({ onConfirm, onClose }: DateRangePickerP
             onClick={handleConfirm}
             className="flex-1 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white py-2.5 rounded-[8px] font-medium text-sm hover:opacity-90 transition-opacity"
           >
-            Confirm
+            确认
           </button>
         </div>
       </div>

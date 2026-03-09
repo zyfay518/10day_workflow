@@ -158,7 +158,7 @@ export default function History() {
   }, [user, startDate, endDate, dimensions, dateRangeType, cyclesLoading, selectedCycle]);
 
   const handleDeleteRecord = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    if (!window.confirm('确认删除这条记录吗？')) return;
 
     try {
       setLoading(true);
@@ -513,7 +513,7 @@ export default function History() {
                           )}
                           <button
                             onClick={() => {
-                              if (window.confirm("Are you sure you want to delete this milestone?")) {
+                              if (window.confirm("确认删除这个里程碑吗？")) {
                                 deleteMilestone(milestone.id);
                               }
                             }}

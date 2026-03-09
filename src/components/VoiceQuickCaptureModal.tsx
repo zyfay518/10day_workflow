@@ -32,7 +32,7 @@ function mapDimensionId(dimensions: { id: number; dimension_name: string }[], ai
 
 export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'home' }: Props) {
   const { user } = useAuth();
-  const { tr } = useLocale();
+  const { tr, trDimension } = useLocale();
   const { currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { transcript, liveTranscript, isListening, isSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
@@ -503,7 +503,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                   className="w-full h-9 rounded-lg border border-gray-200 bg-white px-2 text-sm"
                 >
                   {libDimensions.map((d) => (
-                    <option key={d.id} value={d.id}>{d.dimension_name}</option>
+                    <option key={d.id} value={d.id}>{trDimension(d.dimension_name)}</option>
                   ))}
                 </select>
                 <button
