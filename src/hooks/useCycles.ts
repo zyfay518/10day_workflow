@@ -26,6 +26,25 @@ type CyclesCacheEntry = {
 const cyclesCache = new Map<string, CyclesCacheEntry>();
 const cyclesInflight = new Map<string, Promise<void>>();
 const CACHE_TTL_MS = 60_000;
+const cyclesStorageKey = (userId: string) => `cycles_cache_${userId}`;
+
+function readCyclesStorage(userId: string): CyclesCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(cyclesStorageKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw) as CyclesCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function writeCyclesStorage(userId: string, entry: CyclesCacheEntry) {
+  try {
+    localStorage.setItem(cyclesStorageKey(userId), JSON.stringify(entry));
+  } catch {
+    // ignore storage quota/privacy failures
+  }
+}
 
 interface UseCyclesReturn {
   cycles: Cycle[];
@@ -190,7 +209,7 @@ export function useCycles(userId?: string): UseCyclesReturn {
       return;
     }
 
-    const cached = cyclesCache.get(userId);
+    const cached = cyclesCache.get(userId) || readCyclesStorage(userId);
     const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
 
     if (cached) {
@@ -257,11 +276,13 @@ export function useCycles(userId?: string): UseCyclesReturn {
         setCycles(nextCycles);
         setCurrentCycle(resolvedCurrent);
 
-        cyclesCache.set(userId, {
+        const cacheEntry = {
           cycles: nextCycles,
           currentCycle: resolvedCurrent,
           ts: Date.now(),
-        });
+        };
+        cyclesCache.set(userId, cacheEntry);
+        writeCyclesStorage(userId, cacheEntry);
 
         setError(null);
       } catch (err) {

@@ -18,6 +18,25 @@ type DimensionsCacheEntry = { dimensions: Dimension[]; ts: number };
 const dimensionsCache = new Map<string, DimensionsCacheEntry>();
 const dimensionsInflight = new Map<string, Promise<void>>();
 const DIM_CACHE_TTL_MS = 60_000;
+const dimensionsStorageKey = (userId: string) => `dimensions_cache_${userId}`;
+
+function readDimensionsStorage(userId: string): DimensionsCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(dimensionsStorageKey(userId));
+    if (!raw) return null;
+    return JSON.parse(raw) as DimensionsCacheEntry;
+  } catch {
+    return null;
+  }
+}
+
+function writeDimensionsStorage(userId: string, entry: DimensionsCacheEntry) {
+  try {
+    localStorage.setItem(dimensionsStorageKey(userId), JSON.stringify(entry));
+  } catch {
+    // ignore
+  }
+}
 
 interface UseDimensionsReturn {
   dimensions: Dimension[];
@@ -40,7 +59,7 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
       return;
     }
 
-    const cached = dimensionsCache.get(userId);
+    const cached = dimensionsCache.get(userId) || readDimensionsStorage(userId);
     const isFresh = cached && Date.now() - cached.ts < DIM_CACHE_TTL_MS;
 
     if (cached) {
@@ -137,7 +156,9 @@ export function useDimensions(userId?: string): UseDimensionsReturn {
       }
 
       setDimensions(next);
-      dimensionsCache.set(userId, { dimensions: next, ts: Date.now() });
+      const cacheEntry = { dimensions: next, ts: Date.now() };
+      dimensionsCache.set(userId, cacheEntry);
+      writeDimensionsStorage(userId, cacheEntry);
       setError(null);
       } catch (err) {
         console.error('Failed to fetch dimensions:', err);
