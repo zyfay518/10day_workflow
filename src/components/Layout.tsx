@@ -1,5 +1,7 @@
 import { Outlet } from "react-router-dom";
-import BottomNav from "./BottomNav";
+import { lazy, Suspense } from "react";
+
+const BottomNav = lazy(() => import("./BottomNav"));
 
 export default function Layout() {
   return (
@@ -11,7 +13,9 @@ export default function Layout() {
         >
           <Outlet />
         </div>
-        <BottomNav />
+        <Suspense fallback={null}>
+          <BottomNav />
+        </Suspense>
       </div>
     </div>
   );

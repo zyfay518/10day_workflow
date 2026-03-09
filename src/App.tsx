@@ -6,10 +6,10 @@
 import React, { Suspense, lazy, useEffect, useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Layout from "./components/Layout";
-import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Splash from "./pages/Splash";
 
+const Home = lazy(() => import("./pages/Home"));
 const Expense = lazy(() => import("./pages/Expense"));
 const Goals = lazy(() => import("./pages/Goals"));
 const History = lazy(() => import("./pages/History"));
@@ -69,7 +69,7 @@ export default function App() {
         <Route path="/auth" element={<Auth />} />
 
         <Route element={<ProtectedRoute user={user}><Layout /></ProtectedRoute>}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Suspense fallback={<AppLoadingScreen />}><Home /></Suspense>} />
           <Route path="/goals" element={<Suspense fallback={<AppLoadingScreen />}><Goals /></Suspense>} />
           <Route path="/history" element={<Suspense fallback={<AppLoadingScreen />}><History /></Suspense>} />
           <Route path="/report" element={<Suspense fallback={<AppLoadingScreen />}><Report /></Suspense>} />

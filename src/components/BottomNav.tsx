@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../lib/utils";
 import { LayoutGrid, Flag, User, History, Library, FileText, Mic, PenLine } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import VoiceQuickCaptureModal from "./VoiceQuickCaptureModal";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+
+const VoiceQuickCaptureModal = lazy(() => import("./VoiceQuickCaptureModal"));
 import { useLocale } from "../hooks/useLocale";
 
 const HOLD_MS = 2000;
@@ -176,14 +177,16 @@ export default function BottomNav() {
         </div>
       </nav>
 
-      <VoiceQuickCaptureModal
-        open={showVoiceModal}
-        onClose={() => {
-          setShowVoiceModal(false);
-          clearHold();
-        }}
-        sourcePage={path}
-      />
+      <Suspense fallback={null}>
+        <VoiceQuickCaptureModal
+          open={showVoiceModal}
+          onClose={() => {
+            setShowVoiceModal(false);
+            clearHold();
+          }}
+          sourcePage={path}
+        />
+      </Suspense>
     </>
   );
 }

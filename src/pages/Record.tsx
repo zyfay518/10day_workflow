@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { Suspense, lazy, useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, Calendar, Camera, Mic, Paperclip, Bot, CheckCircle2 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -12,8 +12,9 @@ import { useAIAnalysis } from "../hooks/useAIAnalysis";
 import { useMilestones } from "../hooks/useMilestones";
 import { useGrowthTags } from "../hooks/useGrowthTags";
 import { supabase } from "../lib/supabase";
-import AIResultModal from "../components/AIResultModal";
 import { SplitDimensionItem } from "../hooks/useAIAnalysis";
+
+const AIResultModal = lazy(() => import("../components/AIResultModal"));
 
 import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 import { useLocale } from "../hooks/useLocale";
@@ -510,14 +511,16 @@ export default function Record() {
           </div>
         )}
 
-        <AIResultModal
-          isOpen={showAIModal}
-          items={parsedDimensions}
-          availableDimensions={availableDimensions}
-          onConfirm={handleConfirmAI}
-          onCancel={() => setShowAIModal(false)}
-          onSkip={handleSkipAI}
-        />
+        <Suspense fallback={null}>
+          <AIResultModal
+            isOpen={showAIModal}
+            items={parsedDimensions}
+            availableDimensions={availableDimensions}
+            onConfirm={handleConfirmAI}
+            onCancel={() => setShowAIModal(false)}
+            onSkip={handleSkipAI}
+          />
+        </Suspense>
       </div>
     </div>
   );
