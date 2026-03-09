@@ -14,7 +14,7 @@ interface AIResultModalProps {
 
 export default function AIResultModal({ isOpen, items, availableDimensions, onConfirm, onCancel, onSkip }: AIResultModalProps) {
     const [editedItems, setEditedItems] = useState<SplitDimensionItem[]>([]);
-    const { tr } = useLocale();
+    const { tr, trDimension } = useLocale();
 
     useEffect(() => {
         if (isOpen) {
@@ -57,10 +57,10 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
                                     className="bg-gray-100 text-sm font-medium rounded-lg px-2 py-1 outline-none text-gray-700 w-auto"
                                 >
                                     {availableDimensions.map(dim => (
-                                        <option key={dim} value={dim}>{dim}</option>
+                                        <option key={dim} value={dim}>{trDimension(dim)}</option>
                                     ))}
                                     {!availableDimensions.includes(item.dimension) && (
-                                        <option value={item.dimension}>{item.dimension}</option>
+                                        <option value={item.dimension}>{trDimension(item.dimension)}</option>
                                     )}
                                 </select>
                             </div>
