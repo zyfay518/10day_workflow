@@ -18,9 +18,9 @@ import { useLocale } from "../hooks/useLocale";
 export default function Report() {
   const { user } = useAuth();
   const { tr, trDimension } = useLocale();
-  const { cycles } = useCycles(user?.id);
+  const { cycles, loading: cyclesLoading } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
-  const { evaluations, loadAllEvaluations } = useGoalEvaluations(user?.id, undefined);
+  const { evaluations, loading: evalLoading, loadAllEvaluations } = useGoalEvaluations(user?.id, undefined);
 
   const completedCycles = useMemo(() => cycles.filter(c => c.status === 'completed').sort((a, b) => a.cycle_number - b.cycle_number), [cycles]);
 
@@ -231,6 +231,8 @@ export default function Report() {
     persistProfile();
   }, [user?.id, selectedCycleId, generatedProfile, savedProfile, profileTableAvailable]);
 
+  const isDataLoading = cyclesLoading || evalLoading;
+
   const localizeMetricLabel = (label: string) => {
     const map: Record<string, string> = {
       'Goal Clarity': tr('report_metric_goal_clarity', 'Goal Clarity'),
@@ -256,7 +258,26 @@ export default function Report() {
       </header>
 
       <main className="flex-1 px-4 space-y-4 pt-2 overflow-y-auto">
-        {completedCycles.length === 0 ? (
+        {isDataLoading ? (
+          <>
+            <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
+              <div className="h-5 w-32 bg-gray-100 rounded mb-4" />
+              <div className="h-48 w-full bg-gray-50 rounded-xl" />
+            </section>
+            <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
+              <div className="h-5 w-36 bg-gray-100 rounded mb-4" />
+              <div className="h-56 w-full bg-gray-50 rounded-xl" />
+            </section>
+            <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
+              <div className="h-5 w-40 bg-gray-100 rounded mb-4" />
+              <div className="space-y-3">
+                <div className="h-3 w-full bg-gray-100 rounded" />
+                <div className="h-3 w-5/6 bg-gray-100 rounded" />
+                <div className="h-3 w-4/6 bg-gray-100 rounded" />
+              </div>
+            </section>
+          </>
+        ) : completedCycles.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 mt-12 text-center px-4">
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 border border-blue-100">
               <Brain size={32} className="text-[#9DC5EF]" />

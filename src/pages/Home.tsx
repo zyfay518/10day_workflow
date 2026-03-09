@@ -130,8 +130,23 @@ export default function Home() {
 
   if (cyclesLoading || dimensionsLoading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg">{tr('home_loading', 'Loading...')}</p>
+      <div className="flex flex-col h-full bg-[#F9FAFB]">
+        <header className="flex justify-between items-center px-4 py-3 sticky top-0 bg-[#F9FAFB]/90 backdrop-blur-sm z-10">
+          <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+          <div className="h-5 w-28 bg-gray-200 rounded animate-pulse" />
+          <div className="w-8 h-8 rounded bg-gray-200 animate-pulse" />
+        </header>
+        <main className="px-4 mt-2 flex flex-col items-center w-full flex-1 animate-pulse">
+          <section className="w-full mb-6">
+            <div className="h-44 bg-white rounded-[12px] border border-gray-100" />
+          </section>
+          <section className="w-full mb-5">
+            <div className="h-32 bg-white rounded-[12px] border border-gray-100" />
+          </section>
+          <section className="w-full mb-8">
+            <div className="h-28 bg-white rounded-[12px] border border-gray-100" />
+          </section>
+        </main>
       </div>
     );
   }
