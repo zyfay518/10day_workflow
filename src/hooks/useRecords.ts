@@ -1,12 +1,5 @@
 /**
  * useRecords Hook - 记录管理
- *
- * 功能:
- * - 查询指定日期和维度的记录
- * - 保存/更新记录 (upsert 逻辑)
- * - 自动更新周期完成度 (通过数据库 Trigger)
- *
- * 参考: DATA_FLOW.md "3.2.3 保存记录流程"
  */
 
 import { useEffect, useState } from 'react';
@@ -32,6 +25,20 @@ interface UseRecordsReturn {
   deleteRecord: (id: number) => Promise<boolean>;
 }
 
+type CacheEntry = { item: Record | null; ts: number };
+const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<void>>();
+const TTL_MS = 60_000;
+
+function k(userId: string, cycleId: number, dimensionId: number, date: string) {
+  return `record_cache_${userId}_${cycleId}_${dimensionId}_${date}`;
+}
+
+function read(key: string): CacheEntry | null {
+  try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch { return null; }
+}
+function write(key: string, entry: CacheEntry) { try { localStorage.setItem(key, JSON.stringify(entry)); } catch {} }
+
 export function useRecords(params: UseRecordsParams): UseRecordsReturn {
   const { userId, cycleId, dimensionId, date } = params;
 
@@ -46,50 +53,58 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
       return;
     }
 
-    fetchRecord();
+    const key = k(userId, cycleId, dimensionId, date);
+    const cached = cache.get(key) || read(key);
+    const fresh = cached && Date.now() - cached.ts < TTL_MS;
+
+    if (cached) {
+      setRecord(cached.item);
+      setLoading(false);
+      if (!fresh) fetchRecord(false);
+    } else {
+      fetchRecord(true);
+    }
   }, [userId, cycleId, dimensionId, date]);
 
-  /**
-   * 查询指定日期的记录
-   */
-  const fetchRecord = async () => {
+  const fetchRecord = async (showLoading = true) => {
     if (!userId || !cycleId || !dimensionId || !date) return;
 
-    try {
-      setLoading(true);
+    const key = k(userId, cycleId, dimensionId, date);
+    const existing = inflight.get(key);
+    if (existing) { await existing; return; }
 
-      const { data, error: fetchError } = await supabase
-        .from('records')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('cycle_id', cycleId)
-        .eq('dimension_id', dimensionId)
-        .eq('record_date', date)
-        .maybeSingle(); // 可能不存在
+    const task = (async () => {
+      try {
+        if (showLoading) setLoading(true);
 
-      if (fetchError) throw fetchError;
+        const { data, error: fetchError } = await supabase
+          .from('records')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('cycle_id', cycleId)
+          .eq('dimension_id', dimensionId)
+          .eq('record_date', date)
+          .maybeSingle();
 
-      setRecord(data);
-      setError(null);
-    } catch (err) {
-      console.error('Failed to fetch record:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
+        if (fetchError) throw fetchError;
+
+        setRecord(data);
+        const entry = { item: data, ts: Date.now() };
+        cache.set(key, entry);
+        write(key, entry);
+        setError(null);
+      } catch (err) {
+        console.error('Failed to fetch record:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    inflight.set(key, task);
+    try { await task; } finally { inflight.delete(key); }
   };
 
-  /**
-   * 保存/更新记录
-   *
-   * 使用 upsert 逻辑:
-   * - 如果记录存在,则更新
-   * - 如果记录不存在,则插入
-   *
-   * @param content - 记录内容
-   * @param status - 记录状态 (默认: published)
-   * @returns 是否成功 (或者成功后的记录)
-   */
   const saveRecord = async (
     content: string,
     status: 'draft' | 'published' = 'published'
@@ -105,7 +120,6 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
       let savedData;
 
       if (record) {
-        // 更新现有记录
         const { data, error: updateError } = await supabase
           .from('records')
           .update({
@@ -122,7 +136,6 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
         savedData = data;
         setRecord(data);
       } else {
-        // 插入新记录
         const newRecord: RecordInsert = {
           user_id: userId,
           cycle_id: cycleId,
@@ -155,9 +168,6 @@ export function useRecords(params: UseRecordsParams): UseRecordsReturn {
     }
   };
 
-  /**
-   * 删除记录
-   */
   const deleteRecord = async (id: number): Promise<boolean> => {
     try {
       setSaving(true);

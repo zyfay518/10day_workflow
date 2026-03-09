@@ -12,6 +12,15 @@ interface ParsedExpense {
   date?: string;
 }
 
+type CacheEntry = { items: Expense[]; ts: number };
+const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<void>>();
+const TTL_MS = 60_000;
+const key = (userId: string, start: string, end: string) => `expenses_cache_${userId}_${start}_${end}`;
+
+function read(k: string): CacheEntry | null { try { const raw = localStorage.getItem(k); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+function write(k: string, entry: CacheEntry) { try { localStorage.setItem(k, JSON.stringify(entry)); } catch {} }
+
 export function useExpenses(params?: {
   userId?: string;
   startDate?: string;
@@ -23,32 +32,57 @@ export function useExpenses(params?: {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadExpenses = useCallback(async () => {
+  const loadExpenses = useCallback(async (showLoading = true) => {
     if (!params?.userId || !params?.startDate || !params?.endDate) return;
 
-    try {
-      setLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('expenses')
-        .select('*')
-        .eq('user_id', params.userId)
-        .gte('expense_date', params.startDate)
-        .lte('expense_date', params.endDate)
-        .order('expense_date', { ascending: false });
+    const cacheId = key(params.userId, params.startDate, params.endDate);
+    const reqId = `${params.userId}:${params.startDate}:${params.endDate}`;
 
-      if (fetchError) throw fetchError;
-      setExpenses(data || []);
-    } catch (err) {
-      console.error('Failed to load expenses:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setLoading(false);
-    }
+    const existing = inflight.get(reqId);
+    if (existing) { await existing; return; }
+
+    const task = (async () => {
+      try {
+        if (showLoading) setLoading(true);
+        const { data, error: fetchError } = await supabase
+          .from('expenses')
+          .select('*')
+          .eq('user_id', params.userId)
+          .gte('expense_date', params.startDate)
+          .lte('expense_date', params.endDate)
+          .order('expense_date', { ascending: false });
+
+        if (fetchError) throw fetchError;
+        const rows = data || [];
+        setExpenses(rows);
+        const entry = { items: rows, ts: Date.now() };
+        cache.set(reqId, entry);
+        write(cacheId, entry);
+      } catch (err) {
+        console.error('Failed to load expenses:', err);
+        setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    inflight.set(reqId, task);
+    try { await task; } finally { inflight.delete(reqId); }
   }, [params]);
 
   useEffect(() => {
-    if (params?.userId && params?.startDate && params?.endDate) {
-      loadExpenses();
+    if (!params?.userId || !params?.startDate || !params?.endDate) return;
+
+    const reqId = `${params.userId}:${params.startDate}:${params.endDate}`;
+    const cached = cache.get(reqId) || read(key(params.userId, params.startDate, params.endDate));
+    const fresh = cached && Date.now() - cached.ts < TTL_MS;
+
+    if (cached) {
+      setExpenses(cached.items);
+      setLoading(false);
+      if (!fresh) loadExpenses(false);
+    } else {
+      loadExpenses(true);
     }
   }, [params, loadExpenses]);
 
