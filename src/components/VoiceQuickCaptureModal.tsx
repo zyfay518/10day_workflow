@@ -40,6 +40,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const [seconds, setSeconds] = useState(0);
   const [draft, setDraft] = useState<VoiceParsedResult | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
   const [draftRowId, setDraftRowId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
@@ -131,80 +132,87 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const handleParse = async () => {
     if (!text.trim()) return;
 
-    const today = getLocalDateString();
-    const tomorrowDate = new Date(today);
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrow = getLocalDateString(tomorrowDate);
+    try {
+      setIsParsing(true);
+      setMessage('');
 
-    const parsed = await parseVoiceQuickEntry(text, { currentDate: today, timezone: 'Asia/Singapore' });
-    if (!parsed) {
-      setMessage('Parsing failed. Please try again.');
-      return;
-    }
+      const today = getLocalDateString();
+      const tomorrowDate = new Date(today);
+      tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+      const tomorrow = getLocalDateString(tomorrowDate);
 
-    const saysTomorrow = /明天/.test(text);
-    const saysToday = /今天/.test(text);
-    const saysCycleGoal = /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(text);
+      const parsed = await parseVoiceQuickEntry(text, { currentDate: today, timezone: 'Asia/Singapore' });
+      if (!parsed) {
+        setMessage('Parsing failed. Please try again.');
+        return;
+      }
 
-    parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
-      ...g,
-      goal_date: saysTomorrow
-        ? tomorrow
-        : saysToday
-          ? today
-          : normalizeDate(g.goal_date, today),
-    }));
+      const saysTomorrow = /明天/.test(text);
+      const saysToday = /今天/.test(text);
+      const saysCycleGoal = /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(text);
 
-    parsed.records = (parsed.records || []).map((r) => ({
-      ...r,
-      record_date: normalizeDate(r.record_date, today),
-    }));
+      parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
+        ...g,
+        goal_date: saysTomorrow
+          ? tomorrow
+          : saysToday
+            ? today
+            : normalizeDate(g.goal_date, today),
+      }));
 
-    parsed.expenses = (parsed.expenses || []).map((e) => ({
-      ...e,
-      expense_date: normalizeDate(e.expense_date, today),
-    }));
+      parsed.records = (parsed.records || []).map((r) => ({
+        ...r,
+        record_date: normalizeDate(r.record_date, today),
+      }));
 
-    // Heuristic guard: explicit cycle intent must produce at least one cycle goal
-    if (saysCycleGoal && (!parsed.cycle_goals || parsed.cycle_goals.length === 0)) {
-      const sentence = text
-        .split(/[。！!？?\n]/)
-        .map(s => s.trim())
-        .find(s => /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(s));
+      parsed.expenses = (parsed.expenses || []).map((e) => ({
+        ...e,
+        expense_date: normalizeDate(e.expense_date, today),
+      }));
 
-      const seed = sentence
-        || (parsed.daily_goals && parsed.daily_goals[0]?.content)
-        || (parsed.records && parsed.records[0]?.content)
-        || parsed.summary
-        || text;
+      // Heuristic guard: explicit cycle intent must produce at least one cycle goal
+      if (saysCycleGoal && (!parsed.cycle_goals || parsed.cycle_goals.length === 0)) {
+        const sentence = text
+          .split(/[。！!？?\n]/)
+          .map(s => s.trim())
+          .find(s => /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(s));
 
-      parsed.cycle_goals = [{
-        dimension: parsed.dimension || 'Other',
-        content: seed,
-        evaluation_criteria: 'Voice quick capture cycle goal',
-        target_type: 'qualitative',
-        target_value: null,
-        target_unit: null,
-      }];
-    }
+        const seed = sentence
+          || (parsed.daily_goals && parsed.daily_goals[0]?.content)
+          || (parsed.records && parsed.records[0]?.content)
+          || parsed.summary
+          || text;
 
-    setDraft(parsed);
-    const voiceEntryId = await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
+        parsed.cycle_goals = [{
+          dimension: parsed.dimension || 'Other',
+          content: seed,
+          evaluation_criteria: 'Voice quick capture cycle goal',
+          target_type: 'qualitative',
+          target_value: null,
+          target_unit: null,
+        }];
+      }
 
-    if (voiceEntryId && user?.id) {
-      const { data } = await supabase
-        .from('voice_parsed_drafts' as any)
-        .upsert({
-          voice_entry_id: voiceEntryId,
-          user_id: user.id,
-          draft_payload: parsed,
-          confirmed: false,
-          applied: false,
-        }, { onConflict: 'voice_entry_id' })
-        .select('id')
-        .single();
+      setDraft(parsed);
+      const voiceEntryId = await persistVoiceEntry('parsed_to_records_goals', parsed, 'confirmed');
 
-      setDraftRowId(data?.id ?? null);
+      if (voiceEntryId && user?.id) {
+        const { data } = await supabase
+          .from('voice_parsed_drafts' as any)
+          .upsert({
+            voice_entry_id: voiceEntryId,
+            user_id: user.id,
+            draft_payload: parsed,
+            confirmed: false,
+            applied: false,
+          }, { onConflict: 'voice_entry_id' })
+          .select('id')
+          .single();
+
+        setDraftRowId(data?.id ?? null);
+      }
+    } finally {
+      setIsParsing(false);
     }
   };
 
@@ -375,14 +383,27 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
             <div className="grid grid-cols-2 gap-2">
               <button
                 onClick={handleParse}
-                disabled={saving || analyzing || !text.trim()}
+                disabled={saving || analyzing || isParsing || !text.trim()}
                 className="h-11 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Sparkles size={16} /> Parse & Review
+                {isParsing ? (
+                  <>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/95 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/95 animate-bounce [animation-delay:120ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/95 animate-bounce [animation-delay:240ms]" />
+                    </span>
+                    Parsing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} /> Parse & Review
+                  </>
+                )}
               </button>
               <button
                 onClick={handleSaveLibrary}
-                disabled={saving || analyzing || !text.trim()}
+                disabled={saving || analyzing || isParsing || !text.trim()}
                 className="h-11 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <BookOpen size={16} /> Save to Library
