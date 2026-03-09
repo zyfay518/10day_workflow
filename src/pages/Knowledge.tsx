@@ -541,8 +541,8 @@ export default function Knowledge() {
 
             {/* Add Knowledge Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center">
-                    <div className="bg-white w-full max-w-md w-full rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+                <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4">
+                    <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 h-[88dvh] sm:h-auto sm:max-h-[90vh] flex flex-col">
                         <div className="flex justify-between items-center mb-4">
                             <h2 className="text-lg font-bold text-gray-800">New Insight</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
@@ -550,7 +550,7 @@ export default function Knowledge() {
                             </button>
                         </div>
 
-                        <div className="overflow-y-auto flex-1 hide-scrollbar space-y-4">
+                        <div className="overflow-y-auto flex-1 hide-scrollbar space-y-4 pr-1 pb-4">
                             <div>
                                 <label className="block text-xs font-medium text-gray-500 mb-1.5">Reflection / Note</label>
                                 <textarea
@@ -611,7 +611,7 @@ export default function Knowledge() {
                             </div>
                         </div>
 
-                        <div className="mt-6 pt-4 border-t border-gray-100">
+                        <div className="mt-4 pt-4 border-t border-gray-100 bg-white sticky bottom-0 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
                             <button
                                 onClick={handleAdd}
                                 disabled={!content.trim() || !selectedDimId || !selectedCycleId}
