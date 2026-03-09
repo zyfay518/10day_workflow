@@ -4,6 +4,15 @@ import { AI_PROMPTS, AIPromptConfig } from '../lib/aiPrompts';
 
 type CustomPrompts = Record<string, string>;
 
+type CacheEntry = { prompts: CustomPrompts; ts: number };
+const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<void>>();
+const TTL_MS = 60_000;
+const key = (userId: string) => `ai_prompts_cache_${userId}`;
+
+function read(userId: string): CacheEntry | null { try { const raw = localStorage.getItem(key(userId)); return raw ? JSON.parse(raw) : null; } catch { return null; } }
+function write(userId: string, entry: CacheEntry) { try { localStorage.setItem(key(userId), JSON.stringify(entry)); } catch {} }
+
 export function useAIPrompts(userId?: string) {
     const [customPrompts, setCustomPrompts] = useState<CustomPrompts>({});
     const [loading, setLoading] = useState(false);
@@ -12,21 +21,41 @@ export function useAIPrompts(userId?: string) {
     useEffect(() => {
         if (!userId) return;
 
-        const fetchPrompts = async () => {
-            try {
-                const { data, error } = await supabase
-                    .from('user_profiles')
-                    .select('ai_prompts')
-                    .eq('user_id', userId)
-                    .single();
+        const cached = cache.get(userId) || read(userId);
+        const fresh = cached && Date.now() - cached.ts < TTL_MS;
+        if (cached) {
+            setCustomPrompts(cached.prompts || {});
+            if (fresh) return;
+        }
 
-                if (error) throw error;
-                if (data?.ai_prompts) {
-                    setCustomPrompts(data.ai_prompts as CustomPrompts);
-                }
-            } catch (err) {
-                console.error('Failed to load user prompts:', err);
+        const fetchPrompts = async () => {
+            const existing = inflight.get(userId);
+            if (existing) {
+                await existing;
+                return;
             }
+
+            const task = (async () => {
+                try {
+                    const { data, error } = await supabase
+                        .from('user_profiles')
+                        .select('ai_prompts')
+                        .eq('user_id', userId)
+                        .single();
+
+                    if (error) throw error;
+                    const prompts = (data?.ai_prompts as CustomPrompts) || {};
+                    setCustomPrompts(prompts);
+                    const entry = { prompts, ts: Date.now() };
+                    cache.set(userId, entry);
+                    write(userId, entry);
+                } catch (err) {
+                    console.error('Failed to load user prompts:', err);
+                }
+            })();
+
+            inflight.set(userId, task);
+            try { await task; } finally { inflight.delete(userId); }
         };
 
         fetchPrompts();
@@ -60,6 +89,9 @@ export function useAIPrompts(userId?: string) {
 
                 if (error) throw error;
                 setCustomPrompts(newPrompts);
+                const entry = { prompts: newPrompts, ts: Date.now() };
+                cache.set(userId, entry);
+                write(userId, entry);
                 return true;
             } catch (err) {
                 console.error('Failed to save custom prompt:', err);
@@ -88,6 +120,9 @@ export function useAIPrompts(userId?: string) {
 
                 if (error) throw error;
                 setCustomPrompts(newPrompts);
+                const entry = { prompts: newPrompts, ts: Date.now() };
+                cache.set(userId, entry);
+                write(userId, entry);
                 return true;
             } catch (err) {
                 console.error('Failed to reset prompt:', err);
