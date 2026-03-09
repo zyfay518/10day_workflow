@@ -306,10 +306,15 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   };
 
   const handleSaveLibrary = async () => {
-    if (!user?.id || !currentCycle?.id || !text.trim()) return;
+    if (!user?.id || !text.trim()) {
+      setMessage(tr('voice_msg_save_failed', 'Save failed. Please review and try again.'));
+      return;
+    }
 
     try {
       setSaving(true);
+      setMessage('');
+
       const dim = await classifyVoiceDimension(text);
       const dimensionId = mapDimensionId(dimensions, dim);
       const today = getLocalDateString();
@@ -319,18 +324,25 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         return;
       }
 
-      await supabase.from('knowledge_base').insert({
+      const { error } = await supabase.from('knowledge_base').insert({
         user_id: user.id,
-        cycle_id: currentCycle.id,
+        cycle_id: currentCycle?.id ?? null,
         dimension_id: dimensionId,
         record_date: today,
         content: text,
         media_urls: null,
       });
 
+      if (error) {
+        throw error;
+      }
+
       await persistVoiceEntry('saved_to_library', { dimension: dim }, 'applied');
       setMessage(tr('voice_msg_saved_library', 'Saved to Library.'));
       setTimeout(() => onClose(), 600);
+    } catch (e) {
+      console.error(e);
+      setMessage(tr('voice_msg_save_failed', 'Save failed. Please review and try again.'));
     } finally {
       setSaving(false);
     }
@@ -499,13 +511,22 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               </div>
             )}
 
-            <button
-              onClick={handleApplyParsed}
-              disabled={saving}
-              className="w-full h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
-            >
-              {tr('voice_confirm_save', 'Confirm & Save to Records/Goals')}
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setDraft(null)}
+                disabled={saving}
+                className="h-10 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold disabled:opacity-50"
+              >
+                返回修改
+              </button>
+              <button
+                onClick={handleApplyParsed}
+                disabled={saving}
+                className="h-10 rounded-xl bg-gray-900 text-white text-sm font-semibold disabled:opacity-50"
+              >
+                {tr('voice_confirm_save', 'Confirm & Save to Records/Goals')}
+              </button>
+            </div>
           </div>
         )}
 
