@@ -9,6 +9,7 @@ import { useDimensions } from "../hooks/useDimensions";
 import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
 import { useGoalEvaluations } from "../hooks/useGoalEvaluations";
 import { Database } from "../types/database";
+import { useLocale } from "../hooks/useLocale";
 
 type CycleGoal = Database['public']['Tables']['cycle_goals']['Row'];
 type DailyGoal = Database['public']['Tables']['daily_goals']['Row'];
@@ -25,6 +26,7 @@ type GoalFormData = {
 
 export default function Goals() {
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { cycles } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
@@ -226,7 +228,7 @@ export default function Goals() {
           <Link to="/" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
             <ArrowLeft size={24} />
           </Link>
-          <h1 className="text-[18px] font-bold text-gray-800">Goals</h1>
+          <h1 className="text-[18px] font-bold text-gray-800">{tr('goals_title', 'Goals')}</h1>
           <div className="w-10"></div>
         </div>
 
@@ -241,7 +243,7 @@ export default function Goals() {
                 : "text-gray-500"
             )}
           >
-            Cycle Goals
+            {tr('goals_cycle_goals', 'Cycle Goals')}
           </button>
           <button
             onClick={() => setMainTab('daily')}
@@ -252,7 +254,7 @@ export default function Goals() {
                 : "text-gray-500"
             )}
           >
-            Daily Goals
+            {tr('goals_daily_goals', 'Daily Goals')}
           </button>
         </div>
 
@@ -267,7 +269,7 @@ export default function Goals() {
                 : "text-gray-500"
             )}
           >
-            Completed
+            {tr('goals_completed', 'Completed')}
           </button>
           <button
             onClick={() => setCycleStatusTab('ongoing')}
@@ -278,7 +280,7 @@ export default function Goals() {
                 : "text-gray-500"
             )}
           >
-            Ongoing
+            {tr('goals_ongoing', 'Ongoing')}
           </button>
           <button
             onClick={() => setCycleStatusTab('not_started')}
@@ -289,7 +291,7 @@ export default function Goals() {
                 : "text-gray-500"
             )}
           >
-            Not Started
+            {tr('goals_not_started', 'Not Started')}
           </button>
         </div>
       </header>
@@ -311,10 +313,10 @@ export default function Goals() {
                     </div>
                     <div className="text-left">
                       <div className="text-sm font-bold text-gray-800">
-                        Period {cycle.cycle_number}: {cycle.start_date} ~ {cycle.end_date}
+                        {tr('goals_period', 'Period')} {cycle.cycle_number}: {cycle.start_date} ~ {cycle.end_date}
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
-                        Completion: {cycle.completion_rate}%
+                        {tr('goals_completion', 'Completion')}: {cycle.completion_rate}%
                       </div>
                     </div>
                   </div>
@@ -419,7 +421,7 @@ export default function Goals() {
                           </div>
                         ) : (
                           <div className="text-xs text-gray-400 text-center py-2">
-                            No goals yet. Click + to add.
+                            {tr('goals_no_goals', 'No goals yet. Click + to add.')}
                           </div>
                         )}
                       </div>
@@ -431,7 +433,7 @@ export default function Goals() {
 
             {filteredCycles.length === 0 && (
               <div className="py-16 text-center">
-                <p className="text-sm text-gray-400">No cycles in this status</p>
+                <p className="text-sm text-gray-400">{tr('goals_no_cycles', 'No cycles in this status')}</p>
               </div>
             )}
           </div>
@@ -441,7 +443,7 @@ export default function Goals() {
             {!selectedCycleForDaily ? (
               <div className="space-y-3">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">
-                  Select a Cycle
+                  {tr('goals_select_cycle', 'Select a Cycle')}
                 </h3>
                 {filteredCycles.map((cycle) => (
                   <button
@@ -455,10 +457,10 @@ export default function Goals() {
                       </div>
                       <div className="text-left">
                         <div className="text-sm font-bold text-gray-800">
-                          Period {cycle.cycle_number}: {cycle.start_date} ~ {cycle.end_date}
+                          {tr('goals_period', 'Period')} {cycle.cycle_number}: {cycle.start_date} ~ {cycle.end_date}
                         </div>
                         <div className="text-xs text-gray-500 mt-0.5">
-                          {cycle.total_days} days
+                          {cycle.total_days} {tr('goals_days', 'days')}
                         </div>
                       </div>
                     </div>
@@ -467,7 +469,7 @@ export default function Goals() {
               </div>
             ) : (
               <>
-                {/* Back to Cycle Selection */}
+                {/* {tr('goals_back_cycle_selection', 'Back to Cycle Selection')} */}
                 <button
                   onClick={() => {
                     setSelectedCycleForDaily(null);
@@ -476,12 +478,12 @@ export default function Goals() {
                   className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-800 transition-colors mb-3"
                 >
                   <ArrowLeft size={18} />
-                  <span>Back to Cycle Selection</span>
+                  <span>{tr('goals_back_cycle_selection', 'Back to Cycle Selection')}</span>
                 </button>
 
                 {/* Date Cards List */}
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1 mb-3">
-                  Period {selectedCycle?.cycle_number}: {selectedCycle?.start_date} ~ {selectedCycle?.end_date}
+                  {tr('goals_period', 'Period')} {selectedCycle?.cycle_number}: {selectedCycle?.start_date} ~ {selectedCycle?.end_date}
                 </h3>
 
                 {dateCards.map((date, index) => (
@@ -497,10 +499,10 @@ export default function Goals() {
                         </div>
                         <div className="text-left">
                           <div className="text-sm font-bold text-gray-800">
-                            Day {index + 1}: {date}
+                            {tr('goals_day', 'Day')} {index + 1}: {date}
                           </div>
                           <div className="text-xs text-gray-500 mt-0.5">
-                            {dailyGoals.filter(g => g.goal_date === date).length} goals
+                            {dailyGoals.filter(g => g.goal_date === date).length} {tr('goals_goals_count', 'goals')}
                           </div>
                         </div>
                       </div>
@@ -603,7 +605,7 @@ export default function Goals() {
                               </div>
                             ) : (
                               <div className="text-xs text-gray-400 text-center py-2">
-                                No goals yet. Click + to add.
+                                {tr('goals_no_goals', 'No goals yet. Click + to add.')}
                               </div>
                             )}
                           </div>

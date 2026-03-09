@@ -69,6 +69,35 @@ const dict: Record<string, { en: string; zh: string }> = {
   profile_cancel: { en: 'Cancel', zh: '取消' },
   profile_save: { en: 'Save', zh: '保存' },
 
+  goals_title: { en: 'Goals', zh: '目标' },
+  goals_cycle_goals: { en: 'Cycle Goals', zh: '周期目标' },
+  goals_daily_goals: { en: 'Daily Goals', zh: '每日目标' },
+  goals_completed: { en: 'Completed', zh: '已完成' },
+  goals_ongoing: { en: 'Ongoing', zh: '进行中' },
+  goals_not_started: { en: 'Not Started', zh: '未开始' },
+  goals_period: { en: 'Period', zh: '周期' },
+  goals_completion: { en: 'Completion', zh: '完成度' },
+
+  history_title: { en: 'History', zh: '历史' },
+  history_search: { en: 'Search...', zh: '搜索...' },
+  history_current_period: { en: 'Current Period', zh: '当前周期' },
+  history_last_2_weeks: { en: 'Last 2 Weeks', zh: '最近2周' },
+  history_last_month: { en: 'Last Month', zh: '最近1个月' },
+  history_custom_range: { en: 'Custom Range', zh: '自定义范围' },
+  history_custom_range_dots: { en: 'Custom Range...', zh: '自定义范围...' },
+  history_all: { en: 'All', zh: '全部' },
+  history_no_records: { en: 'No records found', zh: '未找到记录' },
+  history_record: { en: 'record', zh: '条记录' },
+  history_records: { en: 'records', zh: '条记录' },
+  history_milestone: { en: 'Milestone', zh: '里程碑' },
+
+  record_title: { en: 'Record', zh: '记录' },
+  record_placeholder: { en: 'Pour your thoughts for today...', zh: '写下你今天的想法...' },
+  record_mark_milestone: { en: 'Mark as Milestone', zh: '标记为里程碑' },
+  record_today_overview: { en: "Today's Overview", zh: '今日概览' },
+  record_processing: { en: 'Processing...', zh: '处理中...' },
+  record_save_organize: { en: 'Save & Organize', zh: '保存并整理' },
+
   loading_workspace: { en: 'Loading your workspace...', zh: '正在加载你的工作空间...' },
 };
 

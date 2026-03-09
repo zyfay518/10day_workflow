@@ -16,10 +16,12 @@ import AIResultModal from "../components/AIResultModal";
 import { SplitDimensionItem } from "../hooks/useAIAnalysis";
 
 import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
+import { useLocale } from "../hooks/useLocale";
 
 export default function Record() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
@@ -374,7 +376,7 @@ export default function Record() {
           <div className="bg-white rounded-[12px] p-4 shadow-sm min-h-[55%] flex flex-col relative">
             <textarea
               className="w-full flex-1 resize-none border-none p-0 text-base text-gray-700 placeholder:text-gray-300 focus:ring-0 leading-relaxed bg-transparent"
-              placeholder={`Pour your thoughts for today...`}
+              placeholder={tr('record_placeholder', 'Pour your thoughts for today...')}
               value={note}
               onChange={(e) => setNote(e.target.value)}
             />
@@ -438,11 +440,11 @@ export default function Record() {
               />
               <span className="text-sm font-medium text-gray-800 flex items-center gap-2">
                 <span className="text-amber-500 text-lg">🏆</span>
-                Mark as Milestone
+                {tr('record_mark_milestone', 'Mark as Milestone')}
               </span>
             </label>
 
-            <p className="text-[12px] text-gray-400 mb-2 font-medium">Today's Overview</p>
+            <p className="text-[12px] text-gray-400 mb-2 font-medium">{tr('record_today_overview', "Today's Overview")}</p>
             <div className="flex flex-wrap gap-2">
               {Object.entries(overviewStatus).map(([key, isActive]) => (
                 <div
@@ -475,7 +477,7 @@ export default function Record() {
             disabled={saving || analyzing}
             className="w-full h-14 rounded-full bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold shadow-lg hover:opacity-90 transition-all flex items-center justify-center"
           >
-            {saving || analyzing ? 'Processing...' : 'Save & Organize'}
+            {saving || analyzing ? tr('record_processing', 'Processing...') : tr('record_save_organize', 'Save & Organize')}
           </button>
         </div>
 

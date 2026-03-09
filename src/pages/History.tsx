@@ -12,6 +12,7 @@ import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
 import { useMilestones } from "../hooks/useMilestones";
 import DynamicIcon from "../components/DynamicIcon";
 import { getDimensionIconName } from "../lib/dimensionIcon";
+import { useLocale } from "../hooks/useLocale";
 
 type Record = Database['public']['Tables']['records']['Row'];
 type Milestone = Database['public']['Tables']['milestones']['Row'];
@@ -31,6 +32,7 @@ export default function History() {
   const cycleIdParam = searchParams.get('cycleId');
 
   const { user } = useAuth();
+  const { tr } = useLocale();
   const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
   const { milestones, deleteMilestone } = useMilestones(user?.id);
@@ -40,7 +42,7 @@ export default function History() {
   const [dateRangeType, setDateRangeType] = useState<"current" | "2weeks" | "1month" | "custom">("current");
   const [customStartDate, setCustomStartDate] = useState<string>("");
   const [customEndDate, setCustomEndDate] = useState<string>("");
-  const [dimFilter, setDimFilter] = useState<string>("All");
+  const [dimFilter, setDimFilter] = useState<string>(tr('history_all', 'All'));
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showDimDropdown, setShowDimDropdown] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -174,7 +176,7 @@ export default function History() {
   const filteredRecords = useMemo(() => {
     return records.filter(record => {
       // Dimension filter
-      if (dimFilter !== "All" && record.dimension_name !== dimFilter) {
+      if (dimFilter !== tr('history_all', 'All') && record.dimension_name !== dimFilter) {
         return false;
       }
 
@@ -201,7 +203,7 @@ export default function History() {
       // Date filter
       if (m.event_date < startDate || m.event_date > endDate) return false;
       // Dimension filter
-      if (dimFilter !== "All") {
+      if (dimFilter !== tr('history_all', 'All')) {
         const dim = dimensions.find(d => d.id === m.related_dimension_id);
         if (dim?.dimension_name !== dimFilter) return false;
       }
@@ -249,18 +251,18 @@ export default function History() {
   const getDateRangeLabel = () => {
     switch (dateRangeType) {
       case "current":
-        return "Current Period";
+        return tr('history_current_period', 'Current Period');
       case "2weeks":
-        return "Last 2 Weeks";
+        return tr('history_last_2_weeks', 'Last 2 Weeks');
       case "1month":
-        return "Last Month";
+        return tr('history_last_month', 'Last Month');
       case "custom":
         if (customStartDate && customEndDate) {
           return `${customStartDate} ~ ${customEndDate}`;
         }
-        return "Custom Range";
+        return tr('history_custom_range', 'Custom Range');
       default:
-        return "Current Period";
+        return tr('history_current_period', 'Current Period');
     }
   };
 
@@ -308,7 +310,7 @@ export default function History() {
           <Link to="/" className="p-2 -ml-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors">
             <ArrowLeft size={24} />
           </Link>
-          <h1 className="text-[18px] font-bold text-gray-800">History</h1>
+          <h1 className="text-[18px] font-bold text-gray-800">{tr('history_title', 'History')}</h1>
           <button
             onClick={() => setIsSearching(!isSearching)}
             className="p-2 -mr-2 text-gray-600 hover:bg-gray-50 rounded-full transition-colors"
@@ -321,7 +323,7 @@ export default function History() {
           <div className="mb-3 relative">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder={tr('history_search', 'Search...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-[8px] py-2 pl-9 pr-4 text-sm focus:ring-1 focus:ring-blue-300 focus:border-transparent"
@@ -371,7 +373,7 @@ export default function History() {
                     dateRangeType === "current" && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
-                  Current Period
+                  {tr('history_current_period', 'Current Period')}
                 </button>
                 <button
                   onClick={(e) => {
@@ -384,7 +386,7 @@ export default function History() {
                     dateRangeType === "2weeks" && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
-                  Last 2 Weeks
+                  {tr('history_last_2_weeks', 'Last 2 Weeks')}
                 </button>
                 <button
                   onClick={(e) => {
@@ -397,7 +399,7 @@ export default function History() {
                     dateRangeType === "1month" && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
-                  Last Month
+                  {tr('history_last_month', 'Last Month')}
                 </button>
                 <button
                   onClick={(e) => {
@@ -410,7 +412,7 @@ export default function History() {
                     dateRangeType === "custom" && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
-                  Custom Range...
+                  {tr('history_custom_range_dots', 'Custom Range...')}
                 </button>
               </div>
             )}
@@ -434,12 +436,12 @@ export default function History() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setDimFilter("All");
+                    setDimFilter(tr('history_all', 'All'));
                     setShowDimDropdown(false);
                   }}
                   className={cn(
                     "w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors",
-                    dimFilter === "All" && "bg-blue-50 text-blue-600 font-medium"
+                    dimFilter === tr('history_all', 'All') && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
                   All
