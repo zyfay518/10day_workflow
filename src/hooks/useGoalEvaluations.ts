@@ -9,6 +9,11 @@ type EvalCacheEntry = { items: GoalEvaluation[]; ts: number };
 const evalCache = new Map<string, EvalCacheEntry>();
 const EVAL_TTL_MS = 60_000;
 
+function computeFinalScore(aiScore: number, userScore: number | null | undefined) {
+    if (userScore === null || userScore === undefined) return aiScore;
+    return userScore * 0.6 + aiScore * 0.4;
+}
+
 export function useGoalEvaluations(userId: string | undefined, cycleId: number | undefined) {
     const [evaluations, setEvaluations] = useState<GoalEvaluation[]>([]);
     const [loading, setLoading] = useState(true);
@@ -81,17 +86,53 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
         }
     }, [userId, cycleId, loadEvaluations, loadAllEvaluations]);
 
-    const addEvaluation = async (evaluationData: Omit<GoalEvaluationInsert, 'id' | 'created_at' | 'updated_at'>) => {
-        if (!userId || !cycleId) return null;
+    const refreshCycleCompletion = useCallback(async (targetCycleId: number) => {
+        if (!userId) return;
         try {
             const { data, error } = await supabase
                 .from('goal_evaluations')
-                .insert([{ ...evaluationData, user_id: userId, cycle_id: cycleId }])
+                .select('ai_score,user_score,final_score')
+                .eq('user_id', userId)
+                .eq('cycle_id', targetCycleId);
+
+            if (error) throw error;
+            const rows = data || [];
+            const avg = rows.length
+                ? Math.round(rows.reduce((sum, row: any) => {
+                    const score = row.final_score ?? computeFinalScore(Number(row.ai_score || 0), row.user_score);
+                    return sum + Number(score || 0);
+                }, 0) / rows.length)
+                : 0;
+
+            await supabase
+                .from('cycles')
+                .update({ completion_rate: avg })
+                .eq('user_id', userId)
+                .eq('id', targetCycleId);
+        } catch (err) {
+            console.error('Failed to refresh cycle completion:', err);
+        }
+    }, [userId]);
+
+    const addEvaluation = async (evaluationData: Omit<GoalEvaluationInsert, 'id' | 'created_at' | 'updated_at'>) => {
+        if (!userId || !cycleId) return null;
+        try {
+            const payload = {
+                ...evaluationData,
+                user_id: userId,
+                cycle_id: cycleId,
+                final_score: computeFinalScore(Number(evaluationData.ai_score || 0), evaluationData.user_score),
+            };
+
+            const { data, error } = await supabase
+                .from('goal_evaluations')
+                .insert([payload])
                 .select()
                 .single();
 
             if (error) throw error;
             setEvaluations(prev => [...prev, data]);
+            await refreshCycleCompletion(cycleId);
             return data;
         } catch (err) {
             console.error('Failed to add goal evaluation:', err);
@@ -101,15 +142,25 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
 
     const updateEvaluation = async (id: number, updates: Partial<Omit<GoalEvaluation, 'id' | 'user_id' | 'created_at'>>) => {
         try {
+            const existing = evaluations.find(e => e.id === id);
+            const aiScore = Number(updates.ai_score ?? existing?.ai_score ?? 0);
+            const userScore = (updates.user_score ?? existing?.user_score ?? null) as number | null;
+            const nextUpdates = {
+                ...updates,
+                final_score: computeFinalScore(aiScore, userScore),
+            };
+
             const { data, error } = await supabase
                 .from('goal_evaluations')
-                .update(updates)
+                .update(nextUpdates)
                 .eq('id', id)
                 .select()
                 .single();
 
             if (error) throw error;
             setEvaluations(prev => prev.map(e => (e.id === id ? data : e)));
+            const targetCycleId = Number(data?.cycle_id || existing?.cycle_id || cycleId || 0);
+            if (targetCycleId) await refreshCycleCompletion(targetCycleId);
             return data;
         } catch (err) {
             console.error('Failed to update goal evaluation:', err);

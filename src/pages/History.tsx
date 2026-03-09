@@ -200,7 +200,13 @@ export default function History() {
   // Unified Timeline Items (Merge Records and Milestones)
   const timelineItems = useMemo(() => {
     // Map records to a standard timeline object
-    const mappedRecords = filteredRecords.map(r => ({ type: 'record' as const, data: r, date: new Date(r.record_date).getTime() }));
+    const mappedRecords = filteredRecords.map(r => ({
+      type: 'record' as const,
+      data: r,
+      date: new Date(r.record_date).getTime(),
+      createdAt: new Date(r.created_at).getTime(),
+      id: r.id,
+    }));
 
     // Filter and map milestones
     const filteredMilestones = milestones.filter(m => {
@@ -223,9 +229,19 @@ export default function History() {
     const milestoneContentKeys = new Set(filteredMilestones.map(m => `${m.event_date}-${m.event_description}`));
     const uniqueRecords = mappedRecords.filter(r => !milestoneContentKeys.has(`${r.data.record_date}-${r.data.content}`));
 
-    const mappedMilestones = filteredMilestones.map(m => ({ type: 'milestone' as const, data: m, date: new Date(m.event_date).getTime() }));
+    const mappedMilestones = filteredMilestones.map(m => ({
+      type: 'milestone' as const,
+      data: m,
+      date: new Date(m.event_date).getTime(),
+      createdAt: new Date(m.created_at).getTime(),
+      id: m.id,
+    }));
 
-    return [...uniqueRecords, ...mappedMilestones].sort((a, b) => b.date - a.date);
+    return [...uniqueRecords, ...mappedMilestones].sort((a, b) => {
+      if (b.date !== a.date) return b.date - a.date;
+      if ((b.createdAt || 0) !== (a.createdAt || 0)) return (b.createdAt || 0) - (a.createdAt || 0);
+      return (b.id || 0) - (a.id || 0);
+    });
   }, [filteredRecords, milestones, startDate, endDate, dimFilter, searchQuery, dimensions]);
 
   // Highlight keywords
