@@ -22,7 +22,7 @@ import { useLocale } from "../hooks/useLocale";
 export default function Record() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { tr } = useLocale();
+  const { tr, trDimension } = useLocale();
   const { cycles, currentCycle } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
@@ -133,14 +133,14 @@ export default function Record() {
   // Handle photo capture
   const handleCapturePhoto = async () => {
     if (!record) {
-      showCustomDialog('Notice', 'Please save the current record first');
+      showCustomDialog(tr('common_notice', 'Notice'), tr('record_save_current_first', 'Please save the current record first'));
       return;
     }
     try {
       await capturePhoto();
-      showCustomDialog('Success', 'Photo uploaded');
+      showCustomDialog(tr('profile_success', 'Success!'), tr('record_photo_uploaded', 'Photo uploaded'));
     } catch (error) {
-      showCustomDialog('Error', error instanceof Error ? error.message : 'Photo capture failed');
+      showCustomDialog(tr('common_error', 'Error'), error instanceof Error ? error.message : tr('record_photo_capture_failed', 'Photo capture failed'));
     }
   };
 
@@ -150,7 +150,7 @@ export default function Record() {
       stopListening();
     } else {
       if (!speechSupported) {
-        showCustomDialog('Notice', 'Your browser does not support speech recognition');
+        showCustomDialog(tr('common_notice', 'Notice'), tr('record_speech_not_supported', 'Your browser does not support speech recognition'));
         return;
       }
       startListening();
@@ -160,7 +160,7 @@ export default function Record() {
   // Handle file upload
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!record) {
-      showCustomDialog('Notice', 'Please save the current record first');
+      showCustomDialog(tr('common_notice', 'Notice'), tr('record_save_current_first', 'Please save the current record first'));
       return;
     }
     const file = e.target.files?.[0];
@@ -168,9 +168,9 @@ export default function Record() {
 
     try {
       await uploadImage(file);
-      showCustomDialog('Success', 'File uploaded');
+      showCustomDialog(tr('profile_success', 'Success!'), tr('record_file_uploaded', 'File uploaded'));
     } catch (error) {
-      showCustomDialog('Error', error instanceof Error ? error.message : 'Upload failed');
+      showCustomDialog(tr('common_error', 'Error'), error instanceof Error ? error.message : tr('record_upload_failed', 'Upload failed'));
     }
   };
 
@@ -181,7 +181,7 @@ export default function Record() {
     console.log('--- handleSaveRecord Triggered ---');
     console.log('Note content:', note);
     if (!note.trim()) {
-      showCustomDialog('Notice', 'Please enter record content');
+      showCustomDialog(tr('common_notice', 'Notice'), tr('record_enter_content', 'Please enter record content'));
       return;
     }
 
@@ -206,18 +206,18 @@ export default function Record() {
         await addMilestone({
           user_id: user!.id,
           event_date: selectedDate,
-          event_title: `Milestone: Journal`,
+          event_title: tr('record_milestone_title', 'Milestone: Journal'),
           event_description: note,
           event_type: 'achievement',
           related_dimension_id: defaultDimension.id
         });
       }
 
-      showCustomDialog('Success', 'Record saved without AI segmentation', () => {
+      showCustomDialog(tr('profile_success', 'Success!'), tr('record_saved_without_ai', 'Record saved without AI segmentation'), () => {
         navigate('/');
       });
     } else {
-      showCustomDialog('Failed', 'Save failed, please try again');
+      showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
     }
   };
 
@@ -225,7 +225,7 @@ export default function Record() {
     setShowAIModal(false);
 
     if (!selectedCycle) {
-      showCustomDialog('Notice', 'Cannot find cycle for selected date');
+      showCustomDialog(tr('common_notice', 'Notice'), tr('record_cycle_not_found', 'Cannot find cycle for selected date'));
       return;
     }
 
@@ -320,19 +320,19 @@ export default function Record() {
         await addMilestone({
           user_id: user!.id,
           event_date: selectedDate,
-          event_title: `Milestone: Journal`,
+          event_title: tr('record_milestone_title', 'Milestone: Journal'),
           event_description: note,
           event_type: 'achievement',
           related_dimension_id: defaultDimension.id
         });
       }
 
-      showCustomDialog('Success', 'AI records organized and saved!', () => {
+      showCustomDialog(tr('profile_success', 'Success!'), tr('record_ai_saved', 'AI records organized and saved!'), () => {
         navigate('/');
       });
     } catch (err) {
       console.error('Save AI records failed:', err);
-      showCustomDialog('Failed', 'Failed to save organized records.');
+      showCustomDialog(tr('common_failed', 'Failed'), tr('record_ai_save_failed', 'Failed to save organized records.'));
     }
   };
 
@@ -425,7 +425,7 @@ export default function Record() {
             {/* Display AI suggestions */}
             {record?.ai_suggestions && (
               <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-xs font-medium text-blue-800 mb-1">AI Suggestions:</p>
+                <p className="text-xs font-medium text-blue-800 mb-1">{tr('record_ai_suggestions', 'AI Suggestions:')}</p>
                 <p className="text-xs text-blue-700 whitespace-pre-wrap">{record.ai_suggestions}</p>
               </div>
             )}
@@ -462,7 +462,7 @@ export default function Record() {
                   ) : (
                     <span className="w-3.5 h-3.5 rounded-full border border-gray-300" />
                   )}
-                  {key}
+                  {trDimension(key)}
                 </div>
               ))}
             </div>
@@ -493,7 +493,7 @@ export default function Record() {
                   onClick={() => setShowDialog(false)}
                   className="flex-1 h-10 rounded-[8px] border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
                 >
-                  Close
+                  {tr('common_close', 'Close')}
                 </button>
                 {dialogConfig.onConfirm && (
                   <button
@@ -503,7 +503,7 @@ export default function Record() {
                     }}
                     className="flex-1 h-10 rounded-[8px] bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-medium"
                   >
-                    Confirm
+                    {tr('common_confirm', 'Confirm')}
                   </button>
                 )}
               </div>

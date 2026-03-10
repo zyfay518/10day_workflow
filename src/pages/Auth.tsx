@@ -35,12 +35,12 @@ export default function Auth() {
             } else {
                 const { error } = await signUp(email, password);
                 if (error) throw error;
-                window.alert("Registration successful! Please check your email to confirm your account.");
-                setSuccessMsg("Account created! Please check your email to confirm.");
+                window.alert(tr('auth_register_success_alert', 'Registration successful! Please check your email to confirm your account.'));
+                setSuccessMsg(tr('auth_account_created', 'Account created! Please check your email to confirm.'));
             }
         } catch (err: any) {
             console.error("Auth error:", err);
-            setErrorMsg(err.message || "Authentication failed");
+            setErrorMsg(err.message || tr('auth_failed', 'Authentication failed'));
         } finally {
             setLoading(false);
         }

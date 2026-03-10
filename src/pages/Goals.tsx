@@ -171,7 +171,7 @@ export default function Goals() {
   };
 
   const handleDeleteGoal = (goalId: number) => {
-    if (!confirm('Are you sure you want to delete this goal?')) return;
+    if (!confirm(tr('goals_confirm_delete', 'Are you sure you want to delete this goal?'))) return;
     if (mainTab === 'cycle') {
       deleteCycleGoal(goalId);
     } else {
@@ -662,12 +662,12 @@ export default function Goals() {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-bold text-gray-800 mb-4">
-              {editingGoal ? 'Edit Goal' : 'Add Goal'}
+              {editingGoal ? tr('goals_edit_goal', 'Edit Goal') : tr('goals_add_goal', 'Add Goal')}
             </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Dimension</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_dimension', 'Dimension')}</label>
                 <select
                   value={goalFormData.dimension_id}
                   onChange={(e) => setGoalFormData({ ...goalFormData, dimension_id: parseInt(e.target.value) })}
@@ -682,27 +682,27 @@ export default function Goals() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Goal Content</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_goal_content', 'Goal Content')}</label>
                 <textarea
                   value={goalFormData.content}
                   onChange={(e) => setGoalFormData({ ...goalFormData, content: e.target.value })}
-                  placeholder="e.g., Exercise for 30 minutes daily"
+                  placeholder={tr('goals_goal_content_placeholder', 'e.g., Exercise for 30 minutes daily')}
                   className="w-full bg-gray-50 border border-gray-200 rounded-[8px] py-2.5 px-3 text-sm min-h-[80px]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Evaluation Criteria</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_eval_criteria', 'Evaluation Criteria')}</label>
                 <textarea
                   value={goalFormData.evaluation_criteria}
                   onChange={(e) => setGoalFormData({ ...goalFormData, evaluation_criteria: e.target.value })}
-                  placeholder="e.g., Total exercise time"
+                  placeholder={tr('goals_eval_criteria_placeholder', 'e.g., Total exercise time')}
                   className="w-full bg-gray-50 border border-gray-200 rounded-[8px] py-2.5 px-3 text-sm min-h-[60px]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_type', 'Type')}</label>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2">
                     <input
@@ -711,7 +711,7 @@ export default function Goals() {
                       onChange={() => setGoalFormData({ ...goalFormData, target_type: 'qualitative', target_value: null, target_unit: null })}
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-gray-700">Qualitative</span>
+                    <span className="text-sm text-gray-700">{tr('goals_qualitative', 'Qualitative')}</span>
                   </label>
                   <label className="flex items-center gap-2">
                     <input
@@ -720,7 +720,7 @@ export default function Goals() {
                       onChange={() => setGoalFormData({ ...goalFormData, target_type: 'quantitative' })}
                       className="w-4 h-4"
                     />
-                    <span className="text-sm text-gray-700">Quantitative</span>
+                    <span className="text-sm text-gray-700">{tr('goals_quantitative', 'Quantitative')}</span>
                   </label>
                 </div>
               </div>
@@ -728,7 +728,7 @@ export default function Goals() {
               {goalFormData.target_type === 'quantitative' && (
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Target Value</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_target_value', 'Target Value')}</label>
                     <input
                       type="number"
                       value={goalFormData.target_value || ''}
@@ -738,7 +738,7 @@ export default function Goals() {
                     />
                   </div>
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_unit', 'Unit')}</label>
                     <input
                       type="text"
                       value={goalFormData.target_unit || ''}
@@ -756,13 +756,13 @@ export default function Goals() {
                 onClick={() => setShowGoalDialog(false)}
                 className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-200 transition-colors"
               >
-                Cancel
+                {tr('profile_cancel', 'Cancel')}
               </button>
               <button
                 onClick={handleSaveGoal}
                 className="flex-1 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white py-2.5 rounded-[8px] font-medium text-sm hover:opacity-90 transition-opacity"
               >
-                Save
+                {tr('profile_save', 'Save')}
               </button>
             </div>
           </div>
@@ -779,7 +779,7 @@ export default function Goals() {
             className="bg-white rounded-[12px] p-6 w-full max-w-md shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Evaluate Goal</h2>
+            <h2 className="text-lg font-bold text-gray-800 mb-4">{tr('goals_evaluate_goal', 'Evaluate Goal')}</h2>
 
             <div className="mb-4">
               <p className="text-sm font-medium text-gray-800">{evaluatingGoal.goal.content}</p>
@@ -801,14 +801,14 @@ export default function Goals() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Your Assessment (0-100)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{tr('goals_your_assessment', 'Your Assessment (0-100)')}</label>
               <input
                 type="number"
                 min="0"
                 max="100"
                 value={userScore}
                 onChange={(e) => setUserScore(e.target.value)}
-                placeholder="Enter your score..."
+                placeholder={tr('goals_enter_score', 'Enter your score...')}
                 className="w-full bg-white border border-gray-200 rounded-[8px] py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
               <p className="text-[10px] text-gray-400 mt-2">
@@ -821,7 +821,7 @@ export default function Goals() {
                 onClick={() => setEvaluatingGoal(null)}
                 className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-200"
               >
-                Close
+                {tr('common_close', 'Close')}
               </button>
               <button
                 onClick={handleSaveEvaluation}

@@ -278,15 +278,15 @@ export default function Knowledge() {
                                                         <Check size={16} strokeWidth={3} className="text-[#6B705C]" />
                                                     </div>
                                                 ) : (
-                                                    <span className="text-[9px] bg-[#D9B8B5]/30 text-[#A56B6B] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Reading</span>
+                                                    <span className="text-[9px] bg-[#D9B8B5]/30 text-[#A56B6B] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">{tr('knowledge_reading_status', 'Reading')}</span>
                                                 )}
                                             </div>
-                                            <p className="text-xs text-[#A8A8A8] font-medium tracking-tight mb-4">{book.author || "Unknown Author"}</p>
+                                            <p className="text-xs text-[#A8A8A8] font-medium tracking-tight mb-4">{book.author || tr('knowledge_unknown_author', 'Unknown Author')}</p>
                                         </div>
 
                                         <div className="space-y-2">
                                             <div className="flex items-center justify-between mb-1">
-                                                <span className="text-[9px] font-bold text-[#A8A8A8] uppercase tracking-widest leading-none">Progress</span>
+                                                <span className="text-[9px] font-bold text-[#A8A8A8] uppercase tracking-widest leading-none">{tr('knowledge_progress', 'Progress')}</span>
                                                 <span className="text-xs font-black text-[#5F6368] leading-none">{book.progress_percent}%</span>
                                             </div>
                                             <div className="h-1.5 bg-[#E5E2DB] rounded-full overflow-hidden">
@@ -312,7 +312,7 @@ export default function Knowledge() {
                                                         onClick={() => updateBook(book.id, { progress_percent: 100, reading_status: 'completed' })}
                                                         className="px-3 py-1 bg-[#5F6368] text-white rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-[#4A4E52] transition-all active:scale-95"
                                                     >
-                                                        Finish
+                                                        {tr('knowledge_finish', 'Finish')}
                                                     </button>
                                                 )}
                                             </div>
@@ -383,7 +383,7 @@ export default function Knowledge() {
 
                                     <div className="bg-[#C6C4BC] rounded-xl p-3 flex justify-between items-center shadow-inner mb-3">
                                         <div>
-                                            <p className="text-[9px] text-white/70 font-bold uppercase tracking-widest mb-0.5">Month Net</p>
+                                            <p className="text-[9px] text-white/70 font-bold uppercase tracking-widest mb-0.5">{tr('knowledge_month_net', 'Month Net')}</p>
                                             <p className="text-base font-black text-white tracking-tight">¥{stat.savings.toLocaleString()}</p>
                                         </div>
                                         <div className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm">
@@ -395,7 +395,7 @@ export default function Knowledge() {
                                     <div className="bg-white/40 rounded-xl p-3 border border-dashed border-[#C6C4BC]">
                                         <div className="flex items-center gap-1.5 mb-1.5">
                                             <Brain size={14} className="text-[#91A8B1]" />
-                                            <span className="text-[10px] font-black text-[#91A8B1] uppercase tracking-wider">AI Summary</span>
+                                            <span className="text-[10px] font-black text-[#91A8B1] uppercase tracking-wider">{tr('knowledge_ai_summary', 'AI Summary')}</span>
                                         </div>
                                         <p className="text-[11px] text-[#5F6368] leading-relaxed italic">
                                             “{stat.aiSummary}”
@@ -491,23 +491,23 @@ export default function Knowledge() {
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1.5">Book Title</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('knowledge_book_title', 'Book Title')}</label>
                                 <input
                                     type="text"
                                     value={bookTitle}
                                     onChange={e => setBookTitle(e.target.value)}
-                                    placeholder="E.g. Thinking, Fast and Slow"
+                                    placeholder={tr('knowledge_book_title_ph', 'E.g. Thinking, Fast and Slow')}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400"
                                     autoFocus
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1.5">Author (Optional)</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('knowledge_author_optional', 'Author (Optional)')}</label>
                                 <input
                                     type="text"
                                     value={bookAuthor}
                                     onChange={e => setBookAuthor(e.target.value)}
-                                    placeholder="E.g. Daniel Kahneman"
+                                    placeholder={tr('knowledge_author_ph', 'E.g. Daniel Kahneman')}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400"
                                 />
                             </div>
@@ -516,7 +516,7 @@ export default function Knowledge() {
                                 disabled={!bookTitle.trim()}
                                 className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-200 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] mt-4"
                             >
-                                Start Reading
+                                {tr('knowledge_start_reading', 'Start Reading')}
                             </button>
                         </div>
                     </div>
@@ -536,11 +536,11 @@ export default function Knowledge() {
 
                         <div className="overflow-y-auto flex-1 hide-scrollbar space-y-4 pr-1 pb-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1.5">Reflection / Note</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('knowledge_reflection_note', 'Reflection / Note')}</label>
                                 <textarea
                                     value={content}
                                     onChange={e => setContent(e.target.value)}
-                                    placeholder="What did you learn today?"
+                                    placeholder={tr('knowledge_reflection_ph', 'What did you learn today?')}
                                     className="w-full bg-gray-50 border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all min-h-[120px] resize-none"
                                 />
                             </div>
@@ -569,7 +569,7 @@ export default function Knowledge() {
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Date</label>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('common_date', 'Date')}</label>
                                     <input
                                         type="date"
                                         value={recordDate}
@@ -578,13 +578,13 @@ export default function Knowledge() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Period (Auto-mapped)</label>
+                                    <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('knowledge_period_auto', 'Period (Auto-mapped)')}</label>
                                     <select
                                         value={selectedCycleId}
                                         onChange={e => setSelectedCycleId(Number(e.target.value))}
                                         className="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
                                     >
-                                        <option value="" disabled>Select mapping...</option>
+                                        <option value="" disabled>{tr('knowledge_select_mapping', 'Select mapping...')}</option>
                                         {cycles.map(c => (
                                             <option key={c.id} value={c.id}>
                                                 Period {c.cycle_number}
@@ -620,12 +620,12 @@ export default function Knowledge() {
                         </div>
                         <div className="space-y-4">
                             <div>
-                                <label className="block text-xs font-medium text-gray-500 mb-1.5">Weight (kg)</label>
+                                <label className="block text-xs font-medium text-gray-500 mb-1.5">{tr('knowledge_weight_kg', 'Weight (kg)')}</label>
                                 <input
                                     type="number"
                                     value={weightKg}
                                     onChange={e => setWeightKg(e.target.value)}
-                                    placeholder="E.g. 65.5"
+                                    placeholder={tr('knowledge_weight_ph', 'E.g. 65.5')}
                                     step="0.1"
                                     className="w-full bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#A8C3A9] focus:border-[#A8C3A9]"
                                     autoFocus
