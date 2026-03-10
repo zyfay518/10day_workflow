@@ -90,7 +90,7 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
     const refreshCycleCompletion = useCallback(async (targetCycleId: number) => {
         if (!userId) return;
         try {
-            const [{ data: evalRows, error: evalErr }, { count: cycleGoalCount, error: cycleErr }, { count: dailyGoalCount, error: dailyErr }] = await Promise.all([
+            const [{ data: evalRows, error: evalErr }, { data: cycleGoals, error: cycleErr }, { data: dailyGoals, error: dailyErr }] = await Promise.all([
                 supabase
                     .from('goal_evaluations')
                     .select('goal_id,goal_type,ai_score,user_score,final_score')
@@ -98,12 +98,12 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
                     .eq('cycle_id', targetCycleId),
                 supabase
                     .from('cycle_goals')
-                    .select('id', { count: 'exact', head: true })
+                    .select('id')
                     .eq('user_id', userId)
                     .eq('cycle_id', targetCycleId),
                 supabase
                     .from('daily_goals')
-                    .select('id', { count: 'exact', head: true })
+                    .select('id')
                     .eq('user_id', userId)
                     .eq('cycle_id', targetCycleId),
             ]);
@@ -111,12 +111,19 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
             if (evalErr || cycleErr || dailyErr) throw evalErr || cycleErr || dailyErr;
 
             const rows = evalRows || [];
-            const sumScores = rows.reduce((sum, row: any) => {
+            const scoredMap = new Map<string, number>();
+            rows.forEach((row: any) => {
+                const k = `${row.goal_type}:${row.goal_id}`;
                 const score = row.final_score ?? computeFinalScore(Number(row.ai_score || 0), row.user_score);
-                return sum + Number(score || 0);
-            }, 0);
+                scoredMap.set(k, Number(score || 0));
+            });
 
-            const totalGoals = Number(cycleGoalCount || 0) + Number(dailyGoalCount || 0);
+            const cycleIds = (cycleGoals || []).map((g: any) => `cycle:${g.id}`);
+            const dailyIds = (dailyGoals || []).map((g: any) => `daily:${g.id}`);
+            const allGoalKeys = [...cycleIds, ...dailyIds];
+            const totalGoals = allGoalKeys.length;
+
+            const sumScores = allGoalKeys.reduce((sum, key) => sum + Number(scoredMap.get(key) || 0), 0);
             const completion = totalGoals > 0 ? Math.round(sumScores / totalGoals) : 0;
 
             await supabase
