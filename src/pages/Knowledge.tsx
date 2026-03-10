@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { BookOpen, Book, Check, PlusCircle, Scale, Wallet, Calendar, TrendingUp, TrendingDown, PiggyBank, Brain, BookPlus, Plus, X, Trash2 } from "lucide-react";
 import DynamicIcon from "../components/DynamicIcon";
 import { getDimensionIconName } from "../lib/dimensionIcon";
@@ -10,8 +10,9 @@ import { cn } from "../lib/utils";
 import { useBooks } from "../hooks/useBooks";
 import { useWeight } from "../hooks/useWeight";
 import { useExpenses } from "../hooks/useExpenses";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from "recharts";
 import { useLocale } from "../hooks/useLocale";
+
+const WeightTrendChart = lazy(() => import("../components/WeightTrendChart"));
 
 export default function Knowledge() {
     const { user } = useAuth();
@@ -333,39 +334,9 @@ export default function Knowledge() {
                                 <p className="text-gray-400 text-sm text-center py-6">No weight data. Click + to add.</p>
                             ) : (
                                 <div className="h-48 w-full">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={weights}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                            <XAxis
-                                                dataKey="record_date"
-                                                tick={{ fill: '#9ca3af', fontSize: 10 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tickFormatter={(v) => v.slice(5)}
-                                            />
-                                            <YAxis
-                                                domain={['dataMin - 2', 'dataMax + 2']}
-                                                tick={{ fill: '#9ca3af', fontSize: 10 }}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                width={30}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                labelStyle={{ color: '#6b7280', fontSize: '12px' }}
-                                                itemStyle={{ color: '#1f2937', fontWeight: 'bold' }}
-                                            />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="weight_kg"
-                                                stroke="#A8C3A9"
-                                                strokeWidth={3}
-                                                dot={{ r: 4, fill: "#A8C3A9", strokeWidth: 2, stroke: "#fff" }}
-                                                activeDot={{ r: 6, fill: "#A8C3A9", stroke: "#fff" }}
-                                                name="Weight (kg)"
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                                    <Suspense fallback={<div className="h-full w-full rounded-xl bg-gray-50 animate-pulse" />}>
+                                        <WeightTrendChart weights={weights as any} />
+                                    </Suspense>
                                 </div>
                             )}
                         </div>
