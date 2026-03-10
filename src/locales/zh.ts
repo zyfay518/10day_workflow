@@ -191,6 +191,15 @@ const zh = {
   "report_suggestion_keep": "保持当前节奏，把有效行动固化成固定时间块，减少临时决策损耗。",
   "report_suggestion_evidence": "每个维度每周至少保留 1 条“可复盘证据”（结果+原因+下一步），提升复盘质量。",
   "report_suggestion_focus": "下周期优先选择 1 个薄弱维度做集中突破，避免平均用力。",
+  "auth_no_account": "还没有账号？",
+  "goals_back_cycle_selection": "返回周期选择",
+  "goals_day": "第",
+  "goals_days": "天",
+  "goals_goals_count": "个目标",
+  "goals_no_cycles": "该状态下暂无周期",
+  "goals_no_goals": "暂无目标，点击 + 添加。",
+  "goals_select_cycle": "选择一个周期",
+  "record_today_overview": "今日总览",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;

@@ -191,6 +191,15 @@ const en = {
   "report_suggestion_keep": "Keep the current pace and solidify effective actions into fixed time blocks to reduce ad-hoc decision cost.",
   "report_suggestion_evidence": "Keep at least 1 reviewable evidence item per dimension each week (result + cause + next step) to improve review quality.",
   "report_suggestion_focus": "Prioritize one weak dimension for focused breakthrough next cycle instead of spreading effort evenly.",
+  "auth_no_account": "Don't have an account?",
+  "goals_back_cycle_selection": "Back to Cycle Selection",
+  "goals_day": "Day",
+  "goals_days": "days",
+  "goals_goals_count": "goals",
+  "goals_no_cycles": "No cycles in this status",
+  "goals_no_goals": "No goals yet. Click + to add.",
+  "goals_select_cycle": "Select a Cycle",
+  "record_today_overview": "Today's overview",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;
