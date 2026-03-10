@@ -131,10 +131,33 @@ export function useGoalEvaluations(userId: string | undefined, cycleId: number |
                 .update({ completion_rate: completion })
                 .eq('user_id', userId)
                 .eq('id', targetCycleId);
+
+            // Keep local startup snapshot in sync to avoid stale 94% after update.
+            try {
+                const key = `cycles_cache_${userId}`;
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (parsed?.cycles?.length) {
+                        parsed.cycles = parsed.cycles.map((c: any) => c.id === targetCycleId ? { ...c, completion_rate: completion } : c);
+                        if (parsed.currentCycle?.id === targetCycleId) {
+                            parsed.currentCycle = { ...parsed.currentCycle, completion_rate: completion };
+                        }
+                        parsed.ts = Date.now();
+                        localStorage.setItem(key, JSON.stringify(parsed));
+                    }
+                }
+            } catch {}
         } catch (err) {
             console.error('Failed to refresh cycle completion:', err);
         }
     }, [userId]);
+
+    useEffect(() => {
+        if (!userId || !cycleId || loading) return;
+        // Backfill completion on page re-open so old 94% snapshots get corrected.
+        refreshCycleCompletion(cycleId);
+    }, [userId, cycleId, loading, evaluations.length, refreshCycleCompletion]);
 
     const addEvaluation = async (evaluationData: Omit<GoalEvaluationInsert, 'id' | 'created_at' | 'updated_at'>) => {
         if (!userId || !cycleId) return null;
