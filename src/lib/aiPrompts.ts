@@ -127,6 +127,29 @@ User transcript:
 {{content}}`
   },
 
+  // Goals页面 - AI目标评分
+  GOAL_EVALUATE: {
+    key: 'goal_evaluate',
+    name: 'Goal AI Evaluation',
+    description: 'Evaluate goal completion score based on goal definition and period records',
+    defaultPrompt: `You are an evaluation engine for personal goals.
+Return ONLY valid JSON:
+{"ai_score": number, "ai_analysis": "string"}
+Rules:
+- ai_score must be 0-100 integer.
+- Use goal target, criteria and evidence from records.
+- If evidence is weak, score conservatively.
+- Keep ai_analysis concise (1-3 sentences) and actionable.
+
+Goal type: {{goalType}}
+Dimension: {{dimension}}
+Goal content: {{goalContent}}
+Evaluation criteria: {{criteria}}
+User records in this cycle:
+{{records}}
+`
+  },
+
   // History页面 - 名言金句生成
   HISTORY_QUOTE: {
     key: 'history_quote',

@@ -8,8 +8,10 @@ import { useCycles } from "../hooks/useCycles";
 import { useDimensions } from "../hooks/useDimensions";
 import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
 import { useGoalEvaluations } from "../hooks/useGoalEvaluations";
+import { useAIAnalysis } from "../hooks/useAIAnalysis";
 import { Database } from "../types/database";
 import { useLocale } from "../hooks/useLocale";
+import { supabase } from "../lib/supabase";
 
 type CycleGoal = Database['public']['Tables']['cycle_goals']['Row'];
 type DailyGoal = Database['public']['Tables']['daily_goals']['Row'];
@@ -39,6 +41,7 @@ export default function Goals() {
   const [editingGoal, setEditingGoal] = useState<CycleGoal | DailyGoal | null>(null);
   const [evaluatingGoal, setEvaluatingGoal] = useState<{ goal: CycleGoal | DailyGoal, type: 'cycle' | 'daily' } | null>(null);
   const [userScore, setUserScore] = useState<number | ''>('');
+  const [evaluatingWithAI, setEvaluatingWithAI] = useState(false);
 
   const [goalFormData, setGoalFormData] = useState<GoalFormData>({
     dimension_id: dimensions[0]?.id || 0,
@@ -53,8 +56,10 @@ export default function Goals() {
   const {
     getEvaluationByGoal,
     addEvaluation,
-    updateEvaluation
+    updateEvaluation,
+    refreshEvaluations,
   } = useGoalEvaluations(user?.id, expandedCycleId || selectedCycleForDaily || undefined);
+  const { evaluateGoal } = useAIAnalysis(user?.id);
 
   // Get filtered cycles based on date-derived status (not stale DB status)
   const filteredCycles = cycles.filter(cycle => {
@@ -184,39 +189,65 @@ export default function Goals() {
     }
   };
 
-  const handleSaveEvaluation = () => {
+  const handleSaveEvaluation = async () => {
     if (!user || !evaluatingGoal) return;
 
-    // Fallback AI score/text for mock if not existing
-    const aiScore = 85;
-    const aiAnalysis = "AI Analysis: Your efforts show steady progress in this area. Maintain the momentum but focus slightly more on qualitative improvements.";
+    try {
+      setEvaluatingWithAI(true);
 
-    const parsedUserScore = userScore === '' ? null : Number(userScore);
-    const finalScore = parsedUserScore !== null ? (aiScore + parsedUserScore) / 2 : aiScore;
+      const dim = dimensions.find(d => d.id === evaluatingGoal.goal.dimension_id);
+      const { data: recs } = await supabase
+        .from('records')
+        .select('content,record_date')
+        .eq('user_id', user.id)
+        .eq('cycle_id', evaluatingGoal.goal.cycle_id)
+        .eq('dimension_id', evaluatingGoal.goal.dimension_id)
+        .order('record_date', { ascending: false })
+        .limit(20);
 
-    const existingEval = getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type);
+      const recordsText = (recs || [])
+        .map((r: any) => `${r.record_date}: ${r.content}`)
+        .join('\n');
 
-    if (existingEval) {
-      updateEvaluation(existingEval.id, {
-        user_score: parsedUserScore,
-        final_score: finalScore,
+      const ai = await evaluateGoal({
+        goalType: evaluatingGoal.type,
+        dimension: dim?.dimension_name || 'Other',
+        goalContent: evaluatingGoal.goal.content,
+        criteria: evaluatingGoal.goal.evaluation_criteria,
+        recordsText,
       });
-    } else {
-      addEvaluation({
-        user_id: user.id,
-        cycle_id: evaluatingGoal.goal.cycle_id,
-        goal_id: evaluatingGoal.goal.id,
-        goal_type: evaluatingGoal.type,
-        dimension_id: evaluatingGoal.goal.dimension_id,
-        ai_score: aiScore,
-        ai_analysis: aiAnalysis,
-        user_score: parsedUserScore,
-        user_comment: null,
-        final_score: finalScore,
-        evaluated_at: new Date().toISOString()
-      });
+
+      const parsedUserScore = userScore === '' ? null : Number(userScore);
+      const existingEval = getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type);
+
+      if (existingEval) {
+        await updateEvaluation(existingEval.id, {
+          ai_score: ai.ai_score,
+          ai_analysis: ai.ai_analysis,
+          user_score: parsedUserScore,
+          evaluated_at: new Date().toISOString(),
+        });
+      } else {
+        await addEvaluation({
+          user_id: user.id,
+          cycle_id: evaluatingGoal.goal.cycle_id,
+          goal_id: evaluatingGoal.goal.id,
+          goal_type: evaluatingGoal.type,
+          dimension_id: evaluatingGoal.goal.dimension_id,
+          ai_score: ai.ai_score,
+          ai_analysis: ai.ai_analysis,
+          user_score: parsedUserScore,
+          user_comment: null,
+          final_score: parsedUserScore !== null ? parsedUserScore * 0.6 + ai.ai_score * 0.4 : ai.ai_score,
+          evaluated_at: new Date().toISOString()
+        });
+      }
+
+      await refreshEvaluations();
+      setEvaluatingGoal(null);
+    } finally {
+      setEvaluatingWithAI(false);
     }
-    setEvaluatingGoal(null);
   };
 
   return (
@@ -760,12 +791,12 @@ export default function Goals() {
                 <Bot size={18} className="text-[#9DC5EF]" />
                 <span className="text-xs font-bold text-gray-700">AI Evaluation</span>
                 <span className="ml-auto text-sm font-bold text-gray-800">
-                  {getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type)?.ai_score || 85}/100
+                  {getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type)?.ai_score ?? '--'}/100
                 </span>
               </div>
               <p className="text-xs text-gray-600 leading-relaxed italic">
                 {getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type)?.ai_analysis ||
-                  "AI Analysis: Your efforts show steady progress in this area. Maintain the momentum but focus slightly more on qualitative improvements."}
+                  "点击保存后将基于本周期同维度记录自动生成AI评分。"}
               </p>
             </div>
 
@@ -781,7 +812,7 @@ export default function Goals() {
                 className="w-full bg-white border border-gray-200 rounded-[8px] py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
               <p className="text-[10px] text-gray-400 mt-2">
-                Final Score = (AI Score + Your Score) / 2. If left empty, AI score is used alone.
+                Final Score：人工为空时=AI分；人工不为空时=人工60% + AI40%。
               </p>
             </div>
 
@@ -794,9 +825,10 @@ export default function Goals() {
               </button>
               <button
                 onClick={handleSaveEvaluation}
-                className="flex-1 bg-gray-900 text-white py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-800"
+                disabled={evaluatingWithAI}
+                className="flex-1 bg-gray-900 text-white py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-800 disabled:opacity-60"
               >
-                Save Score
+                {evaluatingWithAI ? 'AI评分中...' : '保存评分'}
               </button>
             </div>
           </div>

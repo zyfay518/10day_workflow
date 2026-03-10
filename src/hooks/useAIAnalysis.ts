@@ -17,6 +17,11 @@ export interface SplitDimensionItem {
     content: string;
 }
 
+export interface GoalEvaluationAIResult {
+    ai_score: number;
+    ai_analysis: string;
+}
+
 export interface VoiceParsedResult {
     summary: string;
     dimension: string;
@@ -354,6 +359,61 @@ export function useAIAnalysis(userId?: string) {
         }
     }, [profile?.ai_api_key]);
 
+    const evaluateGoal = useCallback(async (params: {
+        goalType: 'cycle' | 'daily';
+        dimension: string;
+        goalContent: string;
+        criteria: string;
+        recordsText: string;
+    }): Promise<GoalEvaluationAIResult> => {
+        const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+        if (!apiKey) {
+            return { ai_score: 70, ai_analysis: 'No API key configured, fallback score used.' };
+        }
+
+        try {
+            let prompt = getPrompt('goal_evaluate');
+            prompt = prompt
+                .replace(/\{\{goalType\}\}/g, params.goalType)
+                .replace(/\{\{dimension\}\}/g, params.dimension)
+                .replace(/\{\{goalContent\}\}/g, params.goalContent)
+                .replace(/\{\{criteria\}\}/g, params.criteria)
+                .replace(/\{\{records\}\}/g, params.recordsText || 'No records found.');
+
+            const response = await fetch(DEEPSEEK_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: 'Return strict JSON only.' },
+                        { role: 'user', content: prompt },
+                    ],
+                    temperature: 0.1,
+                    max_tokens: 300,
+                }),
+            });
+
+            if (!response.ok) throw new Error(`API request failed: ${response.status}`);
+            const data = await response.json();
+            let aiText = String(data.choices?.[0]?.message?.content || '{}');
+            const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) aiText = jsonMatch[0];
+            const parsed = JSON.parse(aiText);
+            const score = Math.max(0, Math.min(100, Math.round(Number(parsed.ai_score ?? 70))));
+            return {
+                ai_score: score,
+                ai_analysis: String(parsed.ai_analysis || 'AI evaluation completed.'),
+            };
+        } catch (err) {
+            console.error('evaluateGoal failed:', err);
+            return { ai_score: 70, ai_analysis: 'AI evaluation failed, fallback score applied.' };
+        }
+    }, [getPrompt, profile?.ai_api_key]);
+
     const classifyVoiceDimension = useCallback(async (content: string): Promise<string> => {
         const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
         if (!apiKey || !content.trim()) return 'Other';
@@ -397,6 +457,7 @@ export function useAIAnalysis(userId?: string) {
         extractTags,
         parseVoiceQuickEntry,
         classifyVoiceDimension,
+        evaluateGoal,
         clearResult: () => { setResult(null); setError(null); },
     };
 }
