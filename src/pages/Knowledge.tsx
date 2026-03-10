@@ -141,14 +141,14 @@ export default function Knowledge() {
                 const topCategory = Object.entries(data.categories)
                     .sort((a, b) => b[1] - a[1])[0];
 
-                let aiSummary = "本月暂无支出记录，财务状况非常健康。";
+                let aiSummary = tr('knowledge_expense_summary_default', 'No expenses this month. Financial status looks healthy.');
                 if (topCategory) {
                     const ratio = ((topCategory[1] / data.expense) * 100).toFixed(0);
-                    aiSummary = `本月主要开支集中在【${topCategory[0]}】，占比达${ratio}%。建议关注该类目的非必要支出，以提升结余率。`;
+                    aiSummary = tr('knowledge_expense_summary_top', `Main spending this month is in [${topCategory[0]}], accounting for ${ratio}%. Consider reducing non-essential spending in this category to improve savings rate.`);
                     if (savings < 0) {
-                        aiSummary += " 注意：本月支出超过收入，建议复盘消费动机。";
+                        aiSummary += ` ${tr('knowledge_expense_summary_over', 'Note: expenses exceeded income this month. Please review spending motivations.')}`;
                     } else if (savings > (data.income * 0.5)) {
-                        aiSummary += " 表现优秀！本月结余率超过50%，继续保持。";
+                        aiSummary += ` ${tr('knowledge_expense_summary_good', 'Excellent! Savings rate exceeded 50% this month. Keep it up.')}`;
                     }
                 }
 
@@ -207,7 +207,7 @@ export default function Knowledge() {
                                 subTab === "books" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
                             )}
                         >
-                            阅读追踪
+                            {tr('knowledge_tab_reading', 'Reading')}
                         </button>
                         <button
                             onClick={() => setSubTab("knowledge")}
@@ -216,7 +216,7 @@ export default function Knowledge() {
                                 subTab === "knowledge" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
                             )}
                         >
-                            知识沉淀
+                            {tr('knowledge_tab_knowledge', 'Knowledge')}
                         </button>
                     </div>
                 </div>
@@ -233,7 +233,7 @@ export default function Knowledge() {
                                 subTabHealth === "knowledge" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
                             )}
                         >
-                            行为
+                            {tr('knowledge_tab_behavior', 'Behavior')}
                         </button>
                         <button
                             onClick={() => setSubTabHealth("weight")}
@@ -242,7 +242,7 @@ export default function Knowledge() {
                                 subTabHealth === "weight" ? "bg-white text-gray-800 shadow-sm" : "text-gray-500 hover:text-gray-700"
                             )}
                         >
-                            体重数据
+                            {tr('knowledge_tab_weight', 'Weight')}
                         </button>
                     </div>
                 </div>
@@ -430,7 +430,7 @@ export default function Knowledge() {
                                         <span className="text-xs text-gray-400">{entry.record_date}</span>
                                         <button
                                             onClick={() => {
-                                                if (window.confirm('确认删除这条知识吗？删除后无法恢复。')) {
+                                                if (window.confirm(tr('knowledge_confirm_delete', 'Delete this insight? This action cannot be undone.'))) {
                                                     removeEntry(entry.id);
                                                 }
                                             }}
@@ -484,7 +484,7 @@ export default function Knowledge() {
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center">
                     <div className="bg-white max-w-md w-full rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-gray-800">添加阅读书籍</h2>
+                            <h2 className="text-lg font-bold text-gray-800">{tr('knowledge_add_book', 'Add Book')}</h2>
                             <button onClick={() => setIsBookModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
                             </button>
@@ -528,7 +528,7 @@ export default function Knowledge() {
                 <div className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-2 sm:p-4">
                     <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200 h-[88dvh] sm:h-auto sm:max-h-[90vh] flex flex-col">
                         <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-bold text-gray-800">New Insight</h2>
+                            <h2 className="text-lg font-bold text-gray-800">{tr('knowledge_new_insight', 'New Insight')}</h2>
                             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
                             </button>
@@ -601,7 +601,7 @@ export default function Knowledge() {
                                 disabled={!content.trim() || !selectedDimId || !selectedCycleId}
                                 className="w-full h-12 bg-gray-900 text-white rounded-xl font-bold shadow-md hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                Save Insight
+                                {tr('knowledge_save_insight', 'Save Insight')}
                             </button>
                         </div>
                     </div>
@@ -613,7 +613,7 @@ export default function Knowledge() {
                 <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center">
                     <div className="bg-white max-w-md w-full rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200">
                         <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-lg font-bold text-gray-800">Record Weight</h2>
+                            <h2 className="text-lg font-bold text-gray-800">{tr('knowledge_record_weight', 'Record Weight')}</h2>
                             <button onClick={() => setIsWeightModalOpen(false)} className="text-gray-400 hover:text-gray-600">
                                 <X size={24} />
                             </button>
@@ -636,7 +636,7 @@ export default function Knowledge() {
                                 disabled={!weightKg}
                                 className="w-full py-3.5 bg-[#A8C3A9] hover:bg-[#8da88e] disabled:bg-gray-200 text-white rounded-xl font-bold text-sm shadow-md transition-all active:scale-[0.98] mt-4"
                             >
-                                Save Weight
+                                {tr('knowledge_save_weight', 'Save Weight')}
                             </button>
                         </div>
                     </div>

@@ -349,7 +349,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
       setLibDimensions(workingDimensions as any);
       setLibDimensionId(detectedId);
-      setMessage(`已识别维度：${dim || 'Other'}，可手动调整后确认保存。`);
+      setMessage(tr('voice_msg_dim_detected', `Detected dimension: ${dim || 'Other'}. You can adjust it before confirming save.`));
     } catch (e: any) {
       console.error(e);
       const detail = e?.message ? ` (${e.message})` : '';
@@ -609,7 +609,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                 disabled={saving}
                 className="h-10 rounded-xl bg-gray-100 text-gray-700 text-sm font-semibold disabled:opacity-50"
               >
-                返回修改
+                {tr('common_back_edit', 'Back to Edit')}
               </button>
               <button
                 onClick={handleApplyParsed}

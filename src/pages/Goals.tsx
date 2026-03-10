@@ -796,7 +796,7 @@ export default function Goals() {
               </div>
               <p className="text-xs text-gray-600 leading-relaxed italic">
                 {getEvaluationByGoal(evaluatingGoal.goal.id, evaluatingGoal.type)?.ai_analysis ||
-                  "点击保存后将基于本周期同维度记录自动生成AI评分。"}
+                  tr('goals_eval_hint', 'Click save to generate AI score based on same-dimension records in this cycle.')}
               </p>
             </div>
 
@@ -812,7 +812,7 @@ export default function Goals() {
                 className="w-full bg-white border border-gray-200 rounded-[8px] py-2.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
               />
               <p className="text-[10px] text-gray-400 mt-2">
-                Final Score：人工为空时=AI分；人工不为空时=人工60% + AI40%。
+                {tr('goals_final_score_rule', 'Final Score: if user score is empty = AI score; otherwise = user 60% + AI 40%.')}
               </p>
             </div>
 
@@ -828,7 +828,7 @@ export default function Goals() {
                 disabled={evaluatingWithAI}
                 className="flex-1 bg-gray-900 text-white py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-800 disabled:opacity-60"
               >
-                {evaluatingWithAI ? 'AI评分中...' : '保存评分'}
+                {evaluatingWithAI ? tr('goals_ai_scoring', 'AI Scoring...') : tr('goals_save_score', 'Save Score')}
               </button>
             </div>
           </div>

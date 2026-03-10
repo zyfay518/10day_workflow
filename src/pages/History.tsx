@@ -158,7 +158,7 @@ export default function History() {
   }, [user, startDate, endDate, dimensions, dateRangeType, cyclesLoading, selectedCycle]);
 
   const handleDeleteRecord = async (id: number) => {
-    if (!window.confirm('确认删除这条记录吗？')) return;
+    if (!window.confirm(tr('history_confirm_delete_record', 'Delete this record?'))) return;
 
     try {
       setLoading(true);
@@ -168,7 +168,7 @@ export default function History() {
       setDbRecords(prev => prev.filter(r => r.id !== id));
     } catch (err) {
       console.error('Failed to delete record:', err);
-      alert('Failed to delete record. Please try again.');
+      alert(tr('history_delete_failed', 'Failed to delete record. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -461,7 +461,7 @@ export default function History() {
                     dimFilter === 'all' && "bg-blue-50 text-blue-600 font-medium"
                   )}
                 >
-                  All
+                  {tr('history_all', 'All')}
                 </button>
                 {dimensions.map((dim) => (
                   <button
@@ -489,7 +489,7 @@ export default function History() {
       <main className="flex-1 overflow-y-auto px-6 pt-6 pb-6 space-y-0 relative">
         {timelineItems.length === 0 ? (
           <div className="py-16 text-center">
-            <p className="text-sm text-gray-400">No records found</p>
+            <p className="text-sm text-gray-400">{tr('history_no_records', 'No records found')}</p>
           </div>
         ) : (
           <div className="relative border-l-2 border-gray-100 pl-6 ml-2 space-y-8">
@@ -529,7 +529,7 @@ export default function History() {
                           )}
                           <button
                             onClick={() => {
-                              if (window.confirm("确认删除这个里程碑吗？")) {
+                              if (window.confirm(tr('history_confirm_delete_milestone', 'Delete this milestone?'))) {
                                 deleteMilestone(milestone.id);
                               }
                             }}

@@ -135,10 +135,10 @@ export default function Report() {
 
     const suggestions = [
       delta < 0
-        ? '本周期有回落，建议把目标数量收敛到 2-3 个，先恢复稳定执行节奏。'
-        : '保持当前节奏，把有效行动固化成固定时间块，减少临时决策损耗。',
-      '每个维度每周至少保留 1 条“可复盘证据”（结果+原因+下一步），提升复盘质量。',
-      '下周期优先选择 1 个薄弱维度做集中突破，避免平均用力。',
+        ? tr('report_suggestion_recover', 'There is a pullback this cycle. Narrow goals to 2-3 first and restore execution stability.')
+        : tr('report_suggestion_keep', 'Keep the current pace and solidify effective actions into fixed time blocks to reduce ad-hoc decision cost.'),
+      tr('report_suggestion_evidence', 'Keep at least 1 reviewable evidence item per dimension each week (result + cause + next step) to improve review quality.'),
+      tr('report_suggestion_focus', 'Prioritize one weak dimension for focused breakthrough next cycle instead of spreading effort evenly.'),
     ];
 
     return {
@@ -366,7 +366,7 @@ export default function Report() {
 
                     <div className="mb-3 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-pink-50 border border-gray-100 flex items-center justify-between">
                       <div>
-                        <p className="text-xs text-gray-500">Period Score</p>
+                        <p className="text-xs text-gray-500">{tr('report_period_score', 'Period Score')}</p>
                         <p className="text-xl font-black text-gray-800">{cognitiveProfile.currentAvg}</p>
                       </div>
                       <div className={cn("text-xs font-semibold px-2.5 py-1 rounded-full", cognitiveProfile.delta >= 0 ? "bg-green-50 text-green-600" : "bg-amber-50 text-amber-600")}>
@@ -390,7 +390,7 @@ export default function Report() {
 
                     {cognitiveProfile.evidence.length > 0 && (
                       <div className="mb-4">
-                        <p className="text-xs font-bold text-gray-500 mb-2">Evidence from this period</p>
+                        <p className="text-xs font-bold text-gray-500 mb-2">{tr('report_evidence', 'Evidence from this period')}</p>
                         <div className="space-y-2">
                           {cognitiveProfile.evidence.map((item, idx) => (
                             <div key={idx} className="text-xs text-gray-600 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 leading-relaxed">
@@ -402,7 +402,7 @@ export default function Report() {
                     )}
 
                     <div>
-                      <p className="text-xs font-bold text-gray-500 mb-2">Next-period strategy</p>
+                      <p className="text-xs font-bold text-gray-500 mb-2">{tr('report_strategy', 'Next-period strategy')}</p>
                       <ul className="space-y-1.5">
                         {cognitiveProfile.suggestions.map((s, idx) => (
                           <li key={idx} className="text-xs text-gray-700 leading-relaxed flex gap-2">
