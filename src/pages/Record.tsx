@@ -74,9 +74,11 @@ export default function Record() {
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
-    setNote(record?.content || "");
+    // Do not preload previous saved content into editor.
+    // Keep input fresh when entering/changing date unless user is actively typing now.
+    setNote("");
     setIsMilestone(false);
-  }, [record?.content, selectedDate]);
+  }, [selectedDate]);
 
   // 加载附件
   useEffect(() => {
@@ -213,9 +215,10 @@ export default function Record() {
         });
       }
 
-      showCustomDialog(tr('profile_success', 'Success!'), tr('record_saved_without_ai', 'Record saved without AI segmentation'), () => {
-        navigate('/');
-      });
+      // Save completed: clear editor and leave page directly (no extra confirmation step)
+      setNote('');
+      setParsedDimensions([]);
+      navigate('/');
     } else {
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
     }
@@ -239,44 +242,23 @@ export default function Record() {
         const dim = dimensions.find(d => d.dimension_name === item.dimension) || defaultDimension;
         if (!dim) continue;
 
-        const { data: existing } = await supabase.from('records')
-          .select('*')
-          .eq('user_id', user!.id)
-          .eq('cycle_id', selectedCycle!.id)
-          .eq('dimension_id', dim.id)
-          .eq('record_date', selectedDate)
-          .maybeSingle();
+        const finalContent = item.content;
 
-        let finalContent = item.content;
-        let savedRecordId;
-
-        if (existing) {
-          const existingRecord = existing;
-          finalContent = existingRecord.content + '\n\n' + item.content;
-          const updatePayload = { content: finalContent, word_count: finalContent.length };
-          const { data, error } = await supabase.from('records')
-            .update(updatePayload)
-            .eq('id', existingRecord.id)
-            .select().single();
-          if (error) throw error;
-          savedRecordId = data?.id;
-        } else {
-          const insertPayload = {
-            user_id: user!.id,
-            cycle_id: selectedCycle.id,
-            dimension_id: dim.id,
-            record_date: selectedDate,
-            content: finalContent,
-            word_count: finalContent.length,
-            status: 'published'
-          };
-          const { data, error } = await supabase.from('records')
-            .insert(insertPayload)
-            .select()
-            .single();
-          if (error) throw error;
-          savedRecordId = data?.id;
-        }
+        const insertPayload = {
+          user_id: user!.id,
+          cycle_id: selectedCycle.id,
+          dimension_id: dim.id,
+          record_date: selectedDate,
+          content: finalContent,
+          word_count: finalContent.length,
+          status: 'published'
+        };
+        const { data, error } = await supabase.from('records')
+          .insert(insertPayload)
+          .select()
+          .single();
+        if (error) throw error;
+        const savedRecordId = data?.id;
 
         if (dim.dimension_name === 'Wealth' || dim.dimension_name === '财富') {
           try {
@@ -327,9 +309,10 @@ export default function Record() {
         });
       }
 
-      showCustomDialog(tr('profile_success', 'Success!'), tr('record_ai_saved', 'AI records organized and saved!'), () => {
-        navigate('/');
-      });
+      // Save completed: clear editor and leave page directly (no extra confirmation step)
+      setNote('');
+      setParsedDimensions([]);
+      navigate('/');
     } catch (err) {
       console.error('Save AI records failed:', err);
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_ai_save_failed', 'Failed to save organized records.'));
