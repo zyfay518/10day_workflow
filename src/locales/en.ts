@@ -257,6 +257,10 @@ const en = {
   "record_ai_save_failed": "Failed to save organized records.",
   "record_ai_suggestions": "AI Suggestions:",
   "record_milestone_title": "Milestone: Journal",
+  "history_edit_record": "Edit record",
+  "history_delete_record": "Delete record",
+  "history_edit_failed": "Failed to save changes. Please try again.",
+  "history_time_kept_hint": "Display time keeps the original first-created time.",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Search, X, Calendar, ChevronDown, Trophy, Quote, Image as ImageIcon, Sparkles, Lightbulb, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ArrowLeft, Search, X, Calendar, ChevronDown, Trophy, Quote, Image as ImageIcon, Sparkles, Lightbulb, ChevronLeft, ChevronRight, Trash2, Pencil } from "lucide-react";
 import { cn } from "../lib/utils";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
@@ -49,6 +49,9 @@ export default function History() {
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [editingRecord, setEditingRecord] = useState<RecordWithDetails | null>(null);
+  const [editingContent, setEditingContent] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // Find the cycle from URL parameter or derive current by date (not stale DB status)
   const selectedCycle = useMemo(() => {
@@ -173,6 +176,37 @@ export default function History() {
       setLoading(false);
     }
   };
+
+  const handleEditRecord = (record: RecordWithDetails) => {
+    setEditingRecord(record);
+    setEditingContent(record.content || '');
+  };
+
+  const handleSaveRecordEdit = async () => {
+    if (!editingRecord) return;
+    const next = editingContent.trim();
+    if (!next) return;
+
+    try {
+      setSavingEdit(true);
+      const { error } = await supabase
+        .from('records')
+        .update({ content: next, word_count: next.length })
+        .eq('id', editingRecord.id);
+
+      if (error) throw error;
+
+      setDbRecords(prev => prev.map(r => r.id === editingRecord.id ? { ...r, content: next, word_count: next.length } : r));
+      setEditingRecord(null);
+      setEditingContent('');
+    } catch (err) {
+      console.error('Failed to edit record:', err);
+      alert(tr('history_edit_failed', 'Failed to save changes. Please try again.'));
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
 
   const records = dbRecords;
 
@@ -588,9 +622,16 @@ export default function History() {
                           {new Date(record.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
                         </span>
                         <button
+                          onClick={() => handleEditRecord(record)}
+                          className="text-gray-400 hover:text-blue-500 transition-colors"
+                          title={tr('history_edit_record', 'Edit record')}
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
                           onClick={() => handleDeleteRecord(record.id)}
                           className="text-gray-400 hover:text-red-500 transition-colors"
-                          title="Delete record"
+                          title={tr('history_delete_record', 'Delete record')}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -722,6 +763,37 @@ export default function History() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Record Modal */}
+      {editingRecord && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4" onClick={() => !savingEdit && setEditingRecord(null)}>
+          <div className="bg-white rounded-[12px] p-4 w-full max-w-md shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-gray-800 mb-3">{tr('history_edit_record', 'Edit record')}</h3>
+            <p className="text-xs text-gray-500 mb-2">{tr('history_time_kept_hint', 'Display time keeps the original first-created time.')}</p>
+            <textarea
+              value={editingContent}
+              onChange={(e) => setEditingContent(e.target.value)}
+              className="w-full min-h-[160px] bg-gray-50 border border-gray-200 rounded-[8px] p-3 text-sm"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setEditingRecord(null)}
+                disabled={savingEdit}
+                className="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-200 disabled:opacity-60"
+              >
+                {tr('profile_cancel', 'Cancel')}
+              </button>
+              <button
+                onClick={handleSaveRecordEdit}
+                disabled={savingEdit || !editingContent.trim()}
+                className="flex-1 bg-gray-900 text-white py-2.5 rounded-[8px] font-medium text-sm hover:bg-gray-800 disabled:opacity-60"
+              >
+                {savingEdit ? tr('record_processing', 'Processing...') : tr('profile_save', 'Save')}
+              </button>
+            </div>
           </div>
         </div>
       )}

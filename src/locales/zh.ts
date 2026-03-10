@@ -257,6 +257,10 @@ const zh = {
   "record_ai_save_failed": "保存整理后的记录失败。",
   "record_ai_suggestions": "AI 建议：",
   "record_milestone_title": "里程碑：日记",
+  "history_edit_record": "编辑记录",
+  "history_delete_record": "删除记录",
+  "history_edit_failed": "保存修改失败，请重试。",
+  "history_time_kept_hint": "卡片展示时间保持首次记录时间不变。",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;
