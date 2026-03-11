@@ -285,6 +285,8 @@ const en = {
   "voice_mic_granted": "Microphone permission granted",
   "voice_mic_prompt": "Microphone permission not granted yet. Please allow once for smoother use.",
   "voice_mic_denied": "Microphone denied. Please enable it in browser/site settings.",
+  "auth_register_check_mail_alert": "Registration successful! Please open your inbox and click the activation link. If it cannot be opened in your current network, copy the link to another browser/network and try again.",
+  "auth_register_check_mail_banner": "Account created. Please activate via the email link before logging in.",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

@@ -35,8 +35,8 @@ export default function Auth() {
             } else {
                 const { error } = await signUp(email, password);
                 if (error) throw error;
-                window.alert(tr('auth_register_success_alert', 'Registration successful! Please check your email to confirm your account.'));
-                setSuccessMsg(tr('auth_account_created', 'Account created! Please check your email to confirm.'));
+                window.alert(tr('auth_register_check_mail_alert', 'Registration successful! Please open your inbox and click the activation link. If it cannot be opened in your current network, copy the link to another browser/network and try again.'));
+                setSuccessMsg(tr('auth_register_check_mail_banner', 'Account created. Please activate via the email link before logging in.'));
             }
         } catch (err: any) {
             console.error("Auth error:", err);

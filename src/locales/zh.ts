@@ -285,6 +285,8 @@ const zh = {
   "voice_mic_granted": "麦克风权限已授权",
   "voice_mic_prompt": "麦克风尚未授权，首次允许后后续会更顺畅。",
   "voice_mic_denied": "麦克风被拒绝，请在浏览器/站点设置中开启。",
+  "auth_register_check_mail_alert": "注册成功！请到注册邮箱点击激活链接。如果当前网络无法打开，请复制链接到可用的浏览器/网络再尝试。",
+  "auth_register_check_mail_banner": "账号已创建，请先通过邮件链接激活后再登录。",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;
