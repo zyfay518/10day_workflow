@@ -111,12 +111,11 @@ export default function Report() {
       }
 
       try {
-        const [recordsRes, knowledgeRes, evalRes, cycleGoalsRes, dailyGoalsRes] = await Promise.all([
+        const [recordsRes, knowledgeRes, evalRes, cycleGoalsRes] = await Promise.all([
           supabase.from('records' as any).select('record_date, content').eq('user_id', user.id),
           supabase.from('knowledge_base' as any).select('record_date, content').eq('user_id', user.id),
           supabase.from('goal_evaluations' as any).select('evaluated_at, final_score').eq('user_id', user.id),
           supabase.from('cycle_goals' as any).select('created_at').eq('user_id', user.id),
-          supabase.from('daily_goals' as any).select('goal_date').eq('user_id', user.id),
         ]);
 
         const records = ((recordsRes.data || []) as any[]).map(r => ({ date: String(r.record_date || '').slice(0, 10), len: String(r.content || '').length }));
@@ -126,7 +125,6 @@ export default function Report() {
           .map(r => ({ date: String(r.evaluated_at || '').slice(0, 10), score: Number(r.final_score) }));
         const goals = [
           ...((cycleGoalsRes.data || []) as any[]).map(g => ({ date: String(g.created_at || '').slice(0, 10) })),
-          ...((dailyGoalsRes.data || []) as any[]).map(g => ({ date: String(g.goal_date || '').slice(0, 10) })),
         ];
 
         setProfileData({ records, knowledge, evals, goals });

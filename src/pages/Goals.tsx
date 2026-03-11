@@ -154,17 +154,6 @@ export default function Goals() {
           ...goalFormData,
         });
       }
-    } else if (mainTab === 'daily' && selectedCycleForDaily && expandedDate) {
-      if (editingGoal) {
-        updateDailyGoal(editingGoal.id, goalFormData);
-      } else {
-        addDailyGoal({
-          user_id: user.id,
-          cycle_id: selectedCycleForDaily,
-          goal_date: expandedDate,
-          ...goalFormData,
-        });
-      }
     }
 
     setShowGoalDialog(false);
@@ -174,8 +163,6 @@ export default function Goals() {
     if (!confirm(tr('goals_confirm_delete', 'Are you sure you want to delete this goal?'))) return;
     if (mainTab === 'cycle') {
       deleteCycleGoal(goalId);
-    } else {
-      deleteDailyGoal(goalId);
     }
   };
 
