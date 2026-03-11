@@ -22,6 +22,11 @@ export interface GoalEvaluationAIResult {
     ai_analysis: string;
 }
 
+export interface IntentItem {
+    type: 'goal' | 'record' | 'todo';
+    text: string;
+}
+
 export interface VoiceParsedResult {
     summary: string;
     dimension: string;
@@ -414,7 +419,7 @@ export function useAIAnalysis(userId?: string) {
         }
     }, [getPrompt, profile?.ai_api_key]);
 
-    const extractTodoCandidates = useCallback(async (content: string): Promise<string[]> => {
+    const extractIntentItems = useCallback(async (content: string): Promise<IntentItem[]> => {
         const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
         if (!apiKey || !content.trim()) return [];
 
@@ -435,7 +440,7 @@ export function useAIAnalysis(userId?: string) {
                         { role: 'user', content: prompt },
                     ],
                     temperature: 0.1,
-                    max_tokens: 600,
+                    max_tokens: 700,
                 }),
             });
 
@@ -445,15 +450,20 @@ export function useAIAnalysis(userId?: string) {
             const jsonMatch = aiText.match(/\{[\s\S]*\}/);
             if (jsonMatch) aiText = jsonMatch[0];
             const parsed = JSON.parse(aiText) as { items?: { type: string; text: string }[] };
-            const items = (parsed.items || [])
-                .filter(i => i.type === 'todo' && i.text && i.text.trim())
-                .map(i => i.text.trim());
-            return Array.from(new Set(items));
+            return (parsed.items || [])
+                .filter(i => ['goal', 'record', 'todo'].includes(i.type) && i.text && i.text.trim())
+                .map(i => ({ type: i.type as IntentItem['type'], text: i.text.trim() }));
         } catch (err) {
-            console.error('extractTodoCandidates failed:', err);
+            console.error('extractIntentItems failed:', err);
             return [];
         }
     }, [getPrompt, profile?.ai_api_key]);
+
+    const extractTodoCandidates = useCallback(async (content: string): Promise<string[]> => {
+        const intents = await extractIntentItems(content);
+        const items = intents.filter(i => i.type === 'todo').map(i => i.text);
+        return Array.from(new Set(items));
+    }, [extractIntentItems]);
 
     const classifyVoiceDimension = useCallback(async (content: string): Promise<string> => {
         const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
@@ -500,6 +510,7 @@ export function useAIAnalysis(userId?: string) {
         classifyVoiceDimension,
         evaluateGoal,
         extractTodoCandidates,
+        extractIntentItems,
         clearResult: () => { setResult(null); setError(null); },
     };
 }

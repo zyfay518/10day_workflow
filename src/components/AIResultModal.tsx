@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SplitDimensionItem } from '../hooks/useAIAnalysis';
+import { IntentItem, SplitDimensionItem } from '../hooks/useAIAnalysis';
 import { Bot, Check, X } from 'lucide-react';
 import { useLocale } from '../hooks/useLocale';
 
@@ -8,22 +8,26 @@ interface AIResultModalProps {
     items: SplitDimensionItem[];
     availableDimensions: string[];
     todoCandidates?: string[];
-    onConfirm: (items: SplitDimensionItem[], selectedTodos: string[]) => void;
+    goalCandidates?: string[];
+    intentItems?: IntentItem[];
+    onConfirm: (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[]) => void;
     onCancel: () => void;
     onSkip: () => void;
 }
 
-export default function AIResultModal({ isOpen, items, availableDimensions, todoCandidates = [], onConfirm, onCancel, onSkip }: AIResultModalProps) {
+export default function AIResultModal({ isOpen, items, availableDimensions, todoCandidates = [], goalCandidates = [], intentItems = [], onConfirm, onCancel, onSkip }: AIResultModalProps) {
     const [editedItems, setEditedItems] = useState<SplitDimensionItem[]>([]);
     const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
+    const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
     const { tr, trDimension } = useLocale();
 
     useEffect(() => {
         if (isOpen) {
             setEditedItems(items);
             setSelectedTodos(todoCandidates);
+            setSelectedGoals(goalCandidates);
         }
-    }, [isOpen, items, todoCandidates]);
+    }, [isOpen, items, todoCandidates, goalCandidates]);
 
     if (!isOpen) return null;
 
@@ -73,6 +77,43 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
                         </div>
                     ))}
 
+                    {intentItems.length > 0 && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <p className="text-xs font-semibold text-gray-500 mb-1">{tr('aimodal_intent_split', 'Intent split result')}</p>
+                            <p className="text-xs text-gray-400">
+                                goal: {intentItems.filter(i => i.type === 'goal').length} · record: {intentItems.filter(i => i.type === 'record').length} · todo: {intentItems.filter(i => i.type === 'todo').length}
+                            </p>
+                        </div>
+                    )}
+
+                    {goalCandidates.length > 0 && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <p className="text-xs font-semibold text-gray-500 mb-2">{tr('aimodal_goal_detected', 'Detected Goals (confirm before add)')}</p>
+                            <div className="space-y-2">
+                                {goalCandidates.map((goal, idx) => {
+                                    const checked = selectedGoals.includes(goal);
+                                    return (
+                                        <label key={`${goal}-${idx}`} className="flex items-start gap-2 text-sm text-gray-700">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedGoals(prev => [...prev, goal]);
+                                                    } else {
+                                                        setSelectedGoals(prev => prev.filter(t => t !== goal));
+                                                    }
+                                                }}
+                                                className="mt-0.5"
+                                            />
+                                            <span>{goal}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {todoCandidates.length > 0 && (
                         <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                             <p className="text-xs font-semibold text-gray-500 mb-2">{tr('aimodal_todo_detected', 'Detected ToDo (confirm before add)')}</p>
@@ -101,7 +142,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
                         </div>
                     )}
 
-                    {editedItems.length === 0 && todoCandidates.length === 0 && (
+                    {editedItems.length === 0 && todoCandidates.length === 0 && goalCandidates.length === 0 && (
                         <p className="text-center text-gray-400 py-6 text-sm">
                             {tr('aimodal_empty',"AI couldn't extract any dimensions from your text.")}
                         </p>
@@ -110,7 +151,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
 
                 <div className="p-4 bg-white border-t border-gray-100 flex flex-col gap-2">
                     <button
-                        onClick={() => onConfirm(editedItems, selectedTodos)}
+                        onClick={() => onConfirm(editedItems, selectedTodos, selectedGoals)}
                         className="w-full h-12 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
                     >
                         <Check size={20} /> {tr('aimodal_confirm', 'Confirm Save')}

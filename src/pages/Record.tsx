@@ -12,7 +12,7 @@ import { useAIAnalysis } from "../hooks/useAIAnalysis";
 import { useMilestones } from "../hooks/useMilestones";
 import { useGrowthTags } from "../hooks/useGrowthTags";
 import { supabase } from "../lib/supabase";
-import { SplitDimensionItem } from "../hooks/useAIAnalysis";
+import { IntentItem, SplitDimensionItem } from "../hooks/useAIAnalysis";
 
 const AIResultModal = lazy(() => import("../components/AIResultModal"));
 
@@ -59,6 +59,8 @@ export default function Record() {
   const [showAIModal, setShowAIModal] = useState(false);
   const [parsedDimensions, setParsedDimensions] = useState<SplitDimensionItem[]>([]);
   const [todoCandidates, setTodoCandidates] = useState<string[]>([]);
+  const [goalCandidates, setGoalCandidates] = useState<string[]>([]);
+  const [intentItems, setIntentItems] = useState<IntentItem[]>([]);
   const availableDimensions = dimensions.map(d => d.dimension_name);
 
   const { addMilestone } = useMilestones(user?.id);
@@ -71,7 +73,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractTodoCandidates } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractIntentItems } = useAIAnalysis(user?.id);
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
@@ -189,14 +191,19 @@ export default function Record() {
     }
 
     try {
-      console.log('Calling splitDimensions...');
-      const [items, todos] = await Promise.all([
-        splitDimensions(note),
-        extractTodoCandidates(note),
-      ]);
+      console.log('Calling intent extractor...');
+      const intents = await extractIntentItems(note);
+      setIntentItems(intents);
+
+      const goalTexts = Array.from(new Set(intents.filter(i => i.type === 'goal').map(i => i.text)));
+      const todoTexts = Array.from(new Set(intents.filter(i => i.type === 'todo').map(i => i.text)));
+      const recordText = intents.filter(i => i.type === 'record').map(i => i.text).join('\n');
+
+      const items = await splitDimensions(recordText || note);
       console.log('splitDimensions returned items:', items);
       setParsedDimensions(items);
-      setTodoCandidates(todos);
+      setTodoCandidates(todoTexts);
+      setGoalCandidates(goalTexts);
       console.log('Setting showAIModal to true');
       setShowAIModal(true);
       console.log('State updated, wait for render');
@@ -225,6 +232,8 @@ export default function Record() {
       setNote('');
       setParsedDimensions([]);
       setTodoCandidates([]);
+      setGoalCandidates([]);
+      setIntentItems([]);
       navigate('/');
     } else {
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
@@ -249,7 +258,60 @@ export default function Record() {
     }
   };
 
-  const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[]) => {
+  const addSelectedAIGoals = async (selectedGoals: string[]) => {
+    if (!user || !selectedCycle || selectedGoals.length === 0) return;
+    const defaultDim = dimensions.find(d => d.dimension_name === 'Health' || d.dimension_name === '健康') || defaultDimension;
+    if (!defaultDim) return;
+
+    const todayDate = selectedDate;
+    const toDaily = (text: string) => /明天|今天|后天|tomorrow|today/i.test(text);
+    const plusDays = (dateStr: string, days: number) => {
+      const d = new Date(dateStr + 'T00:00:00');
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+
+    try {
+      const cycleRows: any[] = [];
+      const dailyRows: any[] = [];
+      for (const g of selectedGoals) {
+        if (toDaily(g)) {
+          const goalDate = /明天|tomorrow/i.test(g) ? plusDays(todayDate, 1) : /后天/i.test(g) ? plusDays(todayDate, 2) : todayDate;
+          dailyRows.push({
+            user_id: user.id,
+            cycle_id: selectedCycle.id,
+            goal_date: goalDate,
+            dimension_id: defaultDim.id,
+            content: g,
+            evaluation_criteria: g,
+            target_type: 'qualitative',
+          });
+        } else {
+          cycleRows.push({
+            user_id: user.id,
+            cycle_id: selectedCycle.id,
+            dimension_id: defaultDim.id,
+            content: g,
+            evaluation_criteria: g,
+            target_type: 'qualitative',
+          });
+        }
+      }
+
+      if (cycleRows.length > 0) {
+        const { error } = await supabase.from('cycle_goals' as any).insert(cycleRows as any);
+        if (error) throw error;
+      }
+      if (dailyRows.length > 0) {
+        const { error } = await supabase.from('daily_goals' as any).insert(dailyRows as any);
+        if (error) throw error;
+      }
+    } catch (e) {
+      console.error('addSelectedAIGoals failed', e);
+    }
+  };
+
+  const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[]) => {
     setShowAIModal(false);
 
     if (!selectedCycle) {
@@ -335,10 +397,13 @@ export default function Record() {
       }
 
       await addSelectedAITodos(selectedTodos);
+      await addSelectedAIGoals(selectedGoals);
       // Save completed: clear editor and leave page directly (no extra confirmation step)
       setNote('');
       setParsedDimensions([]);
       setTodoCandidates([]);
+      setGoalCandidates([]);
+      setIntentItems([]);
       navigate('/');
     } catch (err) {
       console.error('Save AI records failed:', err);
@@ -527,6 +592,8 @@ export default function Record() {
             items={parsedDimensions}
             availableDimensions={availableDimensions}
             todoCandidates={todoCandidates}
+            goalCandidates={goalCandidates}
+            intentItems={intentItems}
             onConfirm={handleConfirmAI}
             onCancel={() => setShowAIModal(false)}
             onSkip={handleSkipAI}
