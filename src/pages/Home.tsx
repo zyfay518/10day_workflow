@@ -363,14 +363,20 @@ export default function Home() {
               <button
                 onClick={() => {
                   if (todoEditMode) {
+                    if (selectedTodoIds.length === 0) return;
                     deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]));
                   } else {
                     handleTodoSubmit();
                   }
                 }}
-                className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm"
+                disabled={todoEditMode && selectedTodoIds.length === 0}
+                className={`h-9 px-3 rounded-lg text-white text-sm ${
+                  todoEditMode && selectedTodoIds.length === 0
+                    ? 'bg-gray-300 cursor-not-allowed'
+                    : 'bg-[#5f6478]'
+                }`}
               >
-                {tr('todo_submit', 'Submit')}
+                {todoEditMode ? tr('todo_delete_selected', 'Delete Selected') : tr('todo_submit', 'Submit')}
               </button>
             </div>
           </div>
