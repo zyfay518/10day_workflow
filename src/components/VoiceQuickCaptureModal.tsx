@@ -48,6 +48,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   const [libDimensions, setLibDimensions] = useState<{ id: number; dimension_name: string }[]>([]);
   const [draftRowId, setDraftRowId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [micPermission, setMicPermission] = useState<'granted' | 'prompt' | 'denied' | 'unknown'>('unknown');
 
   useEffect(() => {
     if (!open) return;
@@ -69,6 +70,12 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         const nav: any = navigator as any;
         if (nav?.permissions?.query) {
           const status = await nav.permissions.query({ name: 'microphone' as PermissionName });
+          setMicPermission((status.state as any) || 'unknown');
+
+          status.onchange = () => {
+            setMicPermission((status.state as any) || 'unknown');
+          };
+
           // only auto-start when browser already has persistent grant
           if (status.state === 'granted') {
             startListening();
@@ -95,6 +102,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   useEffect(() => {
     if (isListening) {
       localStorage.setItem('voice_quick_mic_granted', '1');
+      setMicPermission('granted');
     }
   }, [isListening]);
 
@@ -418,6 +426,16 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
 
         <div className="flex-1 overflow-y-auto pr-1">
         <div className="flex items-center justify-between mb-2">
+        {micPermission !== 'unknown' && (
+          <div className="mb-2 text-[11px] text-gray-500 bg-gray-50 border border-gray-100 rounded-lg px-2 py-1">
+            {micPermission === 'granted'
+              ? tr('voice_mic_granted', 'Microphone permission granted')
+              : micPermission === 'prompt'
+                ? tr('voice_mic_prompt', 'Microphone permission not granted yet. Please allow once for smoother use.')
+                : tr('voice_mic_denied', 'Microphone denied. Please enable it in browser/site settings.')}
+          </div>
+        )}
+
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <div className="flex items-center gap-1.5">
               <span className={`w-1.5 h-1.5 rounded-full ${isListening ? 'bg-[#A8B6C8] animate-bounce' : 'bg-gray-300'}`} />
@@ -446,7 +464,17 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         {!draft && (
           <div className="mt-3 space-y-2">
             <button
-              onClick={() => (isListening ? stopListening() : startListening())}
+              onClick={() => {
+                if (isListening) {
+                  stopListening();
+                  return;
+                }
+                if (micPermission === 'denied') {
+                  setMessage(tr('voice_mic_denied', 'Microphone denied. Please enable it in browser/site settings.'));
+                  return;
+                }
+                startListening();
+              }}
               className={`w-full h-11 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 ${isListening ? 'bg-[#E8E3DD] text-[#6D6A66]' : 'bg-[#EEF1F4] text-[#6D6A66]'}`}
             >
               {isListening ? <Square size={16} /> : <Mic size={16} />} {isListening ? tr('voice_pause', 'Pause') : tr('voice_start_listening', 'Start Listening')}

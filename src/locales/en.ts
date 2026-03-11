@@ -282,6 +282,9 @@ const en = {
   "todo_legend_done": "Done",
   "todo_legend_dropped": "Dropped",
   "voice_todos_editable": "Todos (editable date)",
+  "voice_mic_granted": "Microphone permission granted",
+  "voice_mic_prompt": "Microphone permission not granted yet. Please allow once for smoother use.",
+  "voice_mic_denied": "Microphone denied. Please enable it in browser/site settings.",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

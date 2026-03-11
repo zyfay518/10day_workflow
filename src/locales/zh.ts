@@ -282,6 +282,9 @@ const zh = {
   "todo_legend_done": "完成",
   "todo_legend_dropped": "放弃",
   "voice_todos_editable": "待办（日期可编辑）",
+  "voice_mic_granted": "麦克风权限已授权",
+  "voice_mic_prompt": "麦克风尚未授权，首次允许后后续会更顺畅。",
+  "voice_mic_denied": "麦克风被拒绝，请在浏览器/站点设置中开启。",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;
