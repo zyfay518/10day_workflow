@@ -96,34 +96,106 @@ export default function Report() {
   }, [completedCycles, dimensions, evaluations]);
 
   const selectedCycle = completedCycles.find(c => c.id === selectedCycleId);
+  const [profileData, setProfileData] = useState<{
+    records: { date: string; len: number }[];
+    knowledge: { date: string; len: number }[];
+    evals: { date: string; score: number }[];
+    goals: { date: string }[];
+  } | null>(null);
+
+  useEffect(() => {
+    async function loadProfileData() {
+      if (!user?.id) {
+        setProfileData(null);
+        return;
+      }
+
+      try {
+        const [recordsRes, knowledgeRes, evalRes, cycleGoalsRes, dailyGoalsRes] = await Promise.all([
+          supabase.from('records' as any).select('record_date, content').eq('user_id', user.id),
+          supabase.from('knowledge_base' as any).select('record_date, content').eq('user_id', user.id),
+          supabase.from('goal_evaluations' as any).select('evaluated_at, final_score').eq('user_id', user.id),
+          supabase.from('cycle_goals' as any).select('created_at').eq('user_id', user.id),
+          supabase.from('daily_goals' as any).select('goal_date').eq('user_id', user.id),
+        ]);
+
+        const records = ((recordsRes.data || []) as any[]).map(r => ({ date: String(r.record_date || '').slice(0, 10), len: String(r.content || '').length }));
+        const knowledge = ((knowledgeRes.data || []) as any[]).map(r => ({ date: String(r.record_date || '').slice(0, 10), len: String(r.content || '').length }));
+        const evals = ((evalRes.data || []) as any[])
+          .filter(r => r.final_score !== null && r.final_score !== undefined)
+          .map(r => ({ date: String(r.evaluated_at || '').slice(0, 10), score: Number(r.final_score) }));
+        const goals = [
+          ...((cycleGoalsRes.data || []) as any[]).map(g => ({ date: String(g.created_at || '').slice(0, 10) })),
+          ...((dailyGoalsRes.data || []) as any[]).map(g => ({ date: String(g.goal_date || '').slice(0, 10) })),
+        ];
+
+        setProfileData({ records, knowledge, evals, goals });
+      } catch (e) {
+        console.error('loadProfileData failed', e);
+        setProfileData(null);
+      }
+    }
+
+    loadProfileData();
+  }, [user?.id]);
 
   const hasProfileSourceData = useMemo(() => {
-    if (!selectedCycleId) return false;
-
-    const evalCount = evaluations.filter(e => e.cycle_id === selectedCycleId && e.final_score !== null).length;
-    const evidenceCount = reports
-      .map(r => r.content?.replace(/<br\s*\/?>/g, '\n').replace(/\n+/g, ' ').trim())
-      .filter(Boolean).length;
-
-    return evalCount > 0 || evidenceCount > 0;
-  }, [selectedCycleId, evaluations, reports]);
+    if (!profileData) return false;
+    return (profileData.records.length + profileData.knowledge.length + profileData.evals.length + profileData.goals.length) > 0;
+  }, [profileData]);
 
   const generatedProfile = useMemo(() => {
-    if (!selectedCycle) return null;
+    if (!profileData || !hasProfileSourceData) return null;
 
-    const currentIndex = completedCycles.findIndex(c => c.id === selectedCycle.id);
-    const prevCycle = currentIndex > 0 ? completedCycles[currentIndex - 1] : null;
+    const today = new Date();
+    const dayMs = 24 * 60 * 60 * 1000;
+    const daysAgo = (n: number) => new Date(today.getTime() - n * dayMs);
+    const inRange = (dateStr: string, start: Date, end: Date) => {
+      const d = new Date(dateStr + 'T00:00:00');
+      return d >= start && d <= end;
+    };
 
-    const currentAvg = currentCycleAvgScore;
+    const clamp = (v: number) => Math.max(0, Math.min(100, Math.round(v)));
 
-    const prevEvals = prevCycle
-      ? evaluations.filter(e => e.cycle_id === prevCycle.id && e.final_score !== null)
-      : [];
-    const prevAvg = prevEvals.length > 0
-      ? Math.round(prevEvals.reduce((sum, e) => sum + (e.final_score || 0), 0) / prevEvals.length)
-      : 0;
+    const avg = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
-    const delta = prevCycle ? currentAvg - prevAvg : 0;
+    const rec90 = profileData.records.filter(r => inRange(r.date, daysAgo(90), today));
+    const kb90 = profileData.knowledge.filter(r => inRange(r.date, daysAgo(90), today));
+    const eval90 = profileData.evals.filter(r => inRange(r.date, daysAgo(90), today));
+    const goals90 = profileData.goals.filter(r => inRange(r.date, daysAgo(90), today));
+
+    const knowledgeScore = clamp(kb90.length * 3 + avg(kb90.map(k => Math.min(100, k.len / 8))));
+    const goalEvalAvg = avg(eval90.map(e => e.score));
+    const goalCompletionProxy = goals90.length > 0 ? Math.min(100, (eval90.length / goals90.length) * 100) : 0;
+    const goalScore = clamp(goalEvalAvg * 0.7 + goalCompletionProxy * 0.3);
+
+    const recFreqScore = clamp(Math.min(100, rec90.length * 2.5));
+    const recDepthScore = clamp(avg(rec90.map(r => Math.min(100, r.len / 6))));
+    const recordScore = clamp(recFreqScore * 0.6 + recDepthScore * 0.4);
+
+    const currentAvg = clamp(knowledgeScore * 0.45 + goalScore * 0.3 + recordScore * 0.25);
+
+    const nowStart = daysAgo(30);
+    const prevStart = daysAgo(60);
+    const prevEnd = daysAgo(31);
+
+    const windowScore = (start: Date, end: Date) => {
+      const r = profileData.records.filter(x => inRange(x.date, start, end));
+      const k = profileData.knowledge.filter(x => inRange(x.date, start, end));
+      const e = profileData.evals.filter(x => inRange(x.date, start, end));
+      const g = profileData.goals.filter(x => inRange(x.date, start, end));
+
+      const ks = clamp(k.length * 3 + avg(k.map(x => Math.min(100, x.len / 8))));
+      const ge = avg(e.map(x => x.score));
+      const gc = g.length > 0 ? Math.min(100, (e.length / g.length) * 100) : 0;
+      const gs = clamp(ge * 0.7 + gc * 0.3);
+      const rs = clamp(Math.min(100, r.length * 2.5) * 0.6 + avg(r.map(x => Math.min(100, x.len / 6))) * 0.4);
+      return clamp(ks * 0.45 + gs * 0.3 + rs * 0.25);
+    };
+
+    const current30 = windowScore(nowStart, today);
+    const prev30 = windowScore(prevStart, prevEnd);
+    const delta = clamp(current30) - clamp(prev30);
 
     const stage = currentAvg >= 80
       ? tr('report_stage_system_builder', 'System Builder')
@@ -132,17 +204,17 @@ export default function Report() {
         : tr('report_stage_foundation_explorer', 'Foundation Explorer');
 
     const metrics = [
-      { label: tr('report_metric_goal_clarity', 'Goal Clarity'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.92 + 6))) },
-      { label: tr('report_metric_execution_stability', 'Execution Stability'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.88 + 8))) },
-      { label: tr('report_metric_review_depth', 'Review Depth'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.9 + 5))) },
-      { label: tr('report_metric_cross_domain_transfer', 'Cross-domain Transfer'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.84 + 10))) },
-      { label: tr('report_metric_long_term_consistency', 'Long-term Consistency'), value: Math.min(100, Math.max(0, Math.round(currentAvg * 0.86 + 9))) },
+      { label: tr('report_metric_goal_clarity', 'Goal Clarity'), value: clamp(goalScore * 0.95 + 3) },
+      { label: tr('report_metric_execution_stability', 'Execution Stability'), value: clamp(recordScore * 0.9 + 5) },
+      { label: tr('report_metric_review_depth', 'Review Depth'), value: clamp(knowledgeScore * 0.92 + 4) },
+      { label: tr('report_metric_cross_domain_transfer', 'Cross-domain Transfer'), value: clamp((knowledgeScore * 0.5 + recordScore * 0.5) * 0.88 + 6) },
+      { label: tr('report_metric_long_term_consistency', 'Long-term Consistency'), value: clamp((current30 * 0.7 + prev30 * 0.3)) },
     ];
 
-    const evidence = reports
-      .map(r => r.content?.replace(/<br\s*\/?>/g, '\n').replace(/\n+/g, ' ').trim())
-      .filter(Boolean)
-      .slice(0, 2) as string[];
+    const evidence = [
+      tr('report_evidence_knowledge_weighted', `Knowledge-base entries (90d): ${kb90.length}`),
+      tr('report_evidence_goal_eval_weighted', `Goal evaluations (90d): ${eval90.length}`),
+    ];
 
     const suggestions = [
       delta < 0
@@ -152,15 +224,8 @@ export default function Report() {
       tr('report_suggestion_focus', 'Prioritize one weak dimension for focused breakthrough next cycle instead of spreading effort evenly.'),
     ];
 
-    return {
-      stage,
-      currentAvg,
-      delta,
-      metrics,
-      evidence,
-      suggestions,
-    };
-  }, [selectedCycle, completedCycles, currentCycleAvgScore, evaluations, reports]);
+    return { stage, currentAvg, delta, metrics, evidence, suggestions };
+  }, [profileData, hasProfileSourceData, tr]);
 
   const cognitiveProfile = useMemo(() => {
     if (!hasProfileSourceData) return null;
