@@ -277,6 +277,7 @@ const en = {
   "todo_select_delete": "Select to delete",
   "todo_edit": "Edit",
   "todo_done_edit": "Done",
+  "report_cognitive_no_data": "No sufficient data yet. Add records/goals in this period to generate your cognitive profile.",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

@@ -97,6 +97,17 @@ export default function Report() {
 
   const selectedCycle = completedCycles.find(c => c.id === selectedCycleId);
 
+  const hasProfileSourceData = useMemo(() => {
+    if (!selectedCycleId) return false;
+
+    const evalCount = evaluations.filter(e => e.cycle_id === selectedCycleId && e.final_score !== null).length;
+    const evidenceCount = reports
+      .map(r => r.content?.replace(/<br\s*\/?>/g, '\n').replace(/\n+/g, ' ').trim())
+      .filter(Boolean).length;
+
+    return evalCount > 0 || evidenceCount > 0;
+  }, [selectedCycleId, evaluations, reports]);
+
   const generatedProfile = useMemo(() => {
     if (!selectedCycle) return null;
 
@@ -152,6 +163,8 @@ export default function Report() {
   }, [selectedCycle, completedCycles, currentCycleAvgScore, evaluations, reports]);
 
   const cognitiveProfile = useMemo(() => {
+    if (!hasProfileSourceData) return null;
+
     if (savedProfile) {
       return {
         stage: savedProfile.stage,
@@ -164,7 +177,7 @@ export default function Report() {
     }
 
     return generatedProfile;
-  }, [savedProfile, generatedProfile]);
+  }, [savedProfile, generatedProfile, hasProfileSourceData]);
 
   useEffect(() => {
     async function loadSavedProfile() {
@@ -196,7 +209,7 @@ export default function Report() {
 
   useEffect(() => {
     async function persistProfile() {
-      if (!user?.id || !selectedCycleId || !generatedProfile || !profileTableAvailable) return;
+      if (!user?.id || !selectedCycleId || !generatedProfile || !profileTableAvailable || !hasProfileSourceData) return;
 
       // If already exists, don't overwrite manually tuned content
       if (savedProfile) return;
@@ -229,7 +242,7 @@ export default function Report() {
     }
 
     persistProfile();
-  }, [user?.id, selectedCycleId, generatedProfile, savedProfile, profileTableAvailable]);
+  }, [user?.id, selectedCycleId, generatedProfile, savedProfile, profileTableAvailable, hasProfileSourceData]);
 
   const isDataLoading = cyclesLoading || evalLoading;
 
@@ -350,6 +363,16 @@ export default function Report() {
                     </ResponsiveContainer>
                   </div>
                 </section>
+
+                {!hasProfileSourceData && (
+                  <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+                    <h2 className="font-bold text-gray-800 flex items-center gap-2 mb-2">
+                      <Brain size={22} className="text-[#9DC5EF]" />
+                      {tr('report_cognitive_profile', 'Cognitive Profile')}
+                    </h2>
+                    <p className="text-sm text-gray-500">{tr('report_cognitive_no_data', 'No sufficient data yet. Add records/goals in this period to generate your cognitive profile.')}</p>
+                  </section>
+                )}
 
                 {cognitiveProfile && (
                   <section className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
