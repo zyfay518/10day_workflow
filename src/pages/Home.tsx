@@ -1,16 +1,15 @@
 import { Link, useNavigate } from "react-router-dom";
 import React from "react";
-import { Settings, ChevronRight, Circle, CheckCircle2, Edit, BarChart2 } from "lucide-react";
-import { cn } from "../lib/utils";
+import { Settings, ChevronRight } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
 import { useDimensions } from "../hooks/useDimensions";
 import { useUserProfile } from "../hooks/useUserProfile";
-import { useCycleGoals, useDailyGoals } from "../hooks/useGoals";
-import { useRecords } from "../hooks/useRecords";
-
-import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
+import { useCycleGoals } from "../hooks/useGoals";
+import { getLocalDateString } from "../lib/utils";
 import { useLocale } from "../hooks/useLocale";
+import CycleMatrix from "../components/CycleMatrix";
+import { useTodos } from "../hooks/useTodos";
 
 export default function Home() {
   const { user } = useAuth();
@@ -21,112 +20,55 @@ export default function Home() {
   const navigate = useNavigate();
   const readyEmittedRef = React.useRef(false);
 
-  // 年份选择
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
+  const [matrixExpanded, setMatrixExpanded] = React.useState(false);
 
-  // 根据年份过滤周期
-  const filteredCycles = React.useMemo(() => {
-    return cycles.filter(cycle => {
-      const year = new Date(cycle.start_date).getFullYear();
-      return year === selectedYear;
-    });
-  }, [cycles, selectedYear]);
-
-  // 获取所有可用的年份
   const availableYears = React.useMemo(() => {
     const years = new Set<number>();
-    cycles.forEach(cycle => {
-      const year = new Date(cycle.start_date).getFullYear();
-      years.add(year);
-    });
-    return Array.from(years).sort((a, b) => b - a); // 降序排列
+    cycles.forEach(cycle => years.add(new Date(cycle.start_date).getFullYear()));
+    return Array.from(years).sort((a, b) => b - a);
   }, [cycles]);
 
-  // Load goals
   const { goals: cycleGoals } = useCycleGoals(user?.id, currentCycle?.id);
   const today = getLocalDateString();
-  const { goals: dailyGoals } = useDailyGoals(user?.id, today);
 
-  const getDotStatus = (cycle: { id: number; start_date: string; end_date: string }) => {
-    if (currentCycle && cycle.id === currentCycle.id) return 'current' as const;
-    const status = getCycleDisplayStatus(cycle, getLocalDateString());
-    if (status === 'completed') return 'complete' as const;
-    if (status === 'ongoing') return 'current' as const;
-    return 'future' as const;
+  const {
+    todos,
+    loading: todosLoading,
+    addTodo,
+    setStatus,
+    deleteMany,
+    submitTodosToRecords,
+  } = useTodos(user?.id, currentCycle?.id);
+
+  const [newTodo, setNewTodo] = React.useState('');
+  const [selectedTodoIds, setSelectedTodoIds] = React.useState<number[]>([]);
+
+  const nextStatus = (s: 'pending' | 'done' | 'dropped'): 'pending' | 'done' | 'dropped' => {
+    if (s === 'pending') return 'done';
+    if (s === 'done') return 'dropped';
+    return 'pending';
   };
 
-  // Generate 37 dots representing cycles (use real cycle data where available)
-  const totalDots = 37;
-  const dots = Array.from({ length: totalDots }, (_, i) => {
-    const cycleIndex = i;
-    const cycle = filteredCycles[cycleIndex];
-
-    if (cycle) {
-      const displayStatus = getDotStatus(cycle);
-
-      if (displayStatus === 'complete') {
-        return {
-          status: "complete" as const,
-          completion: cycle.completion_rate,
-          cycleId: cycle.id,
-          cycleNumber: cycle.cycle_number
-        };
-      }
-
-      if (displayStatus === 'current') {
-        return {
-          status: "current" as const,
-          completion: cycle.completion_rate,
-          cycleId: cycle.id,
-          cycleNumber: cycle.cycle_number
-        };
-      }
-
-      return {
-        status: "future" as const,
-        completion: 0,
-        cycleId: cycle.id,
-        cycleNumber: cycle.cycle_number
-      };
-    }
-
-    // No real cycle data - show as future/placeholder
-    return {
-      status: "future" as const,
-      completion: 0,
-      cycleId: null,
-      cycleNumber: cycleIndex + 1
-    };
-  });
-
-  // Get dot color based on completion rate - single color interpolation
-  const getDotColor = (completion: number): string => {
-    if (completion === 0) {
-      return '#9DC5EF'; // Pure blue for 0% completion
-    }
-
-    // RGB values for interpolation
-    const blueRGB = { r: 157, g: 197, b: 239 }; // #9DC5EF
-    const pinkRGB = { r: 255, g: 179, b: 193 }; // #FFB3C1
-
-    // Linear interpolation
-    const ratio = completion / 100;
-    const r = Math.round(blueRGB.r + (pinkRGB.r - blueRGB.r) * ratio);
-    const g = Math.round(blueRGB.g + (pinkRGB.g - blueRGB.g) * ratio);
-    const b = Math.round(blueRGB.b + (pinkRGB.b - blueRGB.b) * ratio);
-
-    return `rgb(${r}, ${g}, ${b})`;
+  const toggleSelect = (id: number) => {
+    setSelectedTodoIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  // Group dots into rows (6 per row)
-  const dotRows = [];
-  for (let i = 0; i < dots.length; i += 6) {
-    dotRows.push(dots.slice(i, i + 6));
-  }
+  const handleTodoSubmit = async () => {
+    const defaultDim = dimensions.find(d => d.dimension_name === 'Other' || d.dimension_name === '其他') || dimensions[0];
+    if (!defaultDim || !currentCycle) return;
 
-  // 刷新数据
-  const handleRefresh = () => {
-    refreshCycles();
+    const res = await submitTodosToRecords({
+      dimensionId: defaultDim.id,
+      currentCycleId: currentCycle.id,
+      submitType: 'manual',
+    });
+
+    if (res.ok) {
+      alert(tr('todo_submit_done', `Submitted ${res.count} todo items to records.`));
+    } else {
+      alert(tr('todo_submit_failed', 'Todo submit failed. Please retry.'));
+    }
   };
 
   React.useEffect(() => {
@@ -145,15 +87,9 @@ export default function Home() {
           <div className="w-8 h-8 rounded bg-gray-200 animate-pulse" />
         </header>
         <main className="px-4 mt-2 flex flex-col items-center w-full flex-1 animate-pulse">
-          <section className="w-full mb-6">
-            <div className="h-44 bg-white rounded-[12px] border border-gray-100" />
-          </section>
-          <section className="w-full mb-5">
-            <div className="h-32 bg-white rounded-[12px] border border-gray-100" />
-          </section>
-          <section className="w-full mb-8">
-            <div className="h-28 bg-white rounded-[12px] border border-gray-100" />
-          </section>
+          <section className="w-full mb-3"><div className="h-16 bg-white rounded-[12px] border border-gray-100" /></section>
+          <section className="w-full mb-5"><div className="h-32 bg-white rounded-[12px] border border-gray-100" /></section>
+          <section className="w-full mb-8"><div className="h-28 bg-white rounded-[12px] border border-gray-100" /></section>
         </main>
       </div>
     );
@@ -161,27 +97,19 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full bg-[#F9FAFB]">
-
       <header className="flex justify-between items-center px-4 py-3 sticky top-0 bg-[#F9FAFB]/90 backdrop-blur-sm z-10">
         <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold">
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
-          ) : (
-            profile?.nickname?.charAt(0) || 'U'
-          )}
+          {profile?.avatar_url ? <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" /> : (profile?.nickname?.charAt(0) || 'U')}
         </div>
         <div className="flex flex-col items-center">
           <h1 className="text-[18px] font-bold text-gray-800">10-Day Flow</h1>
-          {/* Year Selector */}
           {availableYears.length > 0 && (
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
               className="mt-1 text-xs text-gray-500 bg-transparent border border-gray-200 rounded px-2 py-0.5 outline-none focus:border-blue-400"
             >
-              {availableYears.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
+              {availableYears.map(year => <option key={year} value={year}>{year}</option>)}
             </select>
           )}
         </div>
@@ -190,111 +118,56 @@ export default function Home() {
         </Link>
       </header>
 
-      <main className="px-4 mt-2 flex flex-col items-center w-full flex-1">
-        <section className="w-full flex flex-col items-center mb-6">
-          {/* Matrix with row numbers */}
-          <div className="flex gap-2">
-            {/* Row numbers column */}
-            <div className="flex flex-col gap-2 pt-1">
-              {dotRows.map((_, rowIndex) => (
-                <div
-                  key={rowIndex}
-                  className="w-6 h-9 flex items-center justify-center text-xs text-gray-400 font-medium"
-                >
-                  {rowIndex + 1}
-                </div>
-              ))}
+      <main className="px-4 mt-2 flex flex-col items-center w-full flex-1 overflow-y-auto pb-24">
+        {/* A. Matrix collapsed by default */}
+        <section className="w-full mb-3">
+          <div className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-800">{tr('home_cycle_matrix', 'Cycle Matrix')}</h2>
+              <button
+                onClick={() => setMatrixExpanded(v => !v)}
+                className="text-xs rounded-full px-3 py-1.5 bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                {matrixExpanded ? tr('home_collapse_matrix', 'Collapse Matrix') : tr('home_expand_matrix', 'Expand Full Matrix')}
+              </button>
             </div>
 
-            {/* Matrix dots */}
-            <div>
-              {dotRows.map((row, rowIndex) => (
-                <div key={rowIndex} className="grid grid-cols-6 gap-2 mb-2">
-                  {row.map((dot, dotIndex) => (
-                    <div
-                      key={`${rowIndex}-${dotIndex}`}
-                      className={cn(
-                        "w-9 h-9 rounded-full transition-all duration-300",
-                        dot.status === "complete" && "hover:opacity-90 cursor-pointer shadow-sm",
-                        dot.status === "current" && "ring-4 ring-[#E8C996]/30 animate-pulse cursor-pointer relative z-10",
-                        dot.status === "future" && "bg-white border border-gray-200",
-                        dot.cycleId && (dot.status === "complete" || dot.status === "current") && "cursor-pointer"
-                      )}
-                      style={
-                        dot.status === "complete"
-                          ? { background: `linear-gradient(135deg, white 10%, ${getDotColor(dot.completion)} 100%)` }
-                          : dot.status === "current"
-                            ? { background: `linear-gradient(135deg, white 10%, #E8C996 100%)` }
-                            : {}
-                      }
-                      title={
-                        dot.cycleId
-                          ? dot.status === "complete"
-                            ? `Period ${dot.cycleNumber} - ${dot.completion}% complete`
-                            : dot.status === "current"
-                              ? `Period ${dot.cycleNumber} - Active`
-                              : `Period ${dot.cycleNumber} - Not started`
-                          : `Period ${dot.cycleNumber} - Placeholder`
-                      }
-                      onClick={() => {
-                        if (dot.cycleId && (dot.status === "complete" || dot.status === "current")) {
-                          navigate(`/history?cycleId=${dot.cycleId}`);
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Matrix color legend */}
-          <div className="w-full mt-3 px-2">
-            <div className="rounded-full h-2.5 bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1]" />
-            <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>0%</span>
-              <span>{tr('home_completion_rate', 'Completion Rate')}</span>
-              <span>100%</span>
-            </div>
-            <div className="flex items-center justify-center gap-1 mt-1 text-[10px] text-gray-500">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#E8C996]" />
-              <span>{tr('home_yellow_current', 'Yellow = Current Period')}</span>
-            </div>
+            {matrixExpanded && (
+              <div className="mt-3 flex flex-col items-center">
+                <CycleMatrix
+                  cycles={cycles}
+                  currentCycle={currentCycle}
+                  selectedYear={selectedYear}
+                  onCycleClick={(cycleId) => navigate(`/history?cycleId=${cycleId}`)}
+                />
+              </div>
+            )}
           </div>
         </section>
 
+        {/* B. Current period card unchanged */}
         <section className="w-full mb-5">
           <div
-            onClick={handleRefresh}
+            onClick={() => refreshCycles()}
             className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)] cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99]"
           >
             <div className="flex justify-between items-start mb-2">
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-gray-800">
-                    {tr('home_period', 'Period')} {currentCycle?.cycle_number || 1}
-                  </h2>
+                  <h2 className="text-lg font-bold text-gray-800">{tr('home_period', 'Period')} {currentCycle?.cycle_number || 1}</h2>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {currentCycle?.start_date} - {currentCycle?.end_date}
-                </p>
+                <p className="text-xs text-gray-500 mt-1">{currentCycle?.start_date} - {currentCycle?.end_date}</p>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-br from-[#7AA5D8] to-[#E89CAB] bg-clip-text text-transparent">
-                {currentCycle?.completion_rate || 0}%
-              </span>
+              <span className="text-2xl font-bold bg-gradient-to-br from-[#7AA5D8] to-[#E89CAB] bg-clip-text text-transparent">{currentCycle?.completion_rate || 0}%</span>
             </div>
             <div className="w-full bg-gray-100 rounded-full h-2.5 mt-2 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] h-2.5 rounded-full transition-all duration-500"
-                style={{ width: `${currentCycle?.completion_rate || 0}%` }}
-              />
+              <div className="bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] h-2.5 rounded-full transition-all duration-500" style={{ width: `${currentCycle?.completion_rate || 0}%` }} />
             </div>
             <div className="flex justify-between text-[10px] text-gray-400 mt-1">
               <span>Day {Math.floor((currentCycle?.completion_rate || 0) / 20) + 1} of {currentCycle?.total_days || 10}</span>
               <span>{currentCycle?.total_days || 10} {tr('home_days_total', 'days total')}</span>
             </div>
 
-            {/* Cycle Goals Summary */}
             {cycleGoals.length > 0 && (
               <div className="mt-3 pt-3 border-t border-gray-100">
                 <p className="text-[10px] text-gray-400 mb-1.5 font-medium">{tr('home_period_goals', 'Period Goals:')}</p>
@@ -314,8 +187,81 @@ export default function Home() {
           </div>
         </section>
 
+        {/* C. Todo card */}
+        <section className="w-full mb-8">
+          <div className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-lg font-bold text-gray-800">To Do</h3>
+              <span className="text-xs text-gray-400">{tr('todo_three_state', '3-state')}</span>
+            </div>
 
+            {todosLoading ? (
+              <p className="text-sm text-gray-400 py-4">{tr('record_processing', 'Processing...')}</p>
+            ) : todos.length === 0 ? (
+              <p className="text-sm text-gray-400 py-3">{tr('todo_empty', 'No todo items yet')}</p>
+            ) : (
+              <ul className="space-y-2">
+                {todos.map(item => (
+                  <li key={item.id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <button
+                        onClick={() => setStatus(item.id, nextStatus(item.status))}
+                        className={`w-5 h-5 rounded border flex items-center justify-center text-xs ${
+                          item.status === 'done'
+                            ? 'bg-[#9fb39f] text-white border-[#9fb39f]'
+                            : item.status === 'dropped'
+                              ? 'bg-[#bda3ab] text-white border-[#bda3ab]'
+                              : 'bg-white text-gray-500 border-gray-300'
+                        }`}
+                        title={tr('todo_cycle_status', 'Tap to cycle status')}
+                      >
+                        {item.status === 'done' ? '✓' : item.status === 'dropped' ? '✕' : ''}
+                      </button>
+                      <span className="text-[15px] text-gray-700 truncate">{item.content}</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={selectedTodoIds.includes(item.id)}
+                      onChange={() => toggleSelect(item.id)}
+                      className="w-4 h-4"
+                    />
+                  </li>
+                ))}
+              </ul>
+            )}
 
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                placeholder={tr('todo_add_placeholder', 'Add a todo item...')}
+                className="flex-1 h-9 rounded-lg border border-gray-200 px-3 text-sm"
+              />
+              <button
+                onClick={async () => {
+                  if (!newTodo.trim()) return;
+                  const ok = await addTodo(newTodo.trim(), 'manual');
+                  if (ok) setNewTodo('');
+                }}
+                className="h-9 px-3 rounded-lg bg-gray-100 text-gray-700 text-sm"
+              >
+                + {tr('todo_add', 'Add')}
+              </button>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]))}
+                className="h-9 px-3 rounded-lg border border-[#eddde3] bg-[#faf5f7] text-[#9b6a79] text-sm"
+              >
+                {tr('todo_delete_selected', 'Delete Selected')}
+              </button>
+              <button onClick={handleTodoSubmit} className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm">
+                {tr('todo_submit', 'Submit')}
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

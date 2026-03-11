@@ -536,6 +536,87 @@ export interface Database {
           content?: string;
         };
       };
+
+      // 17. Todo 主表
+      todos: {
+        Row: {
+          id: number;
+          user_id: string;
+          cycle_id: number;
+          content: string;
+          status: 'pending' | 'done' | 'dropped';
+          source: 'manual' | 'ai_parse';
+          last_status_changed_at: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          cycle_id: number;
+          content: string;
+          status?: 'pending' | 'done' | 'dropped';
+          source?: 'manual' | 'ai_parse';
+          last_status_changed_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          content?: string;
+          status?: 'pending' | 'done' | 'dropped';
+          source?: 'manual' | 'ai_parse';
+          last_status_changed_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      // 18. Todo 提交批次
+      todo_submissions: {
+        Row: {
+          id: number;
+          user_id: string;
+          cycle_id: number;
+          submit_type: 'manual' | 'auto_cycle_rollover';
+          submitted_at: string;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          cycle_id: number;
+          submit_type?: 'manual' | 'auto_cycle_rollover';
+          submitted_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          submit_type?: 'manual' | 'auto_cycle_rollover';
+          submitted_at?: string;
+        };
+      };
+
+      // 19. Todo 提交项映射
+      todo_submission_items: {
+        Row: {
+          id: number;
+          submission_id: number;
+          todo_id: number;
+          record_id: number | null;
+          status_at_submit: 'pending' | 'done' | 'dropped';
+          event_time: string;
+          created_at: string;
+        };
+        Insert: {
+          submission_id: number;
+          todo_id: number;
+          record_id?: number | null;
+          status_at_submit: 'pending' | 'done' | 'dropped';
+          event_time: string;
+          created_at?: string;
+        };
+        Update: {
+          record_id?: number | null;
+          status_at_submit?: 'pending' | 'done' | 'dropped';
+          event_time?: string;
+        };
+      };
     };
     Views: {
       // 用户周期统计视图

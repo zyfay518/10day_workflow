@@ -261,6 +261,18 @@ const zh = {
   "history_delete_record": "删除记录",
   "history_edit_failed": "保存修改失败，请重试。",
   "history_time_kept_hint": "卡片展示时间保持首次记录时间不变。",
+  "home_cycle_matrix": "周期矩阵",
+  "home_expand_matrix": "展开完整矩阵",
+  "home_collapse_matrix": "收起矩阵",
+  "todo_three_state": "三态",
+  "todo_empty": "暂无待办事项",
+  "todo_cycle_status": "点击切换状态",
+  "todo_add_placeholder": "新增一个待办...",
+  "todo_add": "新增",
+  "todo_delete_selected": "删除勾选",
+  "todo_submit": "提交",
+  "todo_submit_done": "待办提交完成。",
+  "todo_submit_failed": "待办提交失败，请重试。",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;

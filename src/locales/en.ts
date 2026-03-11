@@ -261,6 +261,18 @@ const en = {
   "history_delete_record": "Delete record",
   "history_edit_failed": "Failed to save changes. Please try again.",
   "history_time_kept_hint": "Display time keeps the original first-created time.",
+  "home_cycle_matrix": "Cycle Matrix",
+  "home_expand_matrix": "Expand Full Matrix",
+  "home_collapse_matrix": "Collapse Matrix",
+  "todo_three_state": "3-state",
+  "todo_empty": "No todo items yet",
+  "todo_cycle_status": "Tap to cycle status",
+  "todo_add_placeholder": "Add a todo item...",
+  "todo_add": "Add",
+  "todo_delete_selected": "Delete Selected",
+  "todo_submit": "Submit",
+  "todo_submit_done": "Todo submit completed.",
+  "todo_submit_failed": "Todo submit failed. Please retry.",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;
