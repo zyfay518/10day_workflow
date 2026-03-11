@@ -32,7 +32,7 @@ export default function Goals() {
   const { cycles } = useCycles(user?.id);
   const { dimensions } = useDimensions(user?.id);
 
-  const [mainTab, setMainTab] = useState<'cycle' | 'daily'>('cycle');
+  const [mainTab] = useState<'cycle' | 'daily'>('cycle');
   const [cycleStatusTab, setCycleStatusTab] = useState<'completed' | 'ongoing' | 'not_started'>('ongoing');
   const [expandedCycleId, setExpandedCycleId] = useState<number | null>(null);
   const [selectedCycleForDaily, setSelectedCycleForDaily] = useState<number | null>(null);
@@ -263,30 +263,11 @@ export default function Goals() {
           <div className="w-10"></div>
         </div>
 
-        {/* Main Tab Switcher */}
+        {/* Goal module simplified: cycle goals only (daily goals retired) */}
         <div className="flex gap-2 bg-gray-100 rounded-[8px] p-1 mb-3">
-          <button
-            onClick={() => setMainTab('cycle')}
-            className={cn(
-              "flex-1 py-2 rounded-[6px] text-sm font-medium transition-all",
-              mainTab === 'cycle'
-                ? "bg-white text-gray-800 shadow-sm"
-                : "text-gray-500"
-            )}
-          >
+          <div className="flex-1 py-2 rounded-[6px] text-sm font-medium bg-white text-gray-800 shadow-sm text-center">
             {tr('goals_cycle_goals', 'Cycle Goals')}
-          </button>
-          <button
-            onClick={() => setMainTab('daily')}
-            className={cn(
-              "flex-1 py-2 rounded-[6px] text-sm font-medium transition-all",
-              mainTab === 'daily'
-                ? "bg-white text-gray-800 shadow-sm"
-                : "text-gray-500"
-            )}
-          >
-            {tr('goals_daily_goals', 'Daily Goals')}
-          </button>
+          </div>
         </div>
 
         {/* Status Tab Switcher */}

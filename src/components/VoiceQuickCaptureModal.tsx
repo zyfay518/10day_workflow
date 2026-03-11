@@ -158,14 +158,16 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
       const saysToday = /今天/.test(text);
       const saysCycleGoal = /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(text);
 
-      parsed.daily_goals = (parsed.daily_goals || []).map((g) => ({
-        ...g,
-        goal_date: saysTomorrow
+      const legacyDaily = (parsed as any).daily_goals || [];
+      const parsedTodos = ((parsed as any).todos || legacyDaily || []).map((g: any) => ({
+        content: g.content,
+        todo_date: saysTomorrow
           ? tomorrow
           : saysToday
             ? today
-            : normalizeDate(g.goal_date, today),
+            : normalizeDate(g.todo_date || g.goal_date, today),
       }));
+      (parsed as any).todos = parsedTodos;
 
       parsed.records = (parsed.records || []).map((r) => ({
         ...r,
@@ -185,7 +187,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           .find(s => /(本周期|这个周期|这周期|本轮|这十天|10天|周期目标|本周目标|长期目标)/.test(s));
 
         const seed = sentence
-          || (parsed.daily_goals && parsed.daily_goals[0]?.content)
+          || ((parsed as any).todos && (parsed as any).todos[0]?.content)
           || (parsed.records && parsed.records[0]?.content)
           || parsed.summary
           || text;
@@ -273,19 +275,15 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
         if (!error) savedCycleGoals++;
       }
 
-      for (const goal of payload.daily_goals || []) {
-        const dimensionId = mapDimensionId(dimensions, goal.dimension);
-        if (!dimensionId || !goal.content?.trim()) continue;
-        const { error } = await supabase.from('daily_goals').insert({
+      for (const todo of ((payload as any).todos || [])) {
+        if (!todo.content?.trim()) continue;
+        const { error } = await supabase.from('todos' as any).insert({
           user_id: user.id,
           cycle_id: currentCycle.id,
-          goal_date: goal.goal_date || today,
-          dimension_id: dimensionId,
-          content: goal.content,
-          evaluation_criteria: goal.evaluation_criteria || 'Voice quick capture',
-          target_type: goal.target_type || 'qualitative',
-          target_value: goal.target_value ?? null,
-          target_unit: goal.target_unit ?? null,
+          content: todo.content,
+          status: 'pending',
+          source: 'ai_parse',
+          last_status_changed_at: new Date((todo.todo_date || today) + 'T09:00:00').toISOString(),
         });
         if (!error) savedDailyGoals++;
       }
@@ -300,7 +298,7 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
           .eq('user_id', user.id);
       }
 
-      setMessage(`Saved: records ${savedRecords}, cycle goals ${savedCycleGoals}, daily goals ${savedDailyGoals}.`);
+      setMessage(`Saved: records ${savedRecords}, cycle goals ${savedCycleGoals}, todos ${savedDailyGoals}.`);
       setTimeout(() => onClose(), 600);
     } catch (e) {
       console.error(e);
@@ -571,20 +569,20 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
               </div>
             )}
 
-            {(draft.daily_goals || []).length > 0 && (
+            {(((draft as any).todos || []).length > 0) && (
               <div className="p-3 rounded-xl bg-gray-50 border border-gray-100">
-                <p className="text-xs text-gray-500 mb-2">{tr('voice_daily_goals_editable', 'Daily Goals (editable date)')}</p>
+                <p className="text-xs text-gray-500 mb-2">{tr('voice_todos_editable', 'Todos (editable date)')}</p>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {(draft.daily_goals || []).map((g, i) => (
+                  {(((draft as any).todos || []) as any[]).map((g, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-lg p-2">
                       <input
                         type="date"
-                        value={g.goal_date || ''}
+                        value={g.todo_date || ''}
                         onChange={(e) => setDraft(prev => {
                           if (!prev) return prev;
-                          const next = [...(prev.daily_goals || [])];
-                          next[i] = { ...next[i], goal_date: e.target.value };
-                          return { ...prev, daily_goals: next };
+                          const next = [...(((prev as any).todos || []) as any[])];
+                          next[i] = { ...next[i], todo_date: e.target.value };
+                          return { ...(prev as any), todos: next } as any;
                         })}
                         className="w-full text-xs border border-gray-200 rounded px-2 py-1 mb-2"
                       />
@@ -592,9 +590,9 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
                         value={g.content}
                         onChange={(e) => setDraft(prev => {
                           if (!prev) return prev;
-                          const next = [...(prev.daily_goals || [])];
+                          const next = [...(((prev as any).todos || []) as any[])];
                           next[i] = { ...next[i], content: e.target.value };
-                          return { ...prev, daily_goals: next };
+                          return { ...(prev as any), todos: next } as any;
                         })}
                         className="w-full h-14 text-sm border border-gray-200 rounded p-2"
                       />

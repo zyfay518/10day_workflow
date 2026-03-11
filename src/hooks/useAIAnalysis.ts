@@ -39,7 +39,8 @@ export interface VoiceParsedResult {
         target_value?: number | null;
         target_unit?: string | null;
     }[];
-    daily_goals: {
+    // deprecated: kept for backward-compatible parsing only
+    daily_goals?: {
         dimension: string;
         goal_date?: string;
         content: string;
@@ -48,6 +49,7 @@ export interface VoiceParsedResult {
         target_value?: number | null;
         target_unit?: string | null;
     }[];
+    todos?: { todo_date?: string; content: string }[];
     expenses: { category: string; item_name: string; amount: number; expense_date?: string }[];
     confidence?: number;
 }

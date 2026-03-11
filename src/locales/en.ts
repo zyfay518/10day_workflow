@@ -281,6 +281,7 @@ const en = {
   "todo_legend": "Legend:",
   "todo_legend_done": "Done",
   "todo_legend_dropped": "Dropped",
+  "voice_todos_editable": "Todos (editable date)",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

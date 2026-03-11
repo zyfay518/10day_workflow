@@ -102,7 +102,7 @@ Return ONLY valid JSON with this exact shape:
   "dimension": "Health|Work|Study|Wealth|Family|Other",
   "records": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","record_date":"YYYY-MM-DD"}],
   "cycle_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
-  "daily_goals": [{"dimension":"Health|Work|Study|Wealth|Family|Other","goal_date":"YYYY-MM-DD","content":"string","evaluation_criteria":"string","target_type":"quantitative|qualitative","target_value":null,"target_unit":null}],
+  "todos": [{"todo_date":"YYYY-MM-DD","content":"string"}],
   "expenses": [{"category":"string","item_name":"string","amount":0,"expense_date":"YYYY-MM-DD"}],
   "confidence": 0.0
 }
@@ -110,7 +110,7 @@ Rules:
 - If unsure, use dimension = Other.
 - CRITICAL GOAL SPLIT:
   - cycle_goals: long-range / this period / this 10-day cycle targets.
-  - daily_goals: today/tomorrow/this day tasks only.
+  - todos: today/tomorrow/this day tasks only.
 - If user explicitly says "本周期" / "这个周期" / "这十天" / "10天", you MUST output at least one cycle_goals item.
 - Time parsing is strict:
   - 今天 => {{currentDate}}

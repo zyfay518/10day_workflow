@@ -264,7 +264,7 @@ export default function Record() {
     if (!defaultDim) return;
 
     const todayDate = selectedDate;
-    const toDaily = (text: string) => /明天|今天|后天|tomorrow|today/i.test(text);
+    const toTodo = (text: string) => /明天|今天|后天|tomorrow|today/i.test(text);
     const plusDays = (dateStr: string, days: number) => {
       const d = new Date(dateStr + 'T00:00:00');
       d.setDate(d.getDate() + days);
@@ -273,18 +273,17 @@ export default function Record() {
 
     try {
       const cycleRows: any[] = [];
-      const dailyRows: any[] = [];
+      const todoRows: any[] = [];
       for (const g of selectedGoals) {
-        if (toDaily(g)) {
-          const goalDate = /明天|tomorrow/i.test(g) ? plusDays(todayDate, 1) : /后天/i.test(g) ? plusDays(todayDate, 2) : todayDate;
-          dailyRows.push({
+        if (toTodo(g)) {
+          const todoDate = /明天|tomorrow/i.test(g) ? plusDays(todayDate, 1) : /后天/i.test(g) ? plusDays(todayDate, 2) : todayDate;
+          todoRows.push({
             user_id: user.id,
             cycle_id: selectedCycle.id,
-            goal_date: goalDate,
-            dimension_id: defaultDim.id,
             content: g,
-            evaluation_criteria: g,
-            target_type: 'qualitative',
+            status: 'pending',
+            source: 'ai_parse',
+            last_status_changed_at: new Date(todoDate + 'T09:00:00').toISOString(),
           });
         } else {
           cycleRows.push({
@@ -302,8 +301,8 @@ export default function Record() {
         const { error } = await supabase.from('cycle_goals' as any).insert(cycleRows as any);
         if (error) throw error;
       }
-      if (dailyRows.length > 0) {
-        const { error } = await supabase.from('daily_goals' as any).insert(dailyRows as any);
+      if (todoRows.length > 0) {
+        const { error } = await supabase.from('todos' as any).insert(todoRows as any);
         if (error) throw error;
       }
     } catch (e) {

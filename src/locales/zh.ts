@@ -281,6 +281,7 @@ const zh = {
   "todo_legend": "图例：",
   "todo_legend_done": "完成",
   "todo_legend_dropped": "放弃",
+  "voice_todos_editable": "待办（日期可编辑）",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;
