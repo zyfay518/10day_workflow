@@ -409,15 +409,16 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100 font-['Inter','SF_Pro_Text',system-ui,sans-serif]">
-        <div className="flex items-center justify-between mb-3">
+    <div className="fixed inset-0 z-[100] bg-black/45 flex items-center justify-center p-3 sm:p-4">
+      <div className="w-full max-w-md bg-white rounded-3xl p-4 shadow-2xl border border-gray-100 font-['Inter','SF_Pro_Text',system-ui,sans-serif] max-h-[88vh] flex flex-col">
+        <div className="flex items-center justify-between mb-3 flex-shrink-0">
           <h3 className="text-base font-bold text-gray-800">{tr('voice_title', 'Voice Quick Capture')}</h3>
           <button onClick={() => { stopListening(); onClose(); }} className="p-2 rounded-full hover:bg-gray-100">
             <X size={18} />
           </button>
         </div>
 
+        <div className="flex-1 overflow-y-auto pr-1">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2 text-xs text-gray-500">
             <div className="flex items-center gap-1.5">
@@ -621,8 +622,9 @@ export default function VoiceQuickCaptureModal({ open, onClose, sourcePage = 'ho
             </div>
           </div>
         )}
+        </div>
 
-        {message && <p className="mt-2 text-xs text-gray-500">{message}</p>}
+        {message && <p className="mt-2 text-xs text-gray-500 flex-shrink-0">{message}</p>}
       </div>
     </div>
   );
