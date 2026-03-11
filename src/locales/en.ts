@@ -278,6 +278,9 @@ const en = {
   "todo_edit": "Edit",
   "todo_done_edit": "Done",
   "report_cognitive_no_data": "No sufficient data yet. Add records/goals in this period to generate your cognitive profile.",
+  "todo_legend": "Legend:",
+  "todo_legend_done": "Done",
+  "todo_legend_dropped": "Dropped",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;

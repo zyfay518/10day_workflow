@@ -278,6 +278,9 @@ const zh = {
   "todo_edit": "编辑",
   "todo_done_edit": "完成",
   "report_cognitive_no_data": "当前周期数据不足，先补充记录/目标后再生成认知画像。",
+  "todo_legend": "图例：",
+  "todo_legend_done": "完成",
+  "todo_legend_dropped": "放弃",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;

@@ -291,7 +291,19 @@ export default function Home() {
           <div className="bg-white rounded-[12px] p-4 w-full shadow-[0_1px_3px_rgba(0,0,0,0.1)]">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-lg font-bold text-gray-800">To Do</h3>
-              <span className="text-xs text-gray-400">{tr('todo_three_state', '3-state')}</span>
+              <button
+                onClick={() => {
+                  setTodoEditMode(v => !v);
+                  setSelectedTodoIds([]);
+                }}
+                className="text-xs rounded-lg px-2.5 py-1 border border-gray-200 text-gray-600 bg-gray-50"
+              >
+                {todoEditMode ? tr('todo_done_edit', 'Done') : tr('todo_edit', 'Edit')}
+              </button>
+            </div>
+
+            <div className="mb-2 text-xs text-gray-500">
+              {tr('todo_legend', 'Legend:')} ✅ {tr('todo_legend_done', 'Done')} · ❌ {tr('todo_legend_dropped', 'Dropped')}
             </div>
 
             {todosLoading ? (
@@ -334,41 +346,32 @@ export default function Home() {
                 placeholder={tr('todo_add_placeholder', 'Add a todo item...')}
                 className="flex-1 h-9 rounded-lg border border-gray-200 px-3 text-sm"
               />
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
               <button
                 onClick={async () => {
                   if (!newTodo.trim()) return;
                   const ok = await addTodo(newTodo.trim(), 'manual');
                   if (ok) setNewTodo('');
                 }}
-                className="h-9 px-3 rounded-lg bg-gray-100 text-gray-700 text-sm"
+                className="h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm"
               >
                 + {tr('todo_add', 'Add')}
               </button>
-            </div>
 
-            <div className="mt-3 flex items-center gap-2">
               <button
                 onClick={() => {
-                  setTodoEditMode(v => !v);
-                  setSelectedTodoIds([]);
+                  if (todoEditMode) {
+                    deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]));
+                  } else {
+                    handleTodoSubmit();
+                  }
                 }}
-                className="h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm"
+                className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm"
               >
-                {todoEditMode ? tr('todo_done_edit', 'Done') : tr('todo_edit', 'Edit')}
+                {tr('todo_submit', 'Submit')}
               </button>
-
-              {todoEditMode ? (
-                <button
-                  onClick={() => deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]))}
-                  className="h-9 px-3 rounded-lg border border-[#eddde3] bg-[#faf5f7] text-[#9b6a79] text-sm"
-                >
-                  {tr('todo_delete_selected', 'Delete Selected')}
-                </button>
-              ) : (
-                <button onClick={handleTodoSubmit} className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm">
-                  {tr('todo_submit', 'Submit')}
-                </button>
-              )}
             </div>
           </div>
         </section>
