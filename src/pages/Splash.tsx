@@ -4,7 +4,7 @@ import { cn } from "../lib/utils";
 import { useLocale } from "../hooks/useLocale";
 import { useAuth } from "../hooks/useAuth";
 import { useCycles } from "../hooks/useCycles";
-import CycleMatrix from "../components/CycleMatrix";
+import CycleMatrixCore from "../components/CycleMatrixCore";
 
 interface SplashProps {
   onFinish?: () => void;
@@ -75,7 +75,7 @@ export default function Splash({ onFinish, loading = false }: SplashProps) {
           <p className="text-gray-400 mt-1 text-[11px] font-medium tracking-[0.2em]">GROWTH LOOP</p>
 
           <div className="w-full mt-5">
-            <CycleMatrix cycles={matrixCycles as any} currentCycle={currentCycle as any} />
+            <CycleMatrixCore cycles={matrixCycles as any} currentCycle={currentCycle as any} />
           </div>
 
           <div className="flex items-center gap-2 mt-4">
