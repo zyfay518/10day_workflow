@@ -7,20 +7,23 @@ interface AIResultModalProps {
     isOpen: boolean;
     items: SplitDimensionItem[];
     availableDimensions: string[];
-    onConfirm: (items: SplitDimensionItem[]) => void;
+    todoCandidates?: string[];
+    onConfirm: (items: SplitDimensionItem[], selectedTodos: string[]) => void;
     onCancel: () => void;
     onSkip: () => void;
 }
 
-export default function AIResultModal({ isOpen, items, availableDimensions, onConfirm, onCancel, onSkip }: AIResultModalProps) {
+export default function AIResultModal({ isOpen, items, availableDimensions, todoCandidates = [], onConfirm, onCancel, onSkip }: AIResultModalProps) {
     const [editedItems, setEditedItems] = useState<SplitDimensionItem[]>([]);
+    const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
     const { tr, trDimension } = useLocale();
 
     useEffect(() => {
         if (isOpen) {
             setEditedItems(items);
+            setSelectedTodos(todoCandidates);
         }
-    }, [isOpen, items]);
+    }, [isOpen, items, todoCandidates]);
 
     if (!isOpen) return null;
 
@@ -70,7 +73,35 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
                         </div>
                     ))}
 
-                    {editedItems.length === 0 && (
+                    {todoCandidates.length > 0 && (
+                        <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                            <p className="text-xs font-semibold text-gray-500 mb-2">{tr('aimodal_todo_detected', 'Detected ToDo (confirm before add)')}</p>
+                            <div className="space-y-2">
+                                {todoCandidates.map((todo, idx) => {
+                                    const checked = selectedTodos.includes(todo);
+                                    return (
+                                        <label key={`${todo}-${idx}`} className="flex items-start gap-2 text-sm text-gray-700">
+                                            <input
+                                                type="checkbox"
+                                                checked={checked}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setSelectedTodos(prev => [...prev, todo]);
+                                                    } else {
+                                                        setSelectedTodos(prev => prev.filter(t => t !== todo));
+                                                    }
+                                                }}
+                                                className="mt-0.5"
+                                            />
+                                            <span>{todo}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {editedItems.length === 0 && todoCandidates.length === 0 && (
                         <p className="text-center text-gray-400 py-6 text-sm">
                             {tr('aimodal_empty',"AI couldn't extract any dimensions from your text.")}
                         </p>
@@ -79,7 +110,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, onCo
 
                 <div className="p-4 bg-white border-t border-gray-100 flex flex-col gap-2">
                     <button
-                        onClick={() => onConfirm(editedItems)}
+                        onClick={() => onConfirm(editedItems, selectedTodos)}
                         className="w-full h-12 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
                     >
                         <Check size={20} /> {tr('aimodal_confirm', 'Confirm Save')}

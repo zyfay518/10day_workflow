@@ -58,6 +58,7 @@ export default function Record() {
 
   const [showAIModal, setShowAIModal] = useState(false);
   const [parsedDimensions, setParsedDimensions] = useState<SplitDimensionItem[]>([]);
+  const [todoCandidates, setTodoCandidates] = useState<string[]>([]);
   const availableDimensions = dimensions.map(d => d.dimension_name);
 
   const { addMilestone } = useMilestones(user?.id);
@@ -189,9 +190,13 @@ export default function Record() {
 
     try {
       console.log('Calling splitDimensions...');
-      const items = await splitDimensions(note);
+      const [items, todos] = await Promise.all([
+        splitDimensions(note),
+        extractTodoCandidates(note),
+      ]);
       console.log('splitDimensions returned items:', items);
       setParsedDimensions(items);
+      setTodoCandidates(todos);
       console.log('Setting showAIModal to true');
       setShowAIModal(true);
       console.log('State updated, wait for render');
@@ -215,26 +220,21 @@ export default function Record() {
         });
       }
 
-      await confirmAndAddAITodos();
+      // Skip AI path: do not add AI todos automatically.
       // Save completed: clear editor and leave page directly (no extra confirmation step)
       setNote('');
       setParsedDimensions([]);
+      setTodoCandidates([]);
       navigate('/');
     } else {
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
     }
   };
 
-  const confirmAndAddAITodos = async () => {
-    if (!user || !selectedCycle) return;
+  const addSelectedAITodos = async (selectedTodos: string[]) => {
+    if (!user || !selectedCycle || selectedTodos.length === 0) return;
     try {
-      const todoCandidates = await extractTodoCandidates(note);
-      if (!todoCandidates.length) return;
-
-      const ok = window.confirm(tr('record_confirm_add_ai_todos', `AI detected ${todoCandidates.length} todo items. Add them to Todo list?`));
-      if (!ok) return;
-
-      const rows = todoCandidates.map(content => ({
+      const rows = selectedTodos.map(content => ({
         user_id: user.id,
         cycle_id: selectedCycle.id,
         content,
@@ -245,11 +245,11 @@ export default function Record() {
       const { error } = await supabase.from('todos' as any).insert(rows as any);
       if (error) throw error;
     } catch (e) {
-      console.error('confirmAndAddAITodos failed', e);
+      console.error('addSelectedAITodos failed', e);
     }
   };
 
-  const handleConfirmAI = async (items: SplitDimensionItem[]) => {
+  const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[]) => {
     setShowAIModal(false);
 
     if (!selectedCycle) {
@@ -334,10 +334,11 @@ export default function Record() {
         });
       }
 
-      await confirmAndAddAITodos();
+      await addSelectedAITodos(selectedTodos);
       // Save completed: clear editor and leave page directly (no extra confirmation step)
       setNote('');
       setParsedDimensions([]);
+      setTodoCandidates([]);
       navigate('/');
     } catch (err) {
       console.error('Save AI records failed:', err);
@@ -525,6 +526,7 @@ export default function Record() {
             isOpen={showAIModal}
             items={parsedDimensions}
             availableDimensions={availableDimensions}
+            todoCandidates={todoCandidates}
             onConfirm={handleConfirmAI}
             onCancel={() => setShowAIModal(false)}
             onSkip={handleSkipAI}
