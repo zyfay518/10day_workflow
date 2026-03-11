@@ -273,6 +273,7 @@ const zh = {
   "todo_submit": "提交",
   "todo_submit_done": "待办提交完成。",
   "todo_submit_failed": "待办提交失败，请重试。",
+  "record_confirm_add_ai_todos": "AI识别到待办事项，是否添加到ToDo列表？",
   "loading_workspace": "正在加载你的工作空间..."
 } as const;
 export default zh;

@@ -8,6 +8,7 @@ import { useUserProfile } from "../hooks/useUserProfile";
 import { useCycleGoals } from "../hooks/useGoals";
 import { getLocalDateString } from "../lib/utils";
 import { useLocale } from "../hooks/useLocale";
+import { supabase } from "../lib/supabase";
 import CycleMatrix from "../components/CycleMatrix";
 import { useTodos } from "../hooks/useTodos";
 
@@ -22,6 +23,7 @@ export default function Home() {
 
   const [selectedYear, setSelectedYear] = React.useState(new Date().getFullYear());
   const [matrixExpanded, setMatrixExpanded] = React.useState(false);
+  const autoSubmitOnceRef = React.useRef(false);
 
   const availableYears = React.useMemo(() => {
     const years = new Set<number>();
@@ -70,6 +72,102 @@ export default function Home() {
       alert(tr('todo_submit_failed', 'Todo submit failed. Please retry.'));
     }
   };
+
+  // Auto submit previous cycle todos once after entering a new cycle (00:00 boundary semantics)
+  React.useEffect(() => {
+    if (autoSubmitOnceRef.current) return;
+    if (!user?.id || !currentCycle || dimensions.length === 0) return;
+
+    const run = async () => {
+      try {
+        const defaultDim = dimensions.find(d => d.dimension_name === 'Other' || d.dimension_name === '其他') || dimensions[0];
+        if (!defaultDim) return;
+
+        const { data: prevCycles, error: prevErr } = await supabase
+          .from('cycles' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .lt('cycle_number', currentCycle.cycle_number)
+          .order('cycle_number', { ascending: false })
+          .limit(1);
+        if (prevErr) throw prevErr;
+        const prev = prevCycles?.[0];
+        if (!prev) return;
+
+        const dayKey = `${user.id}_${currentCycle.id}_${getLocalDateString()}`;
+        const markerKey = 'todo_auto_submit_marker';
+        if (localStorage.getItem(markerKey) === dayKey) return;
+
+        const { data: existingSub } = await supabase
+          .from('todo_submissions' as any)
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('cycle_id', prev.id)
+          .eq('submit_type', 'auto_cycle_rollover')
+          .limit(1);
+        if (existingSub && existingSub.length > 0) {
+          localStorage.setItem(markerKey, dayKey);
+          return;
+        }
+
+        const { data: prevTodos, error: todoErr } = await supabase
+          .from('todos' as any)
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('cycle_id', prev.id)
+          .in('status', ['done', 'dropped']);
+        if (todoErr) throw todoErr;
+        if (!prevTodos || prevTodos.length === 0) {
+          localStorage.setItem(markerKey, dayKey);
+          return;
+        }
+
+        const { data: submission, error: subErr } = await supabase
+          .from('todo_submissions' as any)
+          .insert({ user_id: user.id, cycle_id: prev.id, submit_type: 'auto_cycle_rollover' })
+          .select('*')
+          .single();
+        if (subErr) throw subErr;
+
+        for (const t of prevTodos) {
+          const text = t.status === 'dropped' ? `[已放弃] ${t.content}` : t.content;
+          const recordDate = new Date(t.last_status_changed_at).toISOString().slice(0, 10);
+
+          const { data: rec, error: recErr } = await supabase
+            .from('records' as any)
+            .insert({
+              user_id: user.id,
+              cycle_id: prev.id,
+              dimension_id: defaultDim.id,
+              record_date: recordDate,
+              content: text,
+              word_count: text.length,
+              status: 'published',
+            })
+            .select('*')
+            .single();
+          if (recErr) throw recErr;
+
+          const { error: mapErr } = await supabase.from('todo_submission_items' as any).insert({
+            submission_id: submission.id,
+            todo_id: t.id,
+            record_id: rec.id,
+            status_at_submit: t.status,
+            event_time: t.last_status_changed_at,
+          });
+          if (mapErr) throw mapErr;
+        }
+
+        localStorage.setItem(markerKey, dayKey);
+      } catch (e) {
+        console.error('auto cycle rollover submit failed', e);
+      } finally {
+        autoSubmitOnceRef.current = true;
+      }
+    };
+
+    run();
+  }, [user?.id, currentCycle?.id, currentCycle?.cycle_number, dimensions]);
 
   React.useEffect(() => {
     if (!cyclesLoading && !dimensionsLoading && !readyEmittedRef.current) {

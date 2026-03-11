@@ -70,7 +70,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractTodoCandidates } = useAIAnalysis(user?.id);
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
@@ -215,12 +215,37 @@ export default function Record() {
         });
       }
 
+      await confirmAndAddAITodos();
       // Save completed: clear editor and leave page directly (no extra confirmation step)
       setNote('');
       setParsedDimensions([]);
       navigate('/');
     } else {
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
+    }
+  };
+
+  const confirmAndAddAITodos = async () => {
+    if (!user || !selectedCycle) return;
+    try {
+      const todoCandidates = await extractTodoCandidates(note);
+      if (!todoCandidates.length) return;
+
+      const ok = window.confirm(tr('record_confirm_add_ai_todos', `AI detected ${todoCandidates.length} todo items. Add them to Todo list?`));
+      if (!ok) return;
+
+      const rows = todoCandidates.map(content => ({
+        user_id: user.id,
+        cycle_id: selectedCycle.id,
+        content,
+        status: 'pending',
+        source: 'ai_parse',
+        last_status_changed_at: new Date().toISOString(),
+      }));
+      const { error } = await supabase.from('todos' as any).insert(rows as any);
+      if (error) throw error;
+    } catch (e) {
+      console.error('confirmAndAddAITodos failed', e);
     }
   };
 
@@ -309,6 +334,7 @@ export default function Record() {
         });
       }
 
+      await confirmAndAddAITodos();
       // Save completed: clear editor and leave page directly (no extra confirmation step)
       setNote('');
       setParsedDimensions([]);

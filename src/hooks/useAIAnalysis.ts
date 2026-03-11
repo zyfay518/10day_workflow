@@ -414,6 +414,47 @@ export function useAIAnalysis(userId?: string) {
         }
     }, [getPrompt, profile?.ai_api_key]);
 
+    const extractTodoCandidates = useCallback(async (content: string): Promise<string[]> => {
+        const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
+        if (!apiKey || !content.trim()) return [];
+
+        try {
+            let prompt = getPrompt('record_intent_extract');
+            prompt = prompt.replace(/\{\{content\}\}/g, content);
+
+            const response = await fetch(DEEPSEEK_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${apiKey}`,
+                },
+                body: JSON.stringify({
+                    model: 'deepseek-chat',
+                    messages: [
+                        { role: 'system', content: 'Return strict JSON only.' },
+                        { role: 'user', content: prompt },
+                    ],
+                    temperature: 0.1,
+                    max_tokens: 600,
+                }),
+            });
+
+            if (!response.ok) return [];
+            const data = await response.json();
+            let aiText = String(data.choices?.[0]?.message?.content || '{}');
+            const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) aiText = jsonMatch[0];
+            const parsed = JSON.parse(aiText) as { items?: { type: string; text: string }[] };
+            const items = (parsed.items || [])
+                .filter(i => i.type === 'todo' && i.text && i.text.trim())
+                .map(i => i.text.trim());
+            return Array.from(new Set(items));
+        } catch (err) {
+            console.error('extractTodoCandidates failed:', err);
+            return [];
+        }
+    }, [getPrompt, profile?.ai_api_key]);
+
     const classifyVoiceDimension = useCallback(async (content: string): Promise<string> => {
         const apiKey = profile?.ai_api_key || ENV_DEEPSEEK_API_KEY;
         if (!apiKey || !content.trim()) return 'Other';
@@ -458,6 +499,7 @@ export function useAIAnalysis(userId?: string) {
         parseVoiceQuickEntry,
         classifyVoiceDimension,
         evaluateGoal,
+        extractTodoCandidates,
         clearResult: () => { setResult(null); setError(null); },
     };
 }

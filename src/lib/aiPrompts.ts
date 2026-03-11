@@ -150,6 +150,25 @@ User records in this cycle:
 `
   },
 
+  // Record页面 - 意图识别（目标/记录/todo）
+  RECORD_INTENT_EXTRACT: {
+    key: 'record_intent_extract',
+    name: 'Record Intent Extract',
+    description: 'Extract todo candidates from record text with intent classification',
+    defaultPrompt: `You are an intent classifier for journaling text.
+Classify each meaningful clause into one of: goal | record | todo.
+Rules:
+- 想做什么 => goal
+- 做了什么 => record
+- 准备做什么 => todo
+Return ONLY JSON:
+{"items":[{"type":"goal|record|todo","text":"string"}]}
+No markdown. No explanation.
+
+User text:
+{{content}}`
+  },
+
   // History页面 - 名言金句生成
   HISTORY_QUOTE: {
     key: 'history_quote',
