@@ -45,6 +45,7 @@ export default function Home() {
 
   const [newTodo, setNewTodo] = React.useState('');
   const [selectedTodoIds, setSelectedTodoIds] = React.useState<number[]>([]);
+  const [todoEditMode, setTodoEditMode] = React.useState(false);
 
   const nextStatus = (s: 'pending' | 'done' | 'dropped'): 'pending' | 'done' | 'dropped' => {
     if (s === 'pending') return 'done';
@@ -299,32 +300,30 @@ export default function Home() {
               <p className="text-sm text-gray-400 py-3">{tr('todo_empty', 'No todo items yet')}</p>
             ) : (
               <ul className="space-y-2">
-                {todos.map(item => (
+                {todos.map(item => {
+                  const selected = selectedTodoIds.includes(item.id);
+                  return (
                   <li key={item.id} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <button
-                        onClick={() => setStatus(item.id, nextStatus(item.status))}
+                        onClick={() => todoEditMode ? toggleSelect(item.id) : setStatus(item.id, nextStatus(item.status))}
                         className={`w-5 h-5 rounded border flex items-center justify-center text-xs ${
-                          item.status === 'done'
-                            ? 'bg-[#9fb39f] text-white border-[#9fb39f]'
-                            : item.status === 'dropped'
-                              ? 'bg-[#bda3ab] text-white border-[#bda3ab]'
-                              : 'bg-white text-gray-500 border-gray-300'
+                          todoEditMode
+                            ? (selected ? 'bg-[#7aa5d8] text-white border-[#7aa5d8]' : 'bg-white text-gray-400 border-gray-300')
+                            : item.status === 'done'
+                              ? 'bg-[#9fb39f] text-white border-[#9fb39f]'
+                              : item.status === 'dropped'
+                                ? 'bg-[#bda3ab] text-white border-[#bda3ab]'
+                                : 'bg-white text-gray-500 border-gray-300'
                         }`}
-                        title={tr('todo_cycle_status', 'Tap to cycle status')}
+                        title={todoEditMode ? tr('todo_select_delete', 'Select to delete') : tr('todo_cycle_status', 'Tap to cycle status')}
                       >
-                        {item.status === 'done' ? '✓' : item.status === 'dropped' ? '✕' : ''}
+                        {todoEditMode ? (selected ? '✓' : '') : (item.status === 'done' ? '✓' : item.status === 'dropped' ? '✕' : '')}
                       </button>
                       <span className="text-[15px] text-gray-700 truncate">{item.content}</span>
                     </div>
-                    <input
-                      type="checkbox"
-                      checked={selectedTodoIds.includes(item.id)}
-                      onChange={() => toggleSelect(item.id)}
-                      className="w-4 h-4"
-                    />
                   </li>
-                ))}
+                )})}
               </ul>
             )}
 
@@ -349,14 +348,27 @@ export default function Home() {
 
             <div className="mt-3 flex items-center gap-2">
               <button
-                onClick={() => deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]))}
-                className="h-9 px-3 rounded-lg border border-[#eddde3] bg-[#faf5f7] text-[#9b6a79] text-sm"
+                onClick={() => {
+                  setTodoEditMode(v => !v);
+                  setSelectedTodoIds([]);
+                }}
+                className="h-9 px-3 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-sm"
               >
-                {tr('todo_delete_selected', 'Delete Selected')}
+                {todoEditMode ? tr('todo_done_edit', 'Done') : tr('todo_edit', 'Edit')}
               </button>
-              <button onClick={handleTodoSubmit} className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm">
-                {tr('todo_submit', 'Submit')}
-              </button>
+
+              {todoEditMode ? (
+                <button
+                  onClick={() => deleteMany(selectedTodoIds).then(ok => ok && setSelectedTodoIds([]))}
+                  className="h-9 px-3 rounded-lg border border-[#eddde3] bg-[#faf5f7] text-[#9b6a79] text-sm"
+                >
+                  {tr('todo_delete_selected', 'Delete Selected')}
+                </button>
+              ) : (
+                <button onClick={handleTodoSubmit} className="h-9 px-3 rounded-lg bg-[#5f6478] text-white text-sm">
+                  {tr('todo_submit', 'Submit')}
+                </button>
+              )}
             </div>
           </div>
         </section>

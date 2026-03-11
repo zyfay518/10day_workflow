@@ -274,6 +274,9 @@ const en = {
   "todo_submit_done": "Todo submit completed.",
   "todo_submit_failed": "Todo submit failed. Please retry.",
   "record_confirm_add_ai_todos": "AI detected todo items. Add them to Todo list?",
+  "todo_select_delete": "Select to delete",
+  "todo_edit": "Edit",
+  "todo_done_edit": "Done",
   "loading_workspace": "Loading your workspace..."
 } as const;
 export default en;
