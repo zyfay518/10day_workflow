@@ -74,8 +74,12 @@ export default function Splash({ onFinish, loading = false }: SplashProps) {
           <h1 className="text-xl font-semibold text-gray-800 tracking-tight">10-Day Flow</h1>
           <p className="text-gray-400 mt-1 text-[11px] font-medium tracking-[0.2em]">GROWTH LOOP</p>
 
-          <div className="w-full mt-5">
-            <CycleMatrixCore cycles={matrixCycles as any} currentCycle={currentCycle as any} />
+          <div className="w-full mt-5 flex justify-center">
+            <CycleMatrixCore
+              cycles={matrixCycles as any}
+              currentCycle={currentCycle as any}
+              showRowNumbers={false}
+            />
           </div>
 
           <div className="flex items-center gap-2 mt-4">

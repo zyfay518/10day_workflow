@@ -10,9 +10,10 @@ interface CycleMatrixCoreProps {
   currentCycle: Cycle | null;
   selectedYear?: number;
   onCycleClick?: (cycleId: number) => void;
+  showRowNumbers?: boolean;
 }
 
-export default function CycleMatrixCore({ cycles, currentCycle, selectedYear, onCycleClick }: CycleMatrixCoreProps) {
+export default function CycleMatrixCore({ cycles, currentCycle, selectedYear, onCycleClick, showRowNumbers = true }: CycleMatrixCoreProps) {
   const filteredCycles = React.useMemo(() => {
     if (!selectedYear) return cycles;
     return cycles.filter(c => new Date(c.start_date).getFullYear() === selectedYear);
@@ -49,14 +50,16 @@ export default function CycleMatrixCore({ cycles, currentCycle, selectedYear, on
   for (let i = 0; i < dots.length; i += 6) dotRows.push(dots.slice(i, i + 6));
 
   return (
-    <div className="flex gap-2">
-      <div className="flex flex-col gap-2 pt-1">
-        {dotRows.map((_, rowIndex) => (
-          <div key={rowIndex} className="w-6 h-9 flex items-center justify-center text-xs text-gray-400 font-medium">
-            {rowIndex + 1}
-          </div>
-        ))}
-      </div>
+    <div className={cn('flex', showRowNumbers ? 'gap-2' : 'justify-center')}>
+      {showRowNumbers && (
+        <div className="flex flex-col gap-2 pt-1">
+          {dotRows.map((_, rowIndex) => (
+            <div key={rowIndex} className="w-6 h-9 flex items-center justify-center text-xs text-gray-400 font-medium">
+              {rowIndex + 1}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div>
         {dotRows.map((row, rowIndex) => (
