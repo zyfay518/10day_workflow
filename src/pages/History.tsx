@@ -19,6 +19,29 @@ type Milestone = Database['public']['Tables']['milestones']['Row'];
 type RecordAttachment = Database['public']['Tables']['record_attachments']['Row'];
 type Expense = Database['public']['Tables']['expenses']['Row'];
 
+
+type HistoryCacheEntry = { items: any[]; ts: number };
+const historyCache = new Map<string, HistoryCacheEntry>();
+const HISTORY_TTL_MS = 60_000;
+const historyCacheKey = (userId: string, start: string, end: string) => `history_cache_${userId}_${start}_${end}`;
+
+function readHistoryCache(userId: string, start: string, end: string): HistoryCacheEntry | null {
+  try {
+    const raw = localStorage.getItem(historyCacheKey(userId, start, end));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeHistoryCache(userId: string, start: string, end: string, entry: HistoryCacheEntry) {
+  try {
+    localStorage.setItem(historyCacheKey(userId, start, end), JSON.stringify(entry));
+  } catch {
+    // ignore
+  }
+}
+
 interface RecordWithDetails extends Record {
   dimension_name: string;
   dimension_color: string;
@@ -120,6 +143,24 @@ export default function History() {
       if (dateRangeType === 'current' && cyclesLoading && !selectedCycle) return;
       if (dateRangeType === 'current' && !selectedCycle) return;
 
+      const cached = historyCache.get(historyCacheKey(user.id, startDate, endDate)) || readHistoryCache(user.id, startDate, endDate);
+      const isFresh = cached && Date.now() - cached.ts < HISTORY_TTL_MS;
+      if (cached) {
+        const enrichedCached = (cached.items || []).map((record: any) => {
+          const dim = dimensions.find(d => d.id === record.dimension_id);
+          return {
+            ...record,
+            dimension_name: dim?.dimension_name || 'Unknown',
+            dimension_color: dim?.color_code || '#999999',
+            dimension_icon: dim?.icon_name || '📝',
+            attachments: record.record_attachments || record.attachments || [],
+            expenses: record.expenses || [],
+          };
+        }) as RecordWithDetails[];
+        setDbRecords(enrichedCached);
+        if (isFresh) return;
+      }
+
       try {
         setLoading(true);
         const { data, error } = await supabase
@@ -150,6 +191,9 @@ export default function History() {
         }) as RecordWithDetails[];
 
         setDbRecords(enriched);
+        const entry = { items: recordsData || [], ts: Date.now() };
+        historyCache.set(historyCacheKey(user.id, startDate, endDate), entry);
+        writeHistoryCache(user.id, startDate, endDate, entry);
       } catch (err) {
         console.error('Failed to fetch history:', err);
       } finally {
