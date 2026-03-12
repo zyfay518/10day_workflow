@@ -61,6 +61,7 @@ export default function Record() {
   const [todoCandidates, setTodoCandidates] = useState<string[]>([]);
   const [goalCandidates, setGoalCandidates] = useState<string[]>([]);
   const [intentItems, setIntentItems] = useState<IntentItem[]>([]);
+  const [goalDimensionMap, setGoalDimensionMap] = useState<Record<string, string>>({});
   const availableDimensions = dimensions.map(d => d.dimension_name);
 
   const { addMilestone } = useMilestones(user?.id);
@@ -73,7 +74,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractIntentItems } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractIntentItems, parseVoiceQuickEntry } = useAIAnalysis(user?.id);
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
@@ -183,15 +184,52 @@ export default function Record() {
 
   // Save current dimension record (Entry point)
   const handleSaveRecord = async () => {
-    console.log('--- handleSaveRecord Triggered ---');
-    console.log('Note content:', note);
     if (!note.trim()) {
       showCustomDialog(tr('common_notice', 'Notice'), tr('record_enter_content', 'Please enter record content'));
       return;
     }
 
     try {
-      console.log('Calling intent extractor...');
+      // Align parser with Voice Quick Capture flow (same prompt family + payload shape)
+      const parsed = await parseVoiceQuickEntry(note, { currentDate: selectedDate, timezone: 'Asia/Singapore' });
+
+      if (parsed) {
+        const recordItems = (parsed.records || [])
+          .filter(r => r.content?.trim())
+          .map(r => ({
+            dimension: r.dimension || 'Other',
+            content: r.content.trim(),
+          }));
+
+        const goals = (parsed.cycle_goals || [])
+          .map(g => ({ content: g.content?.trim() || '', dimension: g.dimension || 'Other' }))
+          .filter(g => g.content);
+
+        const todos = (((parsed as any).todos || []) as any[])
+          .map(t => (t.content || '').trim())
+          .filter(Boolean);
+
+        const goalMap: Record<string, string> = {};
+        goals.forEach(g => {
+          goalMap[g.content] = g.dimension;
+        });
+
+        const synthesizedIntents: IntentItem[] = [
+          ...recordItems.map(r => ({ type: 'record' as const, text: r.content })),
+          ...goals.map(g => ({ type: 'goal' as const, text: g.content })),
+          ...todos.map(t => ({ type: 'todo' as const, text: t })),
+        ];
+
+        setIntentItems(synthesizedIntents);
+        setParsedDimensions(recordItems);
+        setGoalCandidates(Array.from(new Set(goals.map(g => g.content))));
+        setTodoCandidates(Array.from(new Set(todos)));
+        setGoalDimensionMap(goalMap);
+        setShowAIModal(true);
+        return;
+      }
+
+      // Fallback to previous intent/split path if voice parser returns null
       const intents = await extractIntentItems(note);
       setIntentItems(intents);
 
@@ -199,16 +237,13 @@ export default function Record() {
       const todoTexts = Array.from(new Set(intents.filter(i => i.type === 'todo').map(i => i.text)));
       const recordText = intents.filter(i => i.type === 'record').map(i => i.text).join('\n');
 
-      // If user input is pure goal/todo without record intent, do not force-save as records.
       const splitInput = recordText.trim() ? recordText : ((goalTexts.length > 0 || todoTexts.length > 0) ? '' : note);
       const items = splitInput ? await splitDimensions(splitInput) : [];
-      console.log('splitDimensions returned items:', items);
       setParsedDimensions(items);
       setTodoCandidates(todoTexts);
       setGoalCandidates(goalTexts);
-      console.log('Setting showAIModal to true');
+      setGoalDimensionMap({});
       setShowAIModal(true);
-      console.log('State updated, wait for render');
     } catch (e) {
       console.error('handleSaveRecord error caught:', e);
     }
@@ -220,6 +255,7 @@ export default function Record() {
     setTodoCandidates([]);
     setGoalCandidates([]);
     setIntentItems([]);
+    setGoalDimensionMap({});
     showCustomDialog(tr('profile_success', 'Success!'), message, () => navigate('/'));
   };
 
@@ -290,13 +326,24 @@ export default function Record() {
         let goalDimId = fallbackDim.id;
 
         try {
-          const split = await splitDimensions(g);
-          const guessedDimName = split[0]?.dimension?.trim().toLowerCase();
-          if (guessedDimName) {
-            const matched = dimensions.find(d => d.dimension_name.trim().toLowerCase() === guessedDimName)
-              || dimensions.find(d => guessedDimName.includes(d.dimension_name.trim().toLowerCase()))
-              || dimensions.find(d => d.dimension_name.trim().toLowerCase().includes(guessedDimName));
-            if (matched) goalDimId = matched.id;
+          const mappedDimName = goalDimensionMap[g]?.trim().toLowerCase();
+          const fromMap = mappedDimName
+            ? (dimensions.find(d => d.dimension_name.trim().toLowerCase() === mappedDimName)
+              || dimensions.find(d => mappedDimName.includes(d.dimension_name.trim().toLowerCase()))
+              || dimensions.find(d => d.dimension_name.trim().toLowerCase().includes(mappedDimName)))
+            : null;
+
+          if (fromMap) {
+            goalDimId = fromMap.id;
+          } else {
+            const split = await splitDimensions(g);
+            const guessedDimName = split[0]?.dimension?.trim().toLowerCase();
+            if (guessedDimName) {
+              const matched = dimensions.find(d => d.dimension_name.trim().toLowerCase() === guessedDimName)
+                || dimensions.find(d => guessedDimName.includes(d.dimension_name.trim().toLowerCase()))
+                || dimensions.find(d => d.dimension_name.trim().toLowerCase().includes(guessedDimName));
+              if (matched) goalDimId = matched.id;
+            }
           }
         } catch (e) {
           console.error('goal dimension infer failed', e);
