@@ -262,8 +262,8 @@ export default function Record() {
 
   const addSelectedAIGoals = async (selectedGoals: string[]) => {
     if (!user || !selectedCycle || selectedGoals.length === 0) return { goalsAdded: 0, todosAdded: 0 };
-    const defaultDim = dimensions.find(d => d.dimension_name === 'Health' || d.dimension_name === '健康') || defaultDimension;
-    if (!defaultDim) return { goalsAdded: 0, todosAdded: 0 };
+    const fallbackDim = dimensions.find(d => d.dimension_name === 'Other' || d.dimension_name === '其他') || defaultDimension;
+    if (!fallbackDim) return { goalsAdded: 0, todosAdded: 0 };
 
     const todayDate = selectedDate;
     const toTodo = (text: string) => /明天|今天|后天|tomorrow|today/i.test(text);
@@ -287,10 +287,25 @@ export default function Record() {
           last_status_changed_at: new Date(todoDate + 'T09:00:00').toISOString(),
         });
       } else {
+        let goalDimId = fallbackDim.id;
+
+        try {
+          const split = await splitDimensions(g);
+          const guessedDimName = split[0]?.dimension?.trim().toLowerCase();
+          if (guessedDimName) {
+            const matched = dimensions.find(d => d.dimension_name.trim().toLowerCase() === guessedDimName)
+              || dimensions.find(d => guessedDimName.includes(d.dimension_name.trim().toLowerCase()))
+              || dimensions.find(d => d.dimension_name.trim().toLowerCase().includes(guessedDimName));
+            if (matched) goalDimId = matched.id;
+          }
+        } catch (e) {
+          console.error('goal dimension infer failed', e);
+        }
+
         cycleRows.push({
           user_id: user.id,
           cycle_id: selectedCycle.id,
-          dimension_id: defaultDim.id,
+          dimension_id: goalDimId,
           content: g,
           evaluation_criteria: g,
           target_type: 'qualitative',
