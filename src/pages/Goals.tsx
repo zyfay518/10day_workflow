@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronDown, Plus, Edit2, Trash2, Bot, User } from "lucide-react";
 import { getCycleDisplayStatus, getLocalDateString } from "../lib/utils";
@@ -62,13 +62,24 @@ export default function Goals() {
   const { evaluateGoal } = useAIAnalysis(user?.id);
 
   // Get filtered cycles based on date-derived status (not stale DB status)
-  const filteredCycles = cycles.filter(cycle => {
+  const filteredCycles = useMemo(() => cycles.filter(cycle => {
     const displayStatus = getCycleDisplayStatus(cycle, getLocalDateString());
     if (cycleStatusTab === 'completed') return displayStatus === 'completed';
     if (cycleStatusTab === 'ongoing') return displayStatus === 'ongoing';
     if (cycleStatusTab === 'not_started') return displayStatus === 'not_started';
     return false;
-  });
+  }), [cycles, cycleStatusTab]);
+
+  useEffect(() => {
+    if (cycleStatusTab === 'ongoing') {
+      // ongoing 默认展开（优先当前进行中的最新周期）
+      setExpandedCycleId(filteredCycles[0]?.id ?? null);
+      return;
+    }
+
+    // completed / not_started 默认收起
+    setExpandedCycleId(null);
+  }, [cycleStatusTab, filteredCycles]);
 
   // Get the expanded cycle
   const expandedCycle = cycles.find(c => c.id === expandedCycleId);
