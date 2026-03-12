@@ -62,6 +62,13 @@ export default function Record() {
   const [goalCandidates, setGoalCandidates] = useState<string[]>([]);
   const [intentItems, setIntentItems] = useState<IntentItem[]>([]);
   const [goalDimensionMap, setGoalDimensionMap] = useState<Record<string, string>>({});
+  const [goalDraftMap, setGoalDraftMap] = useState<Record<string, {
+    dimension?: string;
+    evaluation_criteria?: string;
+    target_type?: 'quantitative' | 'qualitative';
+    target_value?: number | null;
+    target_unit?: string | null;
+  }>>({});
   const availableDimensions = dimensions.map(d => d.dimension_name);
 
   const { addMilestone } = useMilestones(user?.id);
@@ -210,8 +217,28 @@ export default function Record() {
           .filter(Boolean);
 
         const goalMap: Record<string, string> = {};
+        const goalDrafts: Record<string, {
+          dimension?: string;
+          evaluation_criteria?: string;
+          target_type?: 'quantitative' | 'qualitative';
+          target_value?: number | null;
+          target_unit?: string | null;
+        }> = {};
+
         goals.forEach(g => {
           goalMap[g.content] = g.dimension;
+        });
+
+        (parsed.cycle_goals || []).forEach(g => {
+          const key = (g.content || '').trim();
+          if (!key) return;
+          goalDrafts[key] = {
+            dimension: g.dimension,
+            evaluation_criteria: g.evaluation_criteria,
+            target_type: g.target_type,
+            target_value: g.target_value ?? null,
+            target_unit: g.target_unit ?? null,
+          };
         });
 
         const synthesizedIntents: IntentItem[] = [
@@ -225,6 +252,7 @@ export default function Record() {
         setGoalCandidates(Array.from(new Set(goals.map(g => g.content))));
         setTodoCandidates(Array.from(new Set(todos)));
         setGoalDimensionMap(goalMap);
+        setGoalDraftMap(goalDrafts);
         setShowAIModal(true);
         return;
       }
@@ -243,6 +271,7 @@ export default function Record() {
       setTodoCandidates(todoTexts);
       setGoalCandidates(goalTexts);
       setGoalDimensionMap({});
+      setGoalDraftMap({});
       setShowAIModal(true);
     } catch (e) {
       console.error('handleSaveRecord error caught:', e);
@@ -256,6 +285,7 @@ export default function Record() {
     setGoalCandidates([]);
     setIntentItems([]);
     setGoalDimensionMap({});
+    setGoalDraftMap({});
     showCustomDialog(tr('profile_success', 'Success!'), message, () => navigate('/'));
   };
 
@@ -326,7 +356,8 @@ export default function Record() {
         let goalDimId = fallbackDim.id;
 
         try {
-          const mappedDimName = goalDimensionMap[g]?.trim().toLowerCase();
+          const draft = goalDraftMap[g];
+          const mappedDimName = (draft?.dimension || goalDimensionMap[g])?.trim().toLowerCase();
           const fromMap = mappedDimName
             ? (dimensions.find(d => d.dimension_name.trim().toLowerCase() === mappedDimName)
               || dimensions.find(d => mappedDimName.includes(d.dimension_name.trim().toLowerCase()))
@@ -349,13 +380,16 @@ export default function Record() {
           console.error('goal dimension infer failed', e);
         }
 
+        const draft = goalDraftMap[g];
         cycleRows.push({
           user_id: user.id,
           cycle_id: selectedCycle.id,
           dimension_id: goalDimId,
           content: g,
-          evaluation_criteria: g,
-          target_type: 'qualitative',
+          evaluation_criteria: draft?.evaluation_criteria || g,
+          target_type: draft?.target_type || 'qualitative',
+          target_value: draft?.target_type === 'quantitative' ? (draft?.target_value ?? null) : null,
+          target_unit: draft?.target_type === 'quantitative' ? (draft?.target_unit ?? null) : null,
         });
       }
     }
