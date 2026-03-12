@@ -22,9 +22,10 @@ export default function CycleMatrixCore({ cycles, currentCycle, selectedYear, on
   const getDotStatus = (cycle: Cycle) => {
     if (currentCycle && cycle.id === currentCycle.id) return 'current' as const;
     const status = getCycleDisplayStatus(cycle, getLocalDateString());
-    if (status === 'completed') return 'complete' as const;
-    if (status === 'ongoing') return 'current' as const;
-    return 'future' as const;
+    if (status === 'not_started') return 'future' as const;
+    // Only the resolved current cycle should be yellow.
+    // Other already-started cycles (including edge-case overlapping dates) use completion color.
+    return 'complete' as const;
   };
 
   const totalDots = 37;

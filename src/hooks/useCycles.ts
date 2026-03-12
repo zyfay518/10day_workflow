@@ -9,7 +9,7 @@
  * 参考: DATA_FLOW.md "3.1 Home 页面" 和 "5.2 订阅实现示例"
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database';
@@ -202,12 +202,15 @@ export function useCycles(userId?: string): UseCyclesReturn {
   const [currentCycle, setCurrentCycle] = useState<Cycle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dayRef = useRef(getLocalDateString());
 
   useEffect(() => {
     if (!userId) {
       setLoading(false);
       return;
     }
+
+    dayRef.current = getLocalDateString();
 
     const cached = cyclesCache.get(userId) || readCyclesStorage(userId);
     const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
@@ -227,8 +230,18 @@ export function useCycles(userId?: string): UseCyclesReturn {
     // 设置实时订阅
     const channel = subscribeToCycleChanges(userId);
 
+    // 跨 00:00 时自动刷新当前周期，避免 App 常驻导致周期停留在昨天
+    const dayTick = window.setInterval(() => {
+      const today = getLocalDateString();
+      if (today !== dayRef.current) {
+        dayRef.current = today;
+        fetchCycles(false);
+      }
+    }, 60 * 1000);
+
     return () => {
       channel.unsubscribe();
+      window.clearInterval(dayTick);
     };
   }, [userId]);
 
