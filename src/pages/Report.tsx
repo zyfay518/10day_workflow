@@ -75,7 +75,7 @@ export default function Report() {
       const dataPoint: any = { name: `P${cycle.cycle_number}` };
 
       let cycleTotal = 0;
-      let dimCount = 0;
+      const dimCount = dimensions.length;
 
       dimensions.forEach(dim => {
         const dimEvals = evaluations.filter(e => e.cycle_id === cycle.id && e.dimension_id === dim.id);
@@ -84,12 +84,9 @@ export default function Report() {
           : 0;
 
         dataPoint[trDimension(dim.dimension_name)] = Math.round(avgScore);
-
-        if (avgScore > 0) {
-          cycleTotal += avgScore;
-          dimCount++;
-        }
+        cycleTotal += avgScore;
       });
+      // Keep trend average definition aligned with Period Snapshot average (include zero-score dimensions)
       dataPoint[tr('report_average', 'Average')] = dimCount > 0 ? Math.round(cycleTotal / dimCount) : 0;
       return dataPoint;
     });
