@@ -199,7 +199,9 @@ export default function Record() {
       const todoTexts = Array.from(new Set(intents.filter(i => i.type === 'todo').map(i => i.text)));
       const recordText = intents.filter(i => i.type === 'record').map(i => i.text).join('\n');
 
-      const items = await splitDimensions(recordText || note);
+      // If user input is pure goal/todo without record intent, do not force-save as records.
+      const splitInput = recordText.trim() ? recordText : ((goalTexts.length > 0 || todoTexts.length > 0) ? '' : note);
+      const items = splitInput ? await splitDimensions(splitInput) : [];
       console.log('splitDimensions returned items:', items);
       setParsedDimensions(items);
       setTodoCandidates(todoTexts);
@@ -210,6 +212,15 @@ export default function Record() {
     } catch (e) {
       console.error('handleSaveRecord error caught:', e);
     }
+  };
+
+  const finishSaveAndExit = (message: string) => {
+    setNote('');
+    setParsedDimensions([]);
+    setTodoCandidates([]);
+    setGoalCandidates([]);
+    setIntentItems([]);
+    showCustomDialog(tr('profile_success', 'Success!'), message, () => navigate('/'));
   };
 
   const handleSkipAI = async () => {
@@ -227,41 +238,32 @@ export default function Record() {
         });
       }
 
-      // Skip AI path: do not add AI todos automatically.
-      // Save completed: clear editor and leave page directly (no extra confirmation step)
-      setNote('');
-      setParsedDimensions([]);
-      setTodoCandidates([]);
-      setGoalCandidates([]);
-      setIntentItems([]);
-      navigate('/');
+      // Skip AI path: keep as plain record save.
+      finishSaveAndExit(tr('record_saved_success', 'Saved successfully.'));
     } else {
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_save_failed_retry', 'Save failed, please try again'));
     }
   };
 
   const addSelectedAITodos = async (selectedTodos: string[]) => {
-    if (!user || !selectedCycle || selectedTodos.length === 0) return;
-    try {
-      const rows = selectedTodos.map(content => ({
-        user_id: user.id,
-        cycle_id: selectedCycle.id,
-        content,
-        status: 'pending',
-        source: 'ai_parse',
-        last_status_changed_at: new Date().toISOString(),
-      }));
-      const { error } = await supabase.from('todos' as any).insert(rows as any);
-      if (error) throw error;
-    } catch (e) {
-      console.error('addSelectedAITodos failed', e);
-    }
+    if (!user || !selectedCycle || selectedTodos.length === 0) return 0;
+    const rows = selectedTodos.map(content => ({
+      user_id: user.id,
+      cycle_id: selectedCycle.id,
+      content,
+      status: 'pending',
+      source: 'ai_parse',
+      last_status_changed_at: new Date().toISOString(),
+    }));
+    const { error } = await supabase.from('todos' as any).insert(rows as any);
+    if (error) throw error;
+    return rows.length;
   };
 
   const addSelectedAIGoals = async (selectedGoals: string[]) => {
-    if (!user || !selectedCycle || selectedGoals.length === 0) return;
+    if (!user || !selectedCycle || selectedGoals.length === 0) return { goalsAdded: 0, todosAdded: 0 };
     const defaultDim = dimensions.find(d => d.dimension_name === 'Health' || d.dimension_name === '健康') || defaultDimension;
-    if (!defaultDim) return;
+    if (!defaultDim) return { goalsAdded: 0, todosAdded: 0 };
 
     const todayDate = selectedDate;
     const toTodo = (text: string) => /明天|今天|后天|tomorrow|today/i.test(text);
@@ -271,43 +273,41 @@ export default function Record() {
       return d.toISOString().slice(0, 10);
     };
 
-    try {
-      const cycleRows: any[] = [];
-      const todoRows: any[] = [];
-      for (const g of selectedGoals) {
-        if (toTodo(g)) {
-          const todoDate = /明天|tomorrow/i.test(g) ? plusDays(todayDate, 1) : /后天/i.test(g) ? plusDays(todayDate, 2) : todayDate;
-          todoRows.push({
-            user_id: user.id,
-            cycle_id: selectedCycle.id,
-            content: g,
-            status: 'pending',
-            source: 'ai_parse',
-            last_status_changed_at: new Date(todoDate + 'T09:00:00').toISOString(),
-          });
-        } else {
-          cycleRows.push({
-            user_id: user.id,
-            cycle_id: selectedCycle.id,
-            dimension_id: defaultDim.id,
-            content: g,
-            evaluation_criteria: g,
-            target_type: 'qualitative',
-          });
-        }
+    const cycleRows: any[] = [];
+    const todoRows: any[] = [];
+    for (const g of selectedGoals) {
+      if (toTodo(g)) {
+        const todoDate = /明天|tomorrow/i.test(g) ? plusDays(todayDate, 1) : /后天/i.test(g) ? plusDays(todayDate, 2) : todayDate;
+        todoRows.push({
+          user_id: user.id,
+          cycle_id: selectedCycle.id,
+          content: g,
+          status: 'pending',
+          source: 'ai_parse',
+          last_status_changed_at: new Date(todoDate + 'T09:00:00').toISOString(),
+        });
+      } else {
+        cycleRows.push({
+          user_id: user.id,
+          cycle_id: selectedCycle.id,
+          dimension_id: defaultDim.id,
+          content: g,
+          evaluation_criteria: g,
+          target_type: 'qualitative',
+        });
       }
-
-      if (cycleRows.length > 0) {
-        const { error } = await supabase.from('cycle_goals' as any).insert(cycleRows as any);
-        if (error) throw error;
-      }
-      if (todoRows.length > 0) {
-        const { error } = await supabase.from('todos' as any).insert(todoRows as any);
-        if (error) throw error;
-      }
-    } catch (e) {
-      console.error('addSelectedAIGoals failed', e);
     }
+
+    if (cycleRows.length > 0) {
+      const { error } = await supabase.from('cycle_goals' as any).insert(cycleRows as any);
+      if (error) throw error;
+    }
+    if (todoRows.length > 0) {
+      const { error } = await supabase.from('todos' as any).insert(todoRows as any);
+      if (error) throw error;
+    }
+
+    return { goalsAdded: cycleRows.length, todosAdded: todoRows.length };
   };
 
   const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[]) => {
@@ -318,7 +318,7 @@ export default function Record() {
       return;
     }
 
-    if (items.length === 0) {
+    if (items.length === 0 && selectedTodos.length === 0 && selectedGoals.length === 0) {
       handleSkipAI();
       return;
     }
@@ -395,15 +395,19 @@ export default function Record() {
         });
       }
 
-      await addSelectedAITodos(selectedTodos);
-      await addSelectedAIGoals(selectedGoals);
-      // Save completed: clear editor and leave page directly (no extra confirmation step)
-      setNote('');
-      setParsedDimensions([]);
-      setTodoCandidates([]);
-      setGoalCandidates([]);
-      setIntentItems([]);
-      navigate('/');
+      const todoAddedDirect = await addSelectedAITodos(selectedTodos);
+      const goalAddResult = await addSelectedAIGoals(selectedGoals);
+
+      const recordCount = items.length;
+      const goalsCount = goalAddResult.goalsAdded;
+      const todoCount = todoAddedDirect + goalAddResult.todosAdded;
+
+      finishSaveAndExit(
+        tr(
+          'record_ai_saved_summary',
+          `Saved successfully: ${recordCount} records, ${goalsCount} goals, ${todoCount} todos.`
+        )
+      );
     } catch (err) {
       console.error('Save AI records failed:', err);
       showCustomDialog(tr('common_failed', 'Failed'), tr('record_ai_save_failed', 'Failed to save organized records.'));
