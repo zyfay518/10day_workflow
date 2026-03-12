@@ -10,7 +10,7 @@ import { useAttachments } from "../hooks/useAttachments";
 import { useSpeechRecognition } from "../hooks/useSpeechRecognition.local";
 import { useAIAnalysis } from "../hooks/useAIAnalysis";
 import { useMilestones } from "../hooks/useMilestones";
-import { useGrowthTags } from "../hooks/useGrowthTags";
+
 import { supabase } from "../lib/supabase";
 import { IntentItem, SplitDimensionItem } from "../hooks/useAIAnalysis";
 
@@ -72,7 +72,6 @@ export default function Record() {
   const availableDimensions = dimensions.map(d => d.dimension_name);
 
   const { addMilestone } = useMilestones(user?.id);
-  const { addOrIncrementTag } = useGrowthTags(user?.id);
 
   // 附件管理
   const { attachments, uploading, uploadImage, capturePhoto, deleteAttachment, loadAttachments } = useAttachments(record?.id, user?.id);
@@ -81,7 +80,7 @@ export default function Record() {
   const { transcript, isListening, isSupported: speechSupported, startListening, stopListening, resetTranscript } = useSpeechRecognition();
 
   // AI分析
-  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, extractTags, clearResult, parseExpenseResult, extractIntentItems, parseVoiceQuickEntry } = useAIAnalysis(user?.id);
+  const { analyzing, result: aiResult, analyze, splitDimensions, generateQuote, clearResult, parseExpenseResult, extractIntentItems, parseVoiceQuickEntry } = useAIAnalysis(user?.id);
 
   // 当切换日期时，更新 note (Note: 'record' loading logic will need to be updated to load all text for the day, not just one dimension)
   useEffect(() => {
@@ -463,16 +462,7 @@ export default function Record() {
           }
         }
 
-        const [aiQuote, tags] = await Promise.all([
-          generateQuote(finalContent),
-          extractTags(finalContent)
-        ]);
-
-        if (tags.length > 0) {
-          for (const tag of tags) {
-            addOrIncrementTag(tag, dim.id);
-          }
-        }
+        const aiQuote = await generateQuote(finalContent);
 
         if (aiQuote) {
           const quotePayload = { ai_quote: aiQuote };
