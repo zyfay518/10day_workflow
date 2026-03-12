@@ -326,7 +326,7 @@ export default function Record() {
     return rows.length;
   };
 
-  const addSelectedAIGoals = async (selectedGoals: string[]) => {
+  const addSelectedAIGoals = async (selectedGoals: string[], selectedGoalDimensions: Record<string, string> = {}) => {
     if (!user || !selectedCycle || selectedGoals.length === 0) return { goalsAdded: 0, todosAdded: 0 };
     const fallbackDim = dimensions.find(d => d.dimension_name === 'Other' || d.dimension_name === '其他') || defaultDimension;
     if (!fallbackDim) return { goalsAdded: 0, todosAdded: 0 };
@@ -357,7 +357,7 @@ export default function Record() {
 
         try {
           const draft = goalDraftMap[g];
-          const mappedDimName = (draft?.dimension || goalDimensionMap[g])?.trim().toLowerCase();
+          const mappedDimName = (selectedGoalDimensions[g] || draft?.dimension || goalDimensionMap[g])?.trim().toLowerCase();
           const fromMap = mappedDimName
             ? (dimensions.find(d => d.dimension_name.trim().toLowerCase() === mappedDimName)
               || dimensions.find(d => mappedDimName.includes(d.dimension_name.trim().toLowerCase()))
@@ -406,7 +406,7 @@ export default function Record() {
     return { goalsAdded: cycleRows.length, todosAdded: todoRows.length };
   };
 
-  const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[]) => {
+  const handleConfirmAI = async (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[], selectedGoalDimensions: Record<string, string>) => {
     setShowAIModal(false);
 
     if (!selectedCycle) {
@@ -492,7 +492,7 @@ export default function Record() {
       }
 
       const todoAddedDirect = await addSelectedAITodos(selectedTodos);
-      const goalAddResult = await addSelectedAIGoals(selectedGoals);
+      const goalAddResult = await addSelectedAIGoals(selectedGoals, selectedGoalDimensions);
 
       const recordCount = items.length;
       const goalsCount = goalAddResult.goalsAdded;
@@ -692,6 +692,7 @@ export default function Record() {
             availableDimensions={availableDimensions}
             todoCandidates={todoCandidates}
             goalCandidates={goalCandidates}
+            goalDimensionMap={goalDimensionMap}
             intentItems={intentItems}
             onConfirm={handleConfirmAI}
             onCancel={() => setShowAIModal(false)}

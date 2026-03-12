@@ -9,16 +9,18 @@ interface AIResultModalProps {
     availableDimensions: string[];
     todoCandidates?: string[];
     goalCandidates?: string[];
+    goalDimensionMap?: Record<string, string>;
     intentItems?: IntentItem[];
-    onConfirm: (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[]) => void;
+    onConfirm: (items: SplitDimensionItem[], selectedTodos: string[], selectedGoals: string[], selectedGoalDimensions: Record<string, string>) => void;
     onCancel: () => void;
     onSkip: () => void;
 }
 
-export default function AIResultModal({ isOpen, items, availableDimensions, todoCandidates = [], goalCandidates = [], intentItems = [], onConfirm, onCancel, onSkip }: AIResultModalProps) {
+export default function AIResultModal({ isOpen, items, availableDimensions, todoCandidates = [], goalCandidates = [], goalDimensionMap = {}, intentItems = [], onConfirm, onCancel, onSkip }: AIResultModalProps) {
     const [editedItems, setEditedItems] = useState<SplitDimensionItem[]>([]);
     const [selectedTodos, setSelectedTodos] = useState<string[]>([]);
     const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+    const [selectedGoalDimensions, setSelectedGoalDimensions] = useState<Record<string, string>>({});
     const { tr, trDimension } = useLocale();
 
     useEffect(() => {
@@ -26,8 +28,14 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
             setEditedItems(items);
             setSelectedTodos(todoCandidates);
             setSelectedGoals(goalCandidates);
+
+            const nextGoalDims: Record<string, string> = {};
+            goalCandidates.forEach((goal) => {
+                nextGoalDims[goal] = goalDimensionMap[goal] || availableDimensions[0] || 'Other';
+            });
+            setSelectedGoalDimensions(nextGoalDims);
         }
-    }, [isOpen, items, todoCandidates, goalCandidates]);
+    }, [isOpen, items, todoCandidates, goalCandidates, goalDimensionMap, availableDimensions]);
 
     if (!isOpen) return null;
 
@@ -89,25 +97,41 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
                     {goalCandidates.length > 0 && (
                         <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                             <p className="text-xs font-semibold text-gray-500 mb-2">{tr('aimodal_goal_detected', 'Detected Goals (confirm before add)')}</p>
-                            <div className="space-y-2">
+                            <div className="space-y-2.5">
                                 {goalCandidates.map((goal, idx) => {
                                     const checked = selectedGoals.includes(goal);
                                     return (
-                                        <label key={`${goal}-${idx}`} className="flex items-start gap-2 text-sm text-gray-700">
-                                            <input
-                                                type="checkbox"
-                                                checked={checked}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        setSelectedGoals(prev => [...prev, goal]);
-                                                    } else {
-                                                        setSelectedGoals(prev => prev.filter(t => t !== goal));
-                                                    }
-                                                }}
-                                                className="mt-0.5"
-                                            />
-                                            <span>{goal}</span>
-                                        </label>
+                                        <div key={`${goal}-${idx}`} className="rounded-lg border border-gray-100 p-2">
+                                            <label className="flex items-start gap-2 text-sm text-gray-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedGoals(prev => [...prev, goal]);
+                                                        } else {
+                                                            setSelectedGoals(prev => prev.filter(t => t !== goal));
+                                                        }
+                                                    }}
+                                                    className="mt-0.5"
+                                                />
+                                                <span>{goal}</span>
+                                            </label>
+
+                                            {checked && (
+                                                <div className="mt-2 pl-6">
+                                                    <select
+                                                        value={selectedGoalDimensions[goal] || availableDimensions[0] || 'Other'}
+                                                        onChange={(e) => setSelectedGoalDimensions(prev => ({ ...prev, [goal]: e.target.value }))}
+                                                        className="w-full bg-gray-50 text-xs rounded-lg px-2 py-1.5 border border-gray-200 outline-none"
+                                                    >
+                                                        {availableDimensions.map(dim => (
+                                                            <option key={dim} value={dim}>{trDimension(dim)}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -151,7 +175,7 @@ export default function AIResultModal({ isOpen, items, availableDimensions, todo
 
                 <div className="p-4 bg-white border-t border-gray-100 flex flex-col gap-2">
                     <button
-                        onClick={() => onConfirm(editedItems, selectedTodos, selectedGoals)}
+                        onClick={() => onConfirm(editedItems, selectedTodos, selectedGoals, selectedGoalDimensions)}
                         className="w-full h-12 rounded-xl bg-gradient-to-r from-[#9DC5EF] to-[#FFB3C1] text-white font-bold flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all"
                     >
                         <Check size={20} /> {tr('aimodal_confirm', 'Confirm Save')}
