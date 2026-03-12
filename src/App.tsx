@@ -46,6 +46,7 @@ function ProtectedRoute({ children, user }: { children: React.ReactNode; user: u
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [homeReady, setHomeReady] = useState(false);
+  const [startupMinDone, setStartupMinDone] = useState(false);
   const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
@@ -65,6 +66,20 @@ export default function App() {
     };
   }, []);
 
+  // Keep startup loading overlay (matrix screen) visible at least 1s,
+  // so it can both present the matrix and absorb initial data loading.
+  useEffect(() => {
+    if (showSplash || authLoading || !user) {
+      setStartupMinDone(false);
+      setHomeReady(false);
+      return;
+    }
+
+    setStartupMinDone(false);
+    const timer = window.setTimeout(() => setStartupMinDone(true), 1000);
+    return () => window.clearTimeout(timer);
+  }, [showSplash, authLoading, user]);
+
   // Keep startup visuals in one flow: splash -> loading on same screen -> app.
   if (showSplash || authLoading) {
     return (
@@ -77,7 +92,7 @@ export default function App() {
     );
   }
 
-  const showStartupOverlay = !!user && !homeReady;
+  const showStartupOverlay = !!user && (!homeReady || !startupMinDone);
 
   return (
     <BrowserRouter>
